@@ -178,7 +178,7 @@ class NetClient(private val handler: Handler) {
                             val floatArray = FloatArray(floatBuffer.capacity())
                             floatBuffer.get(floatArray)
                             audioTrack?.write(
-                                floatArray, 0, floatArray.size, AudioTrack.WRITE_BLOCKING
+                                floatArray, 0, floatArray.size, AudioTrack.WRITE_NON_BLOCKING
                             )
                             readCMD()
                         }
