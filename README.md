@@ -4,11 +4,6 @@ Share Windows computer's audio to Android phone, so your phone becomes the speak
 
 ## Screenshot
 
-<style>
-    img {
-        width: 40%
-    }
-</style>
-![show_01.bmp](/docs/img/show_01.bmp)  
+<img src="/docs/img/show_01.bmp" width="50%" alt="show_01.bmp">
 
-![show_02.bmp](/docs/img/show_02.bmp)
+<img src="/docs/img/show_02.bmp" width="50%" alt="show_02.bmp">
