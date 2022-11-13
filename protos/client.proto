@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+message AudioFormat
+{
+	int32 format_tag = 1;
+	int32 channels = 3;
+	int32 sample_rate = 4;
+	int32 bits_per_sample = 2;
+}

@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Audio Share</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="port">65530</string>
+    <string name="host">192.168.3.2</string>
+    <string name="audio_starting">Starting</string>
+    <string name="audio_stopped">Stopped</string>
+    <string name="audio_started">Started</string>
+</resources>
