@@ -58,7 +58,7 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<ip::tcp::socket
             co_return;
         }
 
-        spdlog::error((uint32_t)cmd);
+        spdlog::info("cmd {}", (uint32_t)cmd);
 
         if (cmd == cmd_t::cmd_get_format) {
             auto& format = audio_manager->get_format();

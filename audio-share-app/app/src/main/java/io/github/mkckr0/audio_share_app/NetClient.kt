@@ -273,7 +273,8 @@ class NetClient(private val handler: Handler) {
         MainScope().launch(Dispatchers.Main) {
             val e = exc.message
             if (e != null && exc.message != "") {
-                handler.onNetError(e)
+//                handler.onNetError(e)
+                handler.onNetError(e + "\n" + exc.stackTraceToString())
                 return@launch
             }
             handler.onNetError(exc.stackTraceToString())
