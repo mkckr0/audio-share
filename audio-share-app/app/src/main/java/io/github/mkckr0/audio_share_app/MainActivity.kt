@@ -41,6 +41,9 @@ class MainActivity : AppCompatActivity(), NetClient.Handler {
         MainScope().launch(Dispatchers.IO) {
             editTextHost.setText(db.settingsDao().getValue("host"))
             editTextPort.setText(db.settingsDao().getValue("port"))
+            if (editTextHost.text.isEmpty()) {
+                editTextHost.setText(R.string.host)
+            }
             if (editTextPort.text.isEmpty()) {
                 editTextPort.setText(R.string.port)
             }

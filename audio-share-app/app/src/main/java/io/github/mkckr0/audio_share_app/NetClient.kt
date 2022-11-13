@@ -143,7 +143,7 @@ class NetClient(private val handler: Handler) {
         channel.read(buf, buf, object : ReadCompletionHandler(this) {
             override fun onCompleted(buffer: ByteBuffer) {
                 val id = buffer.int
-                Log.d("AudioShare recv cmd", id.toString())
+//                Log.d("AudioShare recv cmd", id.toString())
                 onReadCMD(CMD.values()[id])
             }
         })
