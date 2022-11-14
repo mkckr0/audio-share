@@ -44,4 +44,4 @@ Share Windows computer's audio to Android phone, so your phone becomes the speak
     - Visual Studio 2022 with "Desktop development with C++" workload and "C++ MFC for latest v143 build tools (x86 & x64)" option is required for compiling.
 
 - App side
-    - Android Studio will import all dependcies automatically.
+    - Android Studio will import all dependencies automatically.
