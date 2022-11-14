@@ -19,7 +19,7 @@
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/mkckr0/audio-share)
 ![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/mkckr0/audio-share)
 
-Share Windows computer's audio to Android phone, so your phone becomes the speaker of computer. (You needn't to buy a new speaker😄.)
+Share Windows computer's audio to Android phone over network, so your phone becomes the speaker of computer. (You needn't to buy a new speaker😄.)
 
 ## Usage
 
