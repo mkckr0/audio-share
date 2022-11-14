@@ -26,8 +26,8 @@ class NetClient(private val handler: Handler) {
         fun onAudioStart()
     }
 
-    abstract class WriteCompletionHandler(private val self: NetClient): CompletionHandler<Int, ByteBuffer>
-    {
+    abstract class WriteCompletionHandler(private val self: NetClient) :
+        CompletionHandler<Int, ByteBuffer> {
         override fun completed(result: Int?, attachment: ByteBuffer?) {
             if (result == -1) {
                 return
@@ -50,8 +50,8 @@ class NetClient(private val handler: Handler) {
         abstract fun onCompleted(buffer: ByteBuffer)
     }
 
-    abstract class ReadCompletionHandler(private val self: NetClient): CompletionHandler<Int, ByteBuffer>
-    {
+    abstract class ReadCompletionHandler(private val self: NetClient) :
+        CompletionHandler<Int, ByteBuffer> {
         override fun completed(result: Int?, attachment: ByteBuffer?) {
 
             if (result == -1) {
@@ -81,7 +81,7 @@ class NetClient(private val handler: Handler) {
         CMD_START_PLAY,
     }
 
-    private lateinit var channel:AsynchronousSocketChannel
+    private lateinit var channel: AsynchronousSocketChannel
     private var audioTrack: AudioTrack? = null
 
     fun start(host: String, port: Int) {
@@ -91,7 +91,7 @@ class NetClient(private val handler: Handler) {
                 channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true)
                 channel.setOption(StandardSocketOptions.TCP_NODELAY, true)
                 val endpoint = InetSocketAddress(host, port)
-                channel.connect(endpoint, null, object: CompletionHandler<Void, Void?> {
+                channel.connect(endpoint, null, object : CompletionHandler<Void, Void?> {
                     override fun completed(result: Void?, attachment: Void?) {
                         onConnected()
                     }
@@ -113,8 +113,12 @@ class NetClient(private val handler: Handler) {
     }
 
     fun stop() {
-        channel.shutdownOutput()
-        channel.shutdownInput()
+        try {
+            channel.shutdownOutput()
+            channel.shutdownInput()
+        } catch (_: Exception) {
+        }
+
         destroy()
         handler.onAudioStop()
     }
