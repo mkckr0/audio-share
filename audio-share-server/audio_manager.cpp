@@ -187,16 +187,51 @@ constexpr inline void exit_on_failed(HRESULT hr) {
     }
 }
 
-void audio_manager::add_playing_peer(std::shared_ptr<asio::ip::tcp::socket> peer)
+int audio_manager::add_playing_peer(std::shared_ptr<asio::ip::tcp::socket> peer)
 {
-    _playing_peer_list.insert(peer);
-    std::cout << "add " << peer->remote_endpoint() << std::endl;
+    if (_playing_peer_list.contains(peer)) {
+        spdlog::error("{} repeat add tcp://{}", __func__, peer->remote_endpoint());
+        return 0;
+    }
+
+    auto info = _playing_peer_list[peer] = std::make_shared<peer_info_t>();
+    static int g_id = 0;
+    info->id = ++g_id;
+    info->tcp_peer = peer;
+
+    spdlog::info("{} add id:{} tcp://{}", __func__, info->id, peer->remote_endpoint());
+    return info->id;
 }
 
 void audio_manager::remove_playing_peer(std::shared_ptr<asio::ip::tcp::socket> peer)
 {
+    if (!_playing_peer_list.contains(peer)) {
+        spdlog::error("{} repeat remove tcp://{}", __func__, peer->remote_endpoint());
+        return;
+    }
+
     _playing_peer_list.erase(peer);
-    std::cout << "remove " << peer->remote_endpoint() << std::endl;
+    spdlog::info("{} remove tcp://{}", __func__, peer->remote_endpoint());
+}
+
+void audio_manager::fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer)
+{
+    auto it = std::find_if(_playing_peer_list.begin(), _playing_peer_list.end(), [id](const std::pair<std::shared_ptr<asio::ip::tcp::socket>, std::shared_ptr<peer_info_t>>& e) {
+        return e.second->id == id;
+        });
+
+    if (it == _playing_peer_list.cend()) {
+        spdlog::error("{} no tcp peer id:{} udp://{}", __func__, id, udp_peer);
+        return;
+    }
+
+    it->second->udp_peer = udp_peer;
+    spdlog::info("{} fill udp peer id:{} tcp://{} udp://{}", __func__, id, it->second->tcp_peer->remote_endpoint(), udp_peer);
+}
+
+void audio_manager::init_udp_server(std::shared_ptr<asio::ip::udp::socket> udp_server)
+{
+    _udp_server = udp_server;
 }
 
 const std::vector<uint8_t>& audio_manager::get_format() const
@@ -298,13 +333,22 @@ void audio_manager::broadcast_audio_data(const char* data, size_t count)
         return;
     }
 
-    uint32_t cmd = (uint32_t)cmd_t::cmd_start_play;
+    //spdlog::info("size: {}", count);
 
-    auto p = std::make_shared<std::vector<uint8_t>>(4 + 4 + count);
-    std::copy((const uint8_t*)&cmd, (const uint8_t*)&cmd + 4, p->data());
-    std::copy((const uint8_t*)&size, (const uint8_t*)&size + 4, p->data() + 4);
-    std::copy((const uint8_t*)data, (const uint8_t*)data + count, p->data() + 4 + 4);
-    for (auto& peer : _playing_peer_list) {
-        asio::async_write(*peer, asio::buffer(*p), [p](const asio::error_code& ec, std::size_t bytes_transferred) {});
+    // divide udp frame
+    constexpr int mtu = 1492, seg_size = mtu - 20 - 8;
+    int i = 0;
+    std::list<std::shared_ptr<std::vector<uint8_t>>> seg_list;
+    for (; i < count; i += seg_size) {
+        const int real_seg_size = std::min((int)count - i, seg_size);
+        auto p = std::make_shared<std::vector<uint8_t>>(real_seg_size);
+        std::copy((const uint8_t*)data + i, (const uint8_t*)data + i + real_seg_size, p->data());
+        seg_list.push_back(p);
+    }
+
+    for (auto seg : seg_list) {
+        for (auto& [peer, info] : _playing_peer_list) {
+            _udp_server->async_send_to(asio::buffer(*seg), info->udp_peer, [seg](const asio::error_code& ec, std::size_t bytes_transferred) {});
+        }
     }
 }

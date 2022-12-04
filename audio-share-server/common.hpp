@@ -8,6 +8,7 @@
 constexpr auto co_token = asio::as_tuple(asio::use_awaitable);
 
 template<> struct fmt::formatter<asio::ip::tcp::endpoint> : fmt::ostream_formatter {};
+template<> struct fmt::formatter<asio::ip::udp::endpoint> : fmt::ostream_formatter {};
 
 enum class cmd_t : uint32_t {
     cmd_none = 0,

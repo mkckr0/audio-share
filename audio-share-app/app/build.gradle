@@ -14,7 +14,7 @@ android {
         minSdk 28
         targetSdk 33
         versionCode 1
-        versionName "1.0"
+        versionName "0.0.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -40,6 +40,11 @@ android {
             }
         }
     }
+
+    packagingOptions {
+        exclude 'META-INF/INDEX.LIST'
+        exclude 'META-INF/io.netty.versions.properties'
+    }
 }
 
 dependencies {
@@ -54,6 +59,8 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 
     implementation 'com.google.protobuf:protobuf-kotlin-lite:3.21.8'
+    // https://mvnrepository.com/artifact/io.netty/netty-all
+    implementation group: 'io.netty', name: 'netty-all', version: '4.1.85.Final'
 
     kapt "androidx.room:room-compiler:2.4.2"
     implementation "androidx.room:room-ktx:2.4.2"

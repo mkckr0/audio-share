@@ -21,7 +21,9 @@ public:
 
     asio::awaitable<void> read_loop(std::shared_ptr<asio::ip::tcp::socket> peer);
 
-    asio::awaitable<void> accept_loop(asio::ip::tcp::acceptor acceptor);
+    asio::awaitable<void> accept_tcp_loop(asio::ip::tcp::acceptor acceptor);
+    
+    asio::awaitable<void> accept_udp_loop(std::shared_ptr<asio::ip::udp::socket> acceptor);
 
     void start_server(const std::string& host, const uint16_t port, const std::wstring& endpoint_id);
 

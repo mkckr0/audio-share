@@ -5,6 +5,7 @@ import android.media.AudioManager
 import android.media.AudioTrack
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
+import android.util.Log
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.room.Room
@@ -66,6 +67,8 @@ class MainActivity : AppCompatActivity(), NetClient.Handler {
 
         textViewInfo.text = getString(R.string.audio_starting)
         switchEnableState(false)
+
+        Log.d("AudioShare", "click start")
 
         netClient.start(editTextHost.text.toString(), editTextPort.text.toString().toInt())
     }

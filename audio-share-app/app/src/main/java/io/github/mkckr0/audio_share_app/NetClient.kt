@@ -6,19 +6,31 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.Build
 import android.util.Log
+import io.netty.bootstrap.Bootstrap
+import io.netty.buffer.ByteBuf
+import io.netty.channel.*
+import io.netty.channel.ChannelHandler.Sharable
+import io.netty.channel.nio.NioEventLoopGroup
+import io.netty.channel.socket.DatagramChannel
+import io.netty.channel.socket.DatagramPacket
+import io.netty.channel.socket.SocketChannel
+import io.netty.channel.socket.nio.NioDatagramChannel
+import io.netty.channel.socket.nio.NioSocketChannel
+import io.netty.handler.codec.ByteToMessageDecoder
+import io.netty.handler.codec.MessageToByteEncoder
+import io.netty.handler.codec.MessageToMessageDecoder
+import io.netty.handler.codec.MessageToMessageEncoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
-import java.net.ConnectException
 import java.net.InetSocketAddress
-import java.net.StandardSocketOptions
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.channels.AsynchronousSocketChannel
-import java.nio.channels.ClosedChannelException
-import java.nio.channels.CompletionHandler
 
+@Sharable
 class NetClient(private val handler: Handler) {
+
+    private val tag = NetClient::class.simpleName
 
     interface Handler {
         fun onNetError(e: String)
@@ -26,53 +38,184 @@ class NetClient(private val handler: Handler) {
         fun onAudioStart()
     }
 
-    abstract class WriteCompletionHandler(private val self: NetClient) :
-        CompletionHandler<Int, ByteBuffer> {
-        override fun completed(result: Int?, attachment: ByteBuffer?) {
-            if (result == -1) {
-                return
-            }
+    class TcpChannelAdapter(private val parent : NetClient) : ChannelInboundHandlerAdapter() {
+        companion object {
+            private val tag = TcpChannelAdapter::class.simpleName
+        }
 
-            if (attachment != null) {
-                if (attachment.remaining() > 0) {
-                    self.channel.write(attachment, attachment, this)
+        @Deprecated("Deprecated in Java")
+        override fun exceptionCaught(ctx: ChannelHandlerContext?, cause: Throwable?) {
+            if (cause != null) {
+                Log.d(tag, cause.stackTraceToString())
+            }
+            parent.onFailed(cause)
+        }
+
+        override fun channelActive(ctx: ChannelHandlerContext) {
+            Log.d(tag, "connected")
+            parent.sendCMD(ctx, CMD.CMD_GET_FORMAT)
+        }
+
+        override fun channelInactive(ctx: ChannelHandlerContext) {
+            Log.d(tag, "disconnected")
+        }
+
+        class TcpMessage {
+            var cmd: CMD = CMD.CMD_NONE
+            var audioFormat: Client.AudioFormat? = null
+            var id: Int = 0
+        }
+
+        override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
+            Log.d(tag, "channelRead tcp")
+            try {
+                if (msg is TcpMessage) {
+                    if (msg.cmd == CMD.CMD_GET_FORMAT) {
+                        val audioFormat = msg.audioFormat
+                        if (audioFormat != null) {
+                            parent.onGetFormat(ctx, audioFormat)
+                        }
+                    } else if (msg.cmd == CMD.CMD_START_PLAY) {
+                        val id = msg.id
+                        if (id > 0) {
+                            parent.udpChannel?.writeAndFlush(id)
+                        } else {
+                            Log.e(tag, "id <= 0")
+                        }
+                    } else {
+                        Log.e(tag, "error cmd")
+                    }
                 } else {
-                    attachment.flip()
-                    onCompleted(attachment)
+                    Log.e(tag, "msg is not valid type")
+                }
+            } catch (e: Exception) {
+                Log.d("channelRead tcp", e.stackTraceToString())
+            }
+        }
+
+        class TcpMessageDecoder : ByteToMessageDecoder() {
+            override fun decode(ctx: ChannelHandlerContext?, `in`: ByteBuf?, out: MutableList<Any>?) {
+                if (`in` == null || out == null) {
+                    return
+                }
+
+                Log.d(tag, "decode")
+
+                if (`in`.readableBytes() < Int.SIZE_BYTES) {
+                    return
+                }
+
+                `in`.markReaderIndex()
+
+                val tcpMessage = TcpMessage()
+                val id = `in`.readIntLE()
+
+                Log.d(tag, "decode cmd id=${id}")
+
+                val cmd = CMD.values()[id]
+
+                tcpMessage.cmd = cmd
+
+                if (cmd == CMD.CMD_GET_FORMAT) {
+                    if (`in`.readableBytes() < Int.SIZE_BYTES) {
+                        `in`.resetReaderIndex()
+                        return
+                    }
+
+                    val bufSize = `in`.readIntLE()
+                    if (`in`.readableBytes() < bufSize) {
+                        `in`.resetReaderIndex()
+                        return
+                    }
+
+                    val buf = ByteArray(bufSize)
+                    `in`.readBytes(buf)
+                    val format = Client.AudioFormat.parseFrom(buf)
+                    tcpMessage.audioFormat = format
+
+                } else if (cmd == CMD.CMD_START_PLAY) {
+                    val x = `in`.readableBytes()
+                    Log.d(tag, "readableBytes ${x}")
+                    if (`in`.readableBytes() < Int.SIZE_BYTES) {
+                        `in`.resetReaderIndex()
+                        return
+                    }
+                    tcpMessage.id = `in`.readIntLE()
+                }
+
+                out.add(tcpMessage)
+            }
+        }
+
+        open class TcpMessageEncoder : MessageToByteEncoder<Int>() {
+            override fun encode(ctx: ChannelHandlerContext?, msg: Int?, out: ByteBuf?) {
+                if (msg != null && out != null) {
+                    out.writeIntLE(msg)
                 }
             }
         }
-
-        override fun failed(exc: Throwable?, attachment: ByteBuffer?) {
-            self.onFailed(exc)
-        }
-
-        abstract fun onCompleted(buffer: ByteBuffer)
     }
 
-    abstract class ReadCompletionHandler(private val self: NetClient) :
-        CompletionHandler<Int, ByteBuffer> {
-        override fun completed(result: Int?, attachment: ByteBuffer?) {
+    class UdpChannelAdapter(private val parent: NetClient) : ChannelInboundHandlerAdapter() {
 
-            if (result == -1) {
-                return
+        private val tag = NetClient::class.simpleName
+
+        @Deprecated("Deprecated in Java")
+        override fun exceptionCaught(ctx: ChannelHandlerContext?, cause: Throwable?) {
+            if (cause != null) {
+                Log.d(tag, cause.stackTraceToString())
             }
+            parent.onFailed(cause)
+        }
 
-            if (attachment != null) {
-                if (attachment.remaining() > 0) {
-                    self.channel.read(attachment, attachment, this)
-                } else {
-                    attachment.flip()
-                    onCompleted(attachment)
+        class UdpMessageEncoder(private val remoteAddress: InetSocketAddress) : MessageToMessageEncoder<Int>() {
+            override fun encode(ctx: ChannelHandlerContext?, msg: Int?, out: MutableList<Any>?) {
+                if (ctx == null || msg == null || out == null) {
+                    return
                 }
+                val buf = ctx.alloc().buffer(Int.SIZE_BYTES)
+                buf.writeIntLE(msg)
+                val data = DatagramPacket(buf, remoteAddress)
+                out.add(data)
             }
         }
 
-        override fun failed(exc: Throwable?, attachment: ByteBuffer?) {
-            self.onFailed(exc)
+        class UdpMessageDecoder : MessageToMessageDecoder<DatagramPacket>() {
+            override fun decode(
+                ctx: ChannelHandlerContext?,
+                msg: DatagramPacket?,
+                out: MutableList<Any>?
+            ) {
+                if (ctx == null || msg == null || out == null) {
+                    return
+                }
+
+//                Log.d("NetClient", "Udp decode")
+
+                val buf = ByteBuffer.allocate(msg.content().readableBytes())
+                msg.content().readBytes(buf)
+                buf.flip()
+                val floatBuffer = buf.order(ByteOrder.nativeOrder()).asFloatBuffer()
+                val floatArray = FloatArray(floatBuffer.capacity())
+                floatBuffer.get(floatArray)
+                out.add(floatArray)
+            }
         }
 
-        abstract fun onCompleted(buffer: ByteBuffer)
+        override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
+//            Log.d(tag, "channelRead udp")
+            try {
+                if (msg is FloatArray) {
+                    parent.audioTrack?.write(
+                        msg, 0, msg.size, AudioTrack.WRITE_NON_BLOCKING
+                    )
+                } else {
+                    Log.e("NetClient", "msg is not valid type")
+                }
+            } catch (e: Exception) {
+                Log.d("channelRead", e.stackTraceToString())
+            }
+        }
     }
 
     enum class CMD {
@@ -81,118 +224,76 @@ class NetClient(private val handler: Handler) {
         CMD_START_PLAY,
     }
 
-    private lateinit var channel: AsynchronousSocketChannel
+    private var tcpChannel: Channel? = null
+    private var udpChannel: Channel? = null
     private var audioTrack: AudioTrack? = null
 
     fun start(host: String, port: Int) {
         MainScope().launch(Dispatchers.IO) {
+            val workerGroup = NioEventLoopGroup()
             try {
-                channel = AsynchronousSocketChannel.open()
-                channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true)
-                channel.setOption(StandardSocketOptions.TCP_NODELAY, true)
-                val endpoint = InetSocketAddress(host, port)
-                channel.connect(endpoint, null, object : CompletionHandler<Void, Void?> {
-                    override fun completed(result: Void?, attachment: Void?) {
-                        onConnected()
-                    }
+                val remoteAddress = InetSocketAddress(host, port)
+                val f = Bootstrap().group(workerGroup)
+                    .channel(NioSocketChannel::class.java)
+                    .option(ChannelOption.SO_KEEPALIVE, true)
+                    .option(ChannelOption.TCP_NODELAY, true)
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1000)
+                    .handler(object : ChannelInitializer<SocketChannel>() {
+                        override fun initChannel(ch: SocketChannel) {
+                            ch.pipeline()
+                                .addLast(TcpChannelAdapter.TcpMessageEncoder())
+                                .addLast(TcpChannelAdapter.TcpMessageDecoder())
+                                .addLast(TcpChannelAdapter(this@NetClient))
+                        }
+                    }).connect(remoteAddress).sync()
 
-                    override fun failed(exc: Throwable?, attachment: Void?) {
-                        onFailed(exc)
+                if (!f.isSuccess) {
+                    if (f.cause() != null) {
+                        onFailed(f.cause())
                     }
-                })
-
-                // check timeout
-                Thread.sleep(1000)
-                if (channel.isOpen && channel.remoteAddress == null) {
-                    throw ConnectException("Connection timed out")
+                    return@launch
                 }
+
+                tcpChannel = f.channel()
+
+                udpChannel = Bootstrap()
+                    .group(workerGroup)
+                    .channel(NioDatagramChannel::class.java)
+                    .handler(object : ChannelInitializer<DatagramChannel>() {
+                        override fun initChannel(ch: DatagramChannel) {
+                            ch.pipeline()
+                                .addLast(UdpChannelAdapter.UdpMessageEncoder(remoteAddress))
+                                .addLast(UdpChannelAdapter.UdpMessageDecoder())
+                                .addLast(UdpChannelAdapter(this@NetClient))
+                        }
+                    }).bind(remoteAddress.port).channel()   // local udp port is same as remote
+
+                tcpChannel?.closeFuture()?.sync()
+                udpChannel?.closeFuture()?.sync()
             } catch (e: Exception) {
                 onFailed(e)
+            } finally {
+                workerGroup.shutdownGracefully()
             }
         }
     }
 
     fun stop() {
-        try {
-            channel.shutdownOutput()
-            channel.shutdownInput()
-        } catch (_: Exception) {
-        }
-
         destroy()
         handler.onAudioStop()
     }
 
     private fun destroy() {
-        channel.close()
+        tcpChannel?.close()
+        udpChannel?.close()
         audioTrack = null
     }
 
-    private fun onConnected() {
-        sendCMD(CMD.CMD_GET_FORMAT)
+    private fun sendCMD(ctx: ChannelHandlerContext, cmd: CMD) {
+        ctx.writeAndFlush(cmd.ordinal).sync()
     }
 
-    private fun sendCMD(cmd: CMD) {
-        val buf = ByteBuffer.allocate(Int.SIZE_BYTES).order(ByteOrder.LITTLE_ENDIAN)
-        buf.putInt(cmd.ordinal).flip()
-        channel.write(buf, buf, object : WriteCompletionHandler(this) {
-            override fun onCompleted(buffer: ByteBuffer) {
-                readCMD()
-            }
-        })
-    }
-
-    private fun readCMD() {
-        val buf = ByteBuffer.allocate(Int.SIZE_BYTES).order(ByteOrder.LITTLE_ENDIAN)
-        channel.read(buf, buf, object : ReadCompletionHandler(this) {
-            override fun onCompleted(buffer: ByteBuffer) {
-                val id = buffer.int
-//                Log.d("AudioShare recv cmd", id.toString())
-                onReadCMD(CMD.values()[id])
-            }
-        })
-    }
-
-    private fun onReadCMD(cmd: CMD) {
-        if (cmd == CMD.CMD_GET_FORMAT) {
-            // read format size
-            val bufSize = ByteBuffer.allocate(Int.SIZE_BYTES).order(ByteOrder.LITTLE_ENDIAN)
-            channel.read(bufSize, bufSize, object : ReadCompletionHandler(this) {
-                override fun onCompleted(buffer: ByteBuffer) {
-                    // read format
-                    val buf = ByteBuffer.allocate(buffer.int)
-                    channel.read(buf, buf, object : ReadCompletionHandler(this@NetClient) {
-                        override fun onCompleted(buffer: ByteBuffer) {
-                            onGetFormat(Client.AudioFormat.parseFrom(buf))
-                        }
-                    })
-                }
-            })
-
-        } else if (cmd == CMD.CMD_START_PLAY) {
-            // read audio data size
-            val bufSize = ByteBuffer.allocate(Int.SIZE_BYTES).order(ByteOrder.LITTLE_ENDIAN)
-            channel.read(bufSize, bufSize, object : ReadCompletionHandler(this) {
-                override fun onCompleted(buffer: ByteBuffer) {
-                    val buf = ByteBuffer.allocate(buffer.int)
-                    // read audio data
-                    channel.read(buf, buf, object : ReadCompletionHandler(this@NetClient) {
-                        override fun onCompleted(buffer: ByteBuffer) {
-                            val floatBuffer = buffer.order(ByteOrder.nativeOrder()).asFloatBuffer()
-                            val floatArray = FloatArray(floatBuffer.capacity())
-                            floatBuffer.get(floatArray)
-                            audioTrack?.write(
-                                floatArray, 0, floatArray.size, AudioTrack.WRITE_NON_BLOCKING
-                            )
-                            readCMD()
-                        }
-                    })
-                }
-            })
-        }
-    }
-
-    private fun onGetFormat(format: Client.AudioFormat) {
+    private fun onGetFormat(ctx: ChannelHandlerContext, format: Client.AudioFormat) {
 
         audioTrack = createAudioTrack(format)
 
@@ -203,7 +304,7 @@ class NetClient(private val handler: Handler) {
         handler.onAudioStart()
 
         // send start playing
-        sendCMD(CMD.CMD_START_PLAY)
+        sendCMD(ctx, CMD.CMD_START_PLAY)
     }
 
     private fun createAudioTrack(format: Client.AudioFormat): AudioTrack {
@@ -267,10 +368,6 @@ class NetClient(private val handler: Handler) {
 
     private fun onFailed(exc: Throwable?) {
         if (exc == null) {
-            return
-        }
-
-        if (exc is ClosedChannelException) {
             return
         }
 

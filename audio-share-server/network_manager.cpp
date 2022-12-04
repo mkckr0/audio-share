@@ -68,7 +68,14 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<ip::tcp::socket
             co_await asio::async_write(*peer, asio::buffer(format), co_token);
         }
         else if (cmd == cmd_t::cmd_start_play) {
-            audio_manager->add_playing_peer(peer);
+            int id = audio_manager->add_playing_peer(peer);
+            if (id <= 0) {
+                spdlog::error("{} id error", __func__);
+                peer->shutdown(ip::tcp::socket::shutdown_both);
+                continue;
+            }
+            co_await asio::async_write(*peer, asio::buffer(&cmd, sizeof(cmd)), co_token);
+            co_await asio::async_write(*peer, asio::buffer(&id, sizeof(id)), co_token);
         }
         else {
             spdlog::error("{} error cmd", __func__);
@@ -79,7 +86,7 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<ip::tcp::socket
     }
 }
 
-asio::awaitable<void> network_manager::accept_loop(ip::tcp::acceptor acceptor)
+asio::awaitable<void> network_manager::accept_tcp_loop(ip::tcp::acceptor acceptor)
 {
     while (true) {
         auto peer = std::make_shared<ip::tcp::socket>(acceptor.get_executor());
@@ -102,6 +109,21 @@ asio::awaitable<void> network_manager::accept_loop(ip::tcp::acceptor acceptor)
     }
 }
 
+asio::awaitable<void> network_manager::accept_udp_loop(std::shared_ptr<asio::ip::udp::socket> acceptor)
+{
+    while (true) {
+        int id = 0;
+        ip::udp::endpoint udp_peer;
+        auto [ec, _] = co_await acceptor->async_receive_from(asio::buffer(&id, sizeof(id)), udp_peer, co_token);
+        if (ec) {
+            spdlog::info("{} {}", __func__, ec.message());
+            co_return;
+        }
+
+        audio_manager->fill_udp_peer(id, udp_peer);
+    }
+}
+
 void network_manager::start_server(const std::string& host, const uint16_t port, const std::wstring& endpoint_id)
 {
     ioc = std::make_shared<asio::io_context>();
@@ -111,23 +133,38 @@ void network_manager::start_server(const std::string& host, const uint16_t port,
     net_thread = std::thread([=, promise = std::move(promise)]() mutable {
 
         try {
-            ip::tcp::endpoint endpoint{ ip::make_address(host), port };
 
-            ip::tcp::acceptor acceptor(*ioc, endpoint.protocol());
-            acceptor.set_option(ip::tcp::acceptor::reuse_address(true));
-            acceptor.bind(endpoint);
+            {
+                ip::tcp::endpoint endpoint{ ip::make_address(host), port };
 
-            audio_manager = std::make_unique<class audio_manager>();
-            asio::co_spawn(*ioc, audio_manager->do_loopback_recording(*ioc, endpoint_id), asio::detached);
-            ioc->run_one();
+                ip::tcp::acceptor acceptor(*ioc, endpoint.protocol());
+                acceptor.set_option(ip::tcp::acceptor::reuse_address(true));
+                acceptor.bind(endpoint);
 
-            acceptor.listen();
+                audio_manager = std::make_unique<class audio_manager>();
+                asio::co_spawn(*ioc, audio_manager->do_loopback_recording(*ioc, endpoint_id), asio::detached);
+                ioc->run_one();
 
-            // start success
-            spdlog::info("listen success on {}", endpoint);
+                acceptor.listen();
+
+                asio::co_spawn(*ioc, accept_tcp_loop(std::move(acceptor)), asio::detached);
+
+                // start tcp success
+                spdlog::info("tcp listen success on {}", endpoint);
+            }
+
+            {
+                ip::udp::endpoint endpoint{ ip::make_address(host), port };
+                auto acceptor = std::make_shared<ip::udp::socket>(*ioc, endpoint.protocol());
+                acceptor->bind(endpoint);
+                audio_manager->init_udp_server(acceptor);
+                asio::co_spawn(*ioc, accept_udp_loop(acceptor), asio::detached);
+
+                // start udp success
+                spdlog::info("udp listen success on {}", endpoint);
+            }
+
             promise.set_value();
-
-            asio::co_spawn(*ioc, accept_loop(std::move(acceptor)), asio::detached);
         }
         catch (...) {
             promise.set_exception(std::current_exception());
