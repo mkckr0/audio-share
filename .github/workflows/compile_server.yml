@@ -36,7 +36,7 @@ jobs:
       with:
         vcpkgGitCommitId: 6f7ffeb18f99796233b958aaaf14ec7bd4fb64b2
 
-    -name: vcpkg integrate install
+    - name: vcpkg integrate install
       run: vcpkg integrate install
 
     - name: Intall dependencies
