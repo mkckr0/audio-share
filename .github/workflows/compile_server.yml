@@ -1,4 +1,4 @@
-name: MSBuild
+name: Compile Server
 
 on:
   workflow_dispatch:
@@ -35,6 +35,9 @@ jobs:
       uses: lukka/run-vcpkg@v10.6
       with:
         vcpkgGitCommitId: 6f7ffeb18f99796233b958aaaf14ec7bd4fb64b2
+
+    -name: vcpkg integrate install
+      run: vcpkg integrate install
 
     - name: Intall dependencies
       run: vcpkg install asio:x64-windows-static-md protobuf:x64-windows-static-md spdlog:x64-windows-static-md 
