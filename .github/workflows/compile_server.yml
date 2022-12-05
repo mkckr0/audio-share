@@ -29,9 +29,13 @@ jobs:
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.0.2
 
-#     - name: Restore NuGet packages
-#       working-directory: ${{env.GITHUB_WORKSPACE}}
-#       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+    - name: run-vcpkg
+      # You may pin to the exact commit or the version.
+      # uses: lukka/run-vcpkg@831e6cd560cc8688a4967c5766e4215afbd196d9
+      uses: lukka/run-vcpkg@v10.6
+
+    - name: Intall dependencies
+      run: vcpkg install asio:x64-windows-static-md protobuf:x64-windows-static-md spdlog:x64-windows-static-md 
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
