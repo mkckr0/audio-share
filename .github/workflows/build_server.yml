@@ -1,4 +1,4 @@
-name: Compile Server
+name: Build Server
 
 on:
   workflow_dispatch:
