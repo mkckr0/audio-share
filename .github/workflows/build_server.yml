@@ -54,4 +54,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: AudioShareServer.exe
-        path: x64/Release/AudioShareServer.exe
+        path: audio-share-server/x64/Release/AudioShareServer.exe
