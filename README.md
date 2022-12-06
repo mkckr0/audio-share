@@ -1,4 +1,4 @@
-# audio-share
+# Audio Share
 
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/mkckr0/audio-share)](https://github.com/mkckr0/audio-share/releases/latest)
 [![GitHub](https://img.shields.io/github/license/mkckr0/audio-share)](https://img.shields.io/github/license/mkckr0/audio-share)
@@ -21,7 +21,7 @@
 [![Build App](https://github.com/mkckr0/audio-share/actions/workflows/build_app.yml/badge.svg)](https://github.com/mkckr0/audio-share/actions/workflows/build_app.yml)
 [![Build Server](https://github.com/mkckr0/audio-share/actions/workflows/build_server.yml/badge.svg)](https://github.com/mkckr0/audio-share/actions/workflows/build_server.yml)
 
-Share Windows computer's audio to Android phone over network, so your phone becomes the speaker of computer. (You needn't to buy a new speaker😄.)
+Audio Share can share Windows computer's audio to Android phone over network, so your phone becomes the speaker of computer. (You needn't to buy a new speaker😄.)
 
 ## Usage
 
