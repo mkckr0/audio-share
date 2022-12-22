@@ -15,14 +15,16 @@ android {
         targetSdk 33
         versionCode 1
         versionName "0.0.2"
-
+        archivesBaseName = "app-$versionName"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
         }
     }
     compileOptions {
@@ -58,7 +60,7 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 
-    implementation 'com.google.protobuf:protobuf-kotlin-lite:3.21.8'
+    implementation 'com.google.protobuf:protobuf-kotlin-lite:3.21.12'
     // https://mvnrepository.com/artifact/io.netty/netty-all
     implementation group: 'io.netty', name: 'netty-all', version: '4.1.85.Final'
 

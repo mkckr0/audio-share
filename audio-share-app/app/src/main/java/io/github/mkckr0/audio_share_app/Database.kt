@@ -1,7 +1,6 @@
 package io.github.mkckr0.audio_share_app
 
 import androidx.room.*
-import androidx.room.RoomDatabase
 
 @Entity
 data class Settings (

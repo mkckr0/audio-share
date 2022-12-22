@@ -1,9 +1,11 @@
 syntax = "proto3";
 
+package io.github.mkckr0.audio_share_app.pb;
+
 message AudioFormat
 {
 	int32 format_tag = 1;
-	int32 channels = 3;
-	int32 sample_rate = 4;
-	int32 bits_per_sample = 2;
+	int32 channels = 2;
+	int32 sample_rate = 3;
+	int32 bits_per_sample = 4;
 }

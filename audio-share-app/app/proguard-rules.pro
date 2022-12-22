@@ -19,3 +19,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keep class io.github.mkckr0.audio_share_app.pb.** {
+    *;
+}
+
+-dontobfuscate

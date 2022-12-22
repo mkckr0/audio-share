@@ -1,11 +1,11 @@
 package io.github.mkckr0.audio_share_app
 
-import Client
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.Build
 import android.util.Log
+import io.github.mkckr0.audio_share_app.pb.*
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
 import io.netty.channel.*
@@ -38,7 +38,7 @@ class NetClient(private val handler: Handler) {
         fun onAudioStart()
     }
 
-    class TcpChannelAdapter(private val parent : NetClient) : ChannelInboundHandlerAdapter() {
+    class TcpChannelAdapter(private val parent: NetClient) : ChannelInboundHandlerAdapter() {
         companion object {
             private val tag = TcpChannelAdapter::class.simpleName
         }
@@ -94,7 +94,11 @@ class NetClient(private val handler: Handler) {
         }
 
         class TcpMessageDecoder : ByteToMessageDecoder() {
-            override fun decode(ctx: ChannelHandlerContext?, `in`: ByteBuf?, out: MutableList<Any>?) {
+            override fun decode(
+                ctx: ChannelHandlerContext?,
+                `in`: ByteBuf?,
+                out: MutableList<Any>?
+            ) {
                 if (`in` == null || out == null) {
                     return
                 }
@@ -168,7 +172,8 @@ class NetClient(private val handler: Handler) {
             parent.onFailed(cause)
         }
 
-        class UdpMessageEncoder(private val remoteAddress: InetSocketAddress) : MessageToMessageEncoder<Int>() {
+        class UdpMessageEncoder(private val remoteAddress: InetSocketAddress) :
+            MessageToMessageEncoder<Int>() {
             override fun encode(ctx: ChannelHandlerContext?, msg: Int?, out: MutableList<Any>?) {
                 if (ctx == null || msg == null || out == null) {
                     return

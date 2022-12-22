@@ -14,6 +14,8 @@
 #include <Audioclient.h>
 #include <Audiopolicy.h>
 
+using namespace io::github::mkckr0::audio_share_app::pb;
+
 // 利用RAII手法，自动调用 CoUninitialize
 class CoInitializeGuard {
 public:

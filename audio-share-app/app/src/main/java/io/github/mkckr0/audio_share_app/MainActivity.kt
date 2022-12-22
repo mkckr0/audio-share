@@ -1,12 +1,12 @@
 package io.github.mkckr0.audio_share_app
 
-import android.content.Context
-import android.media.AudioManager
-import android.media.AudioTrack
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
-import android.widget.*
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.room.Room
 import kotlinx.coroutines.Dispatchers

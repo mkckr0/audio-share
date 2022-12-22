@@ -44,17 +44,32 @@ struct TableStruct_client_2eproto {
   static const uint32_t offsets[];
 };
 extern const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_client_2eproto;
+namespace io {
+namespace github {
+namespace mkckr0 {
+namespace audio_share_app {
+namespace pb {
 class AudioFormat;
 struct AudioFormatDefaultTypeInternal;
 extern AudioFormatDefaultTypeInternal _AudioFormat_default_instance_;
+}  // namespace pb
+}  // namespace audio_share_app
+}  // namespace mkckr0
+}  // namespace github
+}  // namespace io
 PROTOBUF_NAMESPACE_OPEN
-template<> ::AudioFormat* Arena::CreateMaybeMessage<::AudioFormat>(Arena*);
+template<> ::io::github::mkckr0::audio_share_app::pb::AudioFormat* Arena::CreateMaybeMessage<::io::github::mkckr0::audio_share_app::pb::AudioFormat>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
+namespace io {
+namespace github {
+namespace mkckr0 {
+namespace audio_share_app {
+namespace pb {
 
 // ===================================================================
 
 class AudioFormat final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:AudioFormat) */ {
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:io.github.mkckr0.audio_share_app.pb.AudioFormat) */ {
  public:
   inline AudioFormat() : AudioFormat(nullptr) {}
   ~AudioFormat() override;
@@ -157,7 +172,7 @@ class AudioFormat final :
   private:
   friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
   static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "AudioFormat";
+    return "io.github.mkckr0.audio_share_app.pb.AudioFormat";
   }
   protected:
   explicit AudioFormat(::PROTOBUF_NAMESPACE_ID::Arena* arena,
@@ -175,9 +190,9 @@ class AudioFormat final :
 
   enum : int {
     kFormatTagFieldNumber = 1,
-    kBitsPerSampleFieldNumber = 2,
-    kChannelsFieldNumber = 3,
-    kSampleRateFieldNumber = 4,
+    kChannelsFieldNumber = 2,
+    kSampleRateFieldNumber = 3,
+    kBitsPerSampleFieldNumber = 4,
   };
   // int32 format_tag = 1;
   void clear_format_tag();
@@ -188,16 +203,7 @@ class AudioFormat final :
   void _internal_set_format_tag(int32_t value);
   public:
 
-  // int32 bits_per_sample = 2;
-  void clear_bits_per_sample();
-  int32_t bits_per_sample() const;
-  void set_bits_per_sample(int32_t value);
-  private:
-  int32_t _internal_bits_per_sample() const;
-  void _internal_set_bits_per_sample(int32_t value);
-  public:
-
-  // int32 channels = 3;
+  // int32 channels = 2;
   void clear_channels();
   int32_t channels() const;
   void set_channels(int32_t value);
@@ -206,7 +212,7 @@ class AudioFormat final :
   void _internal_set_channels(int32_t value);
   public:
 
-  // int32 sample_rate = 4;
+  // int32 sample_rate = 3;
   void clear_sample_rate();
   int32_t sample_rate() const;
   void set_sample_rate(int32_t value);
@@ -215,7 +221,16 @@ class AudioFormat final :
   void _internal_set_sample_rate(int32_t value);
   public:
 
-  // @@protoc_insertion_point(class_scope:AudioFormat)
+  // int32 bits_per_sample = 4;
+  void clear_bits_per_sample();
+  int32_t bits_per_sample() const;
+  void set_bits_per_sample(int32_t value);
+  private:
+  int32_t _internal_bits_per_sample() const;
+  void _internal_set_bits_per_sample(int32_t value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:io.github.mkckr0.audio_share_app.pb.AudioFormat)
  private:
   class _Internal;
 
@@ -224,9 +239,9 @@ class AudioFormat final :
   typedef void DestructorSkippable_;
   struct Impl_ {
     int32_t format_tag_;
-    int32_t bits_per_sample_;
     int32_t channels_;
     int32_t sample_rate_;
+    int32_t bits_per_sample_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -251,7 +266,7 @@ inline int32_t AudioFormat::_internal_format_tag() const {
   return _impl_.format_tag_;
 }
 inline int32_t AudioFormat::format_tag() const {
-  // @@protoc_insertion_point(field_get:AudioFormat.format_tag)
+  // @@protoc_insertion_point(field_get:io.github.mkckr0.audio_share_app.pb.AudioFormat.format_tag)
   return _internal_format_tag();
 }
 inline void AudioFormat::_internal_set_format_tag(int32_t value) {
@@ -260,10 +275,10 @@ inline void AudioFormat::_internal_set_format_tag(int32_t value) {
 }
 inline void AudioFormat::set_format_tag(int32_t value) {
   _internal_set_format_tag(value);
-  // @@protoc_insertion_point(field_set:AudioFormat.format_tag)
+  // @@protoc_insertion_point(field_set:io.github.mkckr0.audio_share_app.pb.AudioFormat.format_tag)
 }
 
-// int32 channels = 3;
+// int32 channels = 2;
 inline void AudioFormat::clear_channels() {
   _impl_.channels_ = 0;
 }
@@ -271,7 +286,7 @@ inline int32_t AudioFormat::_internal_channels() const {
   return _impl_.channels_;
 }
 inline int32_t AudioFormat::channels() const {
-  // @@protoc_insertion_point(field_get:AudioFormat.channels)
+  // @@protoc_insertion_point(field_get:io.github.mkckr0.audio_share_app.pb.AudioFormat.channels)
   return _internal_channels();
 }
 inline void AudioFormat::_internal_set_channels(int32_t value) {
@@ -280,10 +295,10 @@ inline void AudioFormat::_internal_set_channels(int32_t value) {
 }
 inline void AudioFormat::set_channels(int32_t value) {
   _internal_set_channels(value);
-  // @@protoc_insertion_point(field_set:AudioFormat.channels)
+  // @@protoc_insertion_point(field_set:io.github.mkckr0.audio_share_app.pb.AudioFormat.channels)
 }
 
-// int32 sample_rate = 4;
+// int32 sample_rate = 3;
 inline void AudioFormat::clear_sample_rate() {
   _impl_.sample_rate_ = 0;
 }
@@ -291,7 +306,7 @@ inline int32_t AudioFormat::_internal_sample_rate() const {
   return _impl_.sample_rate_;
 }
 inline int32_t AudioFormat::sample_rate() const {
-  // @@protoc_insertion_point(field_get:AudioFormat.sample_rate)
+  // @@protoc_insertion_point(field_get:io.github.mkckr0.audio_share_app.pb.AudioFormat.sample_rate)
   return _internal_sample_rate();
 }
 inline void AudioFormat::_internal_set_sample_rate(int32_t value) {
@@ -300,10 +315,10 @@ inline void AudioFormat::_internal_set_sample_rate(int32_t value) {
 }
 inline void AudioFormat::set_sample_rate(int32_t value) {
   _internal_set_sample_rate(value);
-  // @@protoc_insertion_point(field_set:AudioFormat.sample_rate)
+  // @@protoc_insertion_point(field_set:io.github.mkckr0.audio_share_app.pb.AudioFormat.sample_rate)
 }
 
-// int32 bits_per_sample = 2;
+// int32 bits_per_sample = 4;
 inline void AudioFormat::clear_bits_per_sample() {
   _impl_.bits_per_sample_ = 0;
 }
@@ -311,7 +326,7 @@ inline int32_t AudioFormat::_internal_bits_per_sample() const {
   return _impl_.bits_per_sample_;
 }
 inline int32_t AudioFormat::bits_per_sample() const {
-  // @@protoc_insertion_point(field_get:AudioFormat.bits_per_sample)
+  // @@protoc_insertion_point(field_get:io.github.mkckr0.audio_share_app.pb.AudioFormat.bits_per_sample)
   return _internal_bits_per_sample();
 }
 inline void AudioFormat::_internal_set_bits_per_sample(int32_t value) {
@@ -320,7 +335,7 @@ inline void AudioFormat::_internal_set_bits_per_sample(int32_t value) {
 }
 inline void AudioFormat::set_bits_per_sample(int32_t value) {
   _internal_set_bits_per_sample(value);
-  // @@protoc_insertion_point(field_set:AudioFormat.bits_per_sample)
+  // @@protoc_insertion_point(field_set:io.github.mkckr0.audio_share_app.pb.AudioFormat.bits_per_sample)
 }
 
 #ifdef __GNUC__
@@ -329,6 +344,11 @@ inline void AudioFormat::set_bits_per_sample(int32_t value) {
 
 // @@protoc_insertion_point(namespace_scope)
 
+}  // namespace pb
+}  // namespace audio_share_app
+}  // namespace mkckr0
+}  // namespace github
+}  // namespace io
 
 // @@protoc_insertion_point(global_scope)
 
