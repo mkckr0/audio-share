@@ -1,3 +1,4 @@
+# Audio Share
 <p align="center">
     <img src="docs/img/icon.png" width="20%" alt="docs/img/icon.png">
 </p>
