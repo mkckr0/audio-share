@@ -1,4 +1,6 @@
-# Audio Share
+<p align="center">
+    <img src="docs/img/icon.png" width="20%" alt="docs/img/icon.png">
+</p>
 
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/mkckr0/audio-share)](https://github.com/mkckr0/audio-share/releases/latest)
 [![GitHub](https://img.shields.io/github/license/mkckr0/audio-share)](https://img.shields.io/github/license/mkckr0/audio-share)
@@ -35,8 +37,8 @@ Audio Share can share Windows computer's audio to Android phone over network, so
 
 ## Screenshot
 
-<img src="docs/img/show_01.jpg" width="40%" alt="show_01.jpg">
-<img src="docs/img/show_02.jpg" width="20%" alt="show_02.jpg">
+<img src="docs/img/show_01.jpg" width="40%" alt="docs/img/show_01.jpg">
+<img src="docs/img/show_02.jpg" width="20%" alt="docs/img/show_02.jpg">
 
 ## Compile from source
 
