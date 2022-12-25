@@ -15,7 +15,7 @@
 // See AudioShareServer.cpp for the implementation of this class
 //
 
-class CAudioShareServerApp : public CWinApp
+class CAudioShareServerApp : public CWinAppEx
 {
 public:
 	CAudioShareServerApp();
