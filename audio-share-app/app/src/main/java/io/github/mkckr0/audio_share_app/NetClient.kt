@@ -242,7 +242,7 @@ class NetClient(private val handler: Handler) {
                     .channel(NioSocketChannel::class.java)
                     .option(ChannelOption.SO_KEEPALIVE, true)
                     .option(ChannelOption.TCP_NODELAY, true)
-                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1000)
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000)
                     .handler(object : ChannelInitializer<SocketChannel>() {
                         override fun initChannel(ch: SocketChannel) {
                             ch.pipeline()
