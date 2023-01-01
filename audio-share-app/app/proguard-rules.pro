@@ -20,8 +20,6 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keep class io.github.mkckr0.audio_share_app.pb.** {
-    *;
-}
-
 -dontobfuscate
+
+-keep class io.github.mkckr0.audio_share_app.pb.** { *; }

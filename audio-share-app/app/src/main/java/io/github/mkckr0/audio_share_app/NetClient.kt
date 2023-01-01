@@ -8,8 +8,12 @@ import android.util.Log
 import io.github.mkckr0.audio_share_app.pb.*
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
-import io.netty.channel.*
+import io.netty.channel.Channel
 import io.netty.channel.ChannelHandler.Sharable
+import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.ChannelInboundHandlerAdapter
+import io.netty.channel.ChannelInitializer
+import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.DatagramChannel
 import io.netty.channel.socket.DatagramPacket
@@ -292,6 +296,10 @@ class NetClient(private val handler: Handler) {
         tcpChannel?.close()
         udpChannel?.close()
         audioTrack = null
+    }
+
+    fun isPlaying(): Boolean {
+        return audioTrack != null
     }
 
     private fun sendCMD(ctx: ChannelHandlerContext, cmd: CMD) {
