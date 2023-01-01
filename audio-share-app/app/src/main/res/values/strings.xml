@@ -9,5 +9,5 @@
     <string name="audio_started">Started</string>
     <string name="work_volume">Work Volume</string>
     <string name="idle_volume">Idle Volume</string>
-    <string name="ignore_battery_optimazations">Ignore Battery Optimazations</string>
+    <string name="ignore_battery_optimizations">Ignore Battery Optimizations</string>
 </resources>
