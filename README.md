@@ -39,7 +39,7 @@ Audio Share can share Windows computer's audio to Android phone over network, so
 ## Screenshot
 
 <img src="docs/img/show_01.jpg" width="40%" alt="docs/img/show_01.jpg">
-<img src="docs/img/show_02.jpg" width="20%" alt="docs/img/show_02.jpg">
+<img src="docs/img/show_02.jpg" width="30%" alt="docs/img/show_02.jpg">
 
 ## Compile from source
 
