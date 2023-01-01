@@ -16,7 +16,6 @@
 
 using namespace io::github::mkckr0::audio_share_app::pb;
 
-// 利用RAII手法，自动调用 CoUninitialize
 class CoInitializeGuard {
 public:
     CoInitializeGuard()
@@ -330,22 +329,22 @@ void audio_manager::set_format(WAVEFORMATEX* format)
 
 void audio_manager::broadcast_audio_data(const char* data, size_t count)
 {
-    uint32_t size = (uint32_t)count;
-    if (size <= 0) {
+    if (count <= 0) {
         return;
     }
 
     //spdlog::info("size: {}", count);
 
     // divide udp frame
-    constexpr int mtu = 1492, seg_size = mtu - 20 - 8;
-    int i = 0;
+    constexpr int mtu = 1492, max_seg_size = mtu - 20 - 8;
     std::list<std::shared_ptr<std::vector<uint8_t>>> seg_list;
-    for (; i < count; i += seg_size) {
-        const int real_seg_size = std::min((int)count - i, seg_size);
-        auto p = std::make_shared<std::vector<uint8_t>>(real_seg_size);
-        std::copy((const uint8_t*)data + i, (const uint8_t*)data + i + real_seg_size, p->data());
-        seg_list.push_back(p);
+
+    for (int begin_pos = 0; begin_pos < count;) {
+        const int real_seg_size = std::min((int)count - begin_pos, max_seg_size);
+        auto seg = std::make_shared<std::vector<uint8_t>>(real_seg_size);
+        std::copy((const uint8_t*)data + begin_pos, (const uint8_t*)data + begin_pos + real_seg_size, seg->begin());
+        seg_list.push_back(seg);
+        begin_pos += real_seg_size;
     }
 
     for (auto seg : seg_list) {
