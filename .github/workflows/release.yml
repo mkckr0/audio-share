@@ -9,27 +9,26 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v3
+    - run: cd audio-share-app
     - name: Setup Java JDK
       uses: actions/setup-java@v3
       with:
         java-version: '17'
         distribution: 'temurin'
         cache: gradle
-        
-    - name: setup-msbuild
-      uses: microsoft/setup-msbuild@v1
-    - name: run-vcpkg
-      uses: lukka/run-vcpkg@v11.1
-      with:
-        vcpkgGitCommitId: 6f7ffeb18f99796233b958aaaf14ec7bd4fb64b2
-
-    - uses: actions/checkout@v3
-    - run: cd audio-share-app
     - run: chmod +x gradlew
     - run: ./gradlew :app:assembleRelease
     - run: sed -En 's/\s*versionName\s+"([^"]*)"/version=\1/p' app/build.gradle >> $GITHUB_OUTPUT
       id: get_version
-      
+
+    - run: echo $pwd
+    # - name: setup-msbuild
+    #   uses: microsoft/setup-msbuild@v1
+    # - name: run-vcpkg
+    #   uses: lukka/run-vcpkg@v11.1
+    #   with:
+    #     vcpkgGitCommitId: 6f7ffeb18f99796233b958aaaf14ec7bd4fb64b2
     # - run: gh release create "v$VERSION" -t "v$VERSION" app/build/outputs/apk/release/*.apk
     #   env:
     #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
