@@ -25,7 +25,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: app
-        path: app/build/outputs/apk/release/*.apk
+        path: audio-share-app/app/build/outputs/apk/release/*.apk
       
   build_server:
     runs-on: windows-latest
@@ -44,7 +44,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: server
-        path: x64/Release/AudioShareServer.exe
+        path: audio-share-server/x64/Release/AudioShareServer.exe
     
   release:
     runs-on: ubuntu-latest
