@@ -13,8 +13,8 @@ android {
         minSdk 28
         targetSdk 33
         versionCode 1
-        versionName "0.0.4"
-        archivesBaseName = "app-$versionName"
+        versionName "0.0.5"
+        archivesBaseName = "${rootProject.name}-$versionName"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
