@@ -9,11 +9,11 @@ jobs:
     defaults:
       run:
         working-directory: audio-share-app
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
     steps:
     - uses: actions/checkout@v3
-    - run: cd audio-share-app
-    - name: Setup Java JDK
-      uses: actions/setup-java@v3
+    - uses: actions/setup-java@v3
       with:
         java-version: '17'
         distribution: 'temurin'
@@ -22,6 +22,10 @@ jobs:
     - run: ./gradlew :app:assembleRelease
     - run: sed -En 's/\s*versionName\s+"([^"]*)"/version=\1/p' app/build.gradle >> $GITHUB_OUTPUT
       id: get_version
+    - uses: actions/upload-artifact@v3
+      with:
+        name: app
+        path: app/build/outputs/apk/release/*.apk
       
   build_server:
     runs-on: windows-latest
@@ -30,21 +34,31 @@ jobs:
         working-directory: audio-share-server
     steps:
     - uses: actions/checkout@v3
-    - name: setup-msbuild
-      uses: microsoft/setup-msbuild@v1
-    - name: run-vcpkg
-      uses: lukka/run-vcpkg@v11.1
+    - uses: microsoft/setup-msbuild@v1
+    - uses: lukka/run-vcpkg@v11.1
       with:
         vcpkgGitCommitId: 6f7ffeb18f99796233b958aaaf14ec7bd4fb64b2
     - run: vcpkg integrate install
     - run: vcpkg install asio:x64-windows-static-md protobuf:x64-windows-static-md spdlog:x64-windows-static-md
     - run: msbuild /m /p:Configuration=Release
+    - uses: actions/upload-artifact@v3
+      with:
+        name: server
+        path: x64/Release/AudioShareServer.exe
     
-  # release:
-  #   runs-on: ubuntu-latest
-    # permissions:
-    #   contents: write
-    # - run: gh release create "v$VERSION" -t "v$VERSION" app/build/outputs/apk/release/*.apk
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #     VERSION: ${{ steps.get_version.outputs.version }}
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [ build_app, build_server ]
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: app
+    - uses: actions/download-artifact@v2
+      with:
+        name: server
+    - run: gh release create "v$VERSION" -t "v$VERSION" *.apk *.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VERSION: ${{ needs.build_app.outputs.version }}
