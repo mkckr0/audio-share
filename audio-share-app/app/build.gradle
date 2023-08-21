@@ -61,8 +61,7 @@ dependencies {
 
     implementation 'com.google.protobuf:protobuf-kotlin-lite:3.21.12'
     // https://mvnrepository.com/artifact/io.netty/netty-all
-    implementation group: 'io.netty', name: 'netty-all', version: '4.1.85.Final'
-
+    implementation 'io.netty:netty-all:4.1.96.Final'
 }
 
 protobuf {

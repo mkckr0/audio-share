@@ -29,3 +29,14 @@
     public static *** d(...);
     public static *** i(...);
 }
+
+-keep class io.netty.channel.socket.nio.* { *; }
+-keep class io.netty.handler.codec.* { *; }
+-keep class io.netty.util.* { *; }
+
+-dontwarn com.oracle.svm.core.annotate.*
+-dontwarn org.apache.log4j.*
+-dontwarn org.apache.logging.log4j.**
+-dontwarn org.jetbrains.annotations.*
+-dontwarn org.slf4j.**
+-dontwarn reactor.blockhound.integration.*
