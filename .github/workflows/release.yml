@@ -23,6 +23,7 @@ jobs:
         debug_keystore: ${{ secrets.DEBUG_KEYSTORE }}
     - run: chmod +x gradlew
     - run: ./gradlew :app:assembleRelease
+    - run: ./gradlew :app:signingReport
     - run: sed -En 's/\s*versionName\s+"([^"]*)"/version=\1/p' app/build.gradle >> $GITHUB_OUTPUT
       id: get_version
     - uses: actions/upload-artifact@v3
