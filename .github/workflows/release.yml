@@ -35,7 +35,7 @@ jobs:
       with:
         name: app
         path: audio-share-app/app/build/outputs/apk/release/*.apk
-    - run: sha256sum app/build/outputs/apk/release/*.apk | awk '{ printf "hash=%s", $1 }'
+    - run: sha256sum app/build/outputs/apk/release/*.apk | awk '{ printf "hash=%s", $1 }' >> $GITHUB_OUTPUT
       id: get_hash
       
   build_server:
@@ -58,7 +58,7 @@ jobs:
       with:
         name: server
         path: audio-share-server/x64/Release/*.exe
-    - run: sha256sum x64/Release/*.exe | awk '{ printf "hash=%s", $1 }'
+    - run: sha256sum x64/Release/*.exe | awk '{ printf "hash=%s", $1 }' >> $GITHUB_OUTPUT
       id: get_hash
       shell: bash
     
