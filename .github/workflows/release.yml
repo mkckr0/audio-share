@@ -11,6 +11,11 @@ jobs:
         working-directory: audio-share-app
     outputs:
       version: ${{ steps.get_version.outputs.version }}
+      hash: ${{ steps.get_hash.outputs.hash }}
+    env:
+      store_pass: ${{ secrets.STORE_PASS }}
+      key_alias: ${{ secrets.KEY_ALIAS }}
+      key_pass: ${{ secrets.KEY_PASS }}
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-java@v3
@@ -18,9 +23,9 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: gradle
-    - run: mkdir ~/.android && echo "$debug_keystore" | base64 -d > ~/.android/debug.keystore
+    - run: mkdir ~/.android && echo "$release_jks" | base64 -d > ~/.android/release.jks
       env:
-        debug_keystore: ${{ secrets.DEBUG_KEYSTORE }}
+        release_jks: ${{ secrets.RELEASE_JKS }}
     - run: chmod +x gradlew
     - run: ./gradlew :app:assembleRelease
     - run: ./gradlew :app:signingReport
@@ -30,12 +35,16 @@ jobs:
       with:
         name: app
         path: audio-share-app/app/build/outputs/apk/release/*.apk
+    - run: sha256sum *.apk | awk '{ printf "hash=%s", $1 }'
+      id: get_hash
       
   build_server:
     runs-on: windows-latest
     defaults:
       run:
         working-directory: audio-share-server
+    outputs:
+      hash: ${{ steps.get_hash.outputs.hash }}
     steps:
     - uses: actions/checkout@v3
     - uses: microsoft/setup-msbuild@v1
@@ -49,6 +58,8 @@ jobs:
       with:
         name: server
         path: audio-share-server/x64/Release/AudioShareServer.exe
+    - run: sha256sum *.exe | awk '{ printf "hash=%s", $1 }'
+      id: get_hash
     
   release:
     runs-on: ubuntu-latest
@@ -63,7 +74,11 @@ jobs:
     - uses: actions/download-artifact@v2
       with:
         name: server
-    - run: gh release create "v$VERSION" -d -t "v$VERSION" *.apk *.exe
+    - run: 'echo -e "sha256sum:\n$(ls *.apk)\: ${app_hash}\n$(ls *.exe): ${server_hash}\n" > notes'
+      env:
+        app_hash: ${{ needs.build_app.outputs.hash }}
+        server_hash: ${{ needs.build_server.outputs.hash }}
+    - run: gh release create "v$VERSION" -d -F notes -t "v$VERSION" *.apk *.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         VERSION: ${{ needs.build_app.outputs.version }}
