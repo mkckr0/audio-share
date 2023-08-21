@@ -75,7 +75,7 @@ jobs:
     - uses: actions/download-artifact@v2
       with:
         name: server
-    - run: 'echo -e "sha256sum:\n$(ls *.apk)\: ${app_hash}\n$(ls *.exe): ${server_hash}\n" > notes'
+    - run: 'echo -e "sha256sum:\n$(ls *.apk): ${app_hash}\n$(ls *.exe): ${server_hash}\n" > notes'
       env:
         app_hash: ${{ needs.build_app.outputs.hash }}
         server_hash: ${{ needs.build_server.outputs.hash }}
