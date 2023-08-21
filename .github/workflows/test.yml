@@ -17,5 +17,5 @@ jobs:
         distribution: 'temurin'
         cache: gradle
     - run: chmod +x gradlew
-    - run: ./gradlew :app:preBuild
+    - run: ./gradlew :app:assembleRelease
     - run: keytool -list -keystore ~/.android/debug.keystore -storepass android
