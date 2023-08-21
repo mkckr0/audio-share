@@ -12,10 +12,6 @@ jobs:
     outputs:
       version: ${{ steps.get_version.outputs.version }}
       hash: ${{ steps.get_hash.outputs.hash }}
-    env:
-      store_pass: ${{ secrets.STORE_PASS }}
-      key_alias: ${{ secrets.KEY_ALIAS }}
-      key_pass: ${{ secrets.KEY_PASS }}
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-java@v3
@@ -28,14 +24,22 @@ jobs:
         release_jks: ${{ secrets.RELEASE_JKS }}
     - run: chmod +x gradlew
     - run: ./gradlew :app:assembleRelease
+      env:
+        store_pass: ${{ secrets.STORE_PASS }}
+        key_alias: ${{ secrets.KEY_ALIAS }}
+        key_pass: ${{ secrets.KEY_PASS }}
     - run: ./gradlew :app:signingReport
-    - run: sed -En 's/\s*versionName\s+"([^"]*)"/version=\1/p' app/build.gradle >> $GITHUB_OUTPUT
+      env:
+        store_pass: ${{ secrets.STORE_PASS }}
+        key_alias: ${{ secrets.KEY_ALIAS }}
+        key_pass: ${{ secrets.KEY_PASS }}
+    - run: sed -En 's/\s*versionName\s+"([^"]*)"/version=\1/p' app/build.gradle | tee $GITHUB_OUTPUT
       id: get_version
     - uses: actions/upload-artifact@v3
       with:
         name: app
         path: audio-share-app/app/build/outputs/apk/release/*.apk
-    - run: sha256sum app/build/outputs/apk/release/*.apk | awk '{ printf "hash=%s", $1 }' >> $GITHUB_OUTPUT
+    - run: sha256sum app/build/outputs/apk/release/*.apk | awk '{ printf "hash=%s", $1 }' | tee $GITHUB_OUTPUT
       id: get_hash
       
   build_server:
@@ -58,7 +62,7 @@ jobs:
       with:
         name: server
         path: audio-share-server/x64/Release/*.exe
-    - run: sha256sum x64/Release/*.exe | awk '{ printf "hash=%s", $1 }' >> $GITHUB_OUTPUT
+    - run: sha256sum x64/Release/*.exe | awk '{ printf "hash=%s", $1 }' | tee $GITHUB_OUTPUT
       id: get_hash
       shell: bash
     
