@@ -5,6 +5,14 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        release {
+            storeFile file('~/.android/release.jks')
+            keyAlias System.getenv("key_alias")
+            storePassword System.getenv("store_pass")
+            keyPassword System.getenv("key_pass")
+        }
+    }
     namespace 'io.github.mkckr0.audio_share_app'
     compileSdk 34
 
