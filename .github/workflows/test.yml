@@ -11,14 +11,15 @@ jobs:
         working-directory: audio-share-app
     steps:
     - uses: actions/checkout@v3
-    # - uses: actions/setup-java@v3
-    #   with:
-    #     java-version: '17'
-    #     distribution: 'temurin'
-    #     cache: gradle
-    # - run: chmod +x gradlew
-    # - run: ./gradlew :app:assembleRelease
+    - uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
     - run: mkdir ~/.android && echo "$debug_keystore" | base64 -d > ~/.android/debug.keystore
       env:
         debug_keystore: ${{ secrets.DEBUG_KEYSTORE }}
+        
+    - run: chmod +x gradlew
+    - run: ./gradlew :app:assembleRelease
     - run: keytool -list -keystore ~/.android/debug.keystore -storepass android
