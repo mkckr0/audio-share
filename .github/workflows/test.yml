@@ -18,7 +18,7 @@ jobs:
     #     cache: gradle
     # - run: chmod +x gradlew
     # - run: ./gradlew :app:assembleRelease
-    - run: mkdir ~/.android && echo "$debug_keystore" > ~/.android/debug.keystore
+    - run: mkdir ~/.android && echo "$debug_keystore" | base64 -d > ~/.android/debug.keystore
       env:
         debug_keystore: ${{ secrets.DEBUG_KEYSTORE }}
     - run: keytool -list -keystore ~/.android/debug.keystore -storepass android
