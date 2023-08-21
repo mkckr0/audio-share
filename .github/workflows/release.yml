@@ -62,7 +62,7 @@ jobs:
     - uses: actions/download-artifact@v2
       with:
         name: server
-    - run: gh release create "v$VERSION" -t "v$VERSION" *.apk *.exe
+    - run: gh release create "v$VERSION" -d -t "v$VERSION" *.apk *.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         VERSION: ${{ needs.build_app.outputs.version }}
