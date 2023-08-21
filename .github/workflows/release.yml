@@ -60,6 +60,7 @@ jobs:
         path: audio-share-server/x64/Release/*.exe
     - run: sha256sum x64/Release/*.exe | awk '{ printf "hash=%s", $1 }'
       id: get_hash
+      shell: bash
     
   release:
     runs-on: ubuntu-latest
