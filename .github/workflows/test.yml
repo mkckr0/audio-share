@@ -20,7 +20,7 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: gradle
-    - run: mkdir ~/.android && echo "$debug_keystore" | base64 -d > ~/.android/release.jks
+    - run: mkdir ~/.android && echo "$release_jks" | base64 -d > ~/.android/release.jks
       env:
         release_jks: ${{ secrets.RELEASE_JKS }}
         
