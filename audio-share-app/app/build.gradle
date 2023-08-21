@@ -7,7 +7,7 @@ plugins {
 android {
     signingConfigs {
         release {
-            storeFile file('~/.android/release.jks')
+            storeFile file("${System.properties['user.home']}/.android/release.jks")
             keyAlias System.getenv("key_alias")
             storePassword System.getenv("store_pass")
             keyPassword System.getenv("key_pass")
@@ -31,7 +31,7 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
         }
     }
     compileOptions {
