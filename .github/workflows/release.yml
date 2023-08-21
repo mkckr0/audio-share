@@ -35,7 +35,7 @@ jobs:
       with:
         name: app
         path: audio-share-app/app/build/outputs/apk/release/*.apk
-    - run: sha256sum *.apk | awk '{ printf "hash=%s", $1 }'
+    - run: sha256sum app/build/outputs/apk/release/*.apk | awk '{ printf "hash=%s", $1 }'
       id: get_hash
       
   build_server:
@@ -57,8 +57,8 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: server
-        path: audio-share-server/x64/Release/AudioShareServer.exe
-    - run: sha256sum *.exe | awk '{ printf "hash=%s", $1 }'
+        path: audio-share-server/x64/Release/*.exe
+    - run: sha256sum x64/Release/*.exe | awk '{ printf "hash=%s", $1 }'
       id: get_hash
     
   release:
