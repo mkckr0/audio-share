@@ -9,6 +9,10 @@ jobs:
     defaults:
       run:
         working-directory: audio-share-app
+    env:
+      store_pass: ${{ secrets.STORE_PASS }}
+      key_alias: ${{ secrets.KEY_ALIAS }}
+      key_pass: ${{ secrets.KEY_PASS }}
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-java@v3
@@ -16,10 +20,10 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: gradle
-    - run: mkdir ~/.android && echo "$debug_keystore" | base64 -d > ~/.android/debug.keystore
+    - run: mkdir ~/.android && echo "$debug_keystore" | base64 -d > ~/.android/release.jks
       env:
-        debug_keystore: ${{ secrets.DEBUG_KEYSTORE }}
+        release_jks: ${{ secrets.RELEASE_JKS }}
         
     - run: chmod +x gradlew
-    - run: ./gradlew :app:assembleRelease
-    - run: keytool -list -keystore ~/.android/debug.keystore -storepass android
+    # - run: ./gradlew :app:assembleRelease
+    - run: ./gradlew :app:signingReport
