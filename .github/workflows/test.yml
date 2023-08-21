@@ -9,10 +9,6 @@ jobs:
     defaults:
       run:
         working-directory: audio-share-app
-    env:
-      store_pass: ${{ secrets.STORE_PASS }}
-      key_alias: ${{ secrets.KEY_ALIAS }}
-      key_pass: ${{ secrets.KEY_PASS }}
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-java@v3
@@ -27,3 +23,7 @@ jobs:
     - run: chmod +x gradlew
     # - run: ./gradlew :app:assembleRelease
     - run: ./gradlew :app:signingReport
+      env:
+        store_pass: ${{ secrets.STORE_PASS }}
+        key_alias: ${{ secrets.KEY_ALIAS }}
+        key_pass: ${{ secrets.KEY_PASS }}
