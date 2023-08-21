@@ -18,6 +18,9 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: gradle
+    - run: mkdir ~/.android && echo "$debug_keystore" | base64 -d > ~/.android/debug.keystore
+      env:
+        debug_keystore: ${{ secrets.DEBUG_KEYSTORE }}
     - run: chmod +x gradlew
     - run: ./gradlew :app:assembleRelease
     - run: sed -En 's/\s*versionName\s+"([^"]*)"/version=\1/p' app/build.gradle >> $GITHUB_OUTPUT
