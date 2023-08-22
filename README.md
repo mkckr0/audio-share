@@ -23,6 +23,7 @@
 [![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/mkckr0/audio-share)](https://img.shields.io/github/issues-pr-closed/mkckr0/audio-share)
 [![Build App](https://github.com/mkckr0/audio-share/actions/workflows/build_app.yml/badge.svg)](https://github.com/mkckr0/audio-share/actions/workflows/build_app.yml)
 [![Build Server](https://github.com/mkckr0/audio-share/actions/workflows/build_server.yml/badge.svg)](https://github.com/mkckr0/audio-share/actions/workflows/build_server.yml)
+[![lzzyOnDroid](https://img.shields.io/endpoint?url=https://apt.izzysoft.de/fdroid/api/v1/shield/io.github.mkckr0.audio_share_app)](https://apt.izzysoft.de/fdroid/index/apk/io.github.mkckr0.audio_share_app)
 
 Audio Share can share Windows computer's audio to Android phone over network, so your phone becomes the speaker of computer. (You needn't to buy a new speaker😄.)
 
