@@ -10,29 +10,15 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
-import android.widget.Button
-import android.widget.EditText
 import android.widget.SeekBar
-import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import io.github.mkckr0.audio_share_app.databinding.ActivityMainBinding
 
 
 class MainActivity : AppCompatActivity(), NetClient.Handler {
 
-    private val buttonBatterySaverSettings by lazy { findViewById<Button>(R.id.buttonBatterySaverSettings) }
-    private val seekBarWorkVolume by lazy { findViewById<SeekBar>(R.id.seekBarWorkVolume) }
-    private val seekBarIdleVolume by lazy { findViewById<SeekBar>(R.id.seekBarIdleVolume) }
-
-    private val editTextHost by lazy { findViewById<EditText>(R.id.editTextHost) }
-    private val editTextPort by lazy { findViewById<EditText>(R.id.editTextPort) }
-
-    private val buttonStart by lazy { findViewById<Button>(R.id.buttonStart) }
-    private val buttonStop by lazy { findViewById<Button>(R.id.buttonStop) }
-
-    private val textViewInfo by lazy { findViewById<TextView>(R.id.textViewInfo) }
+    private lateinit var binding : ActivityMainBinding
 
     private val sharedPref by lazy { getPreferences(MODE_PRIVATE) }
 
@@ -46,9 +32,10 @@ class MainActivity : AppCompatActivity(), NetClient.Handler {
     @SuppressLint("BatteryLife")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        buttonBatterySaverSettings.setOnClickListener {
+        binding.buttonBatterySaverSettings.setOnClickListener {
             val intent = Intent(
                 Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
                 packageUri
@@ -56,10 +43,10 @@ class MainActivity : AppCompatActivity(), NetClient.Handler {
             startActivity(intent)
         }
 
-        seekBarWorkVolume.max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-        seekBarWorkVolume.min = audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC)
-        seekBarWorkVolume.progress = sharedPref.getInt("work_volume", seekBarWorkVolume.max / 2)
-        seekBarWorkVolume.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+        binding.seekBarWorkVolume.max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        binding.seekBarWorkVolume.min = audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC)
+        binding.seekBarWorkVolume.progress = sharedPref.getInt("work_volume", binding.seekBarWorkVolume.max / 2)
+        binding.seekBarWorkVolume.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (netClient.isPlaying()) {
                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0)
@@ -76,13 +63,13 @@ class MainActivity : AppCompatActivity(), NetClient.Handler {
             }
         })
 
-        seekBarIdleVolume.max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-        seekBarIdleVolume.min = audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC)
-        seekBarIdleVolume.progress = sharedPref.getInt(
+        binding.seekBarIdleVolume.max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        binding.seekBarIdleVolume.min = audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC)
+        binding.seekBarIdleVolume.progress = sharedPref.getInt(
             "idle_volume",
             audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         )
-        seekBarIdleVolume.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+        binding.seekBarIdleVolume.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (!netClient.isPlaying()) {
                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0)
@@ -99,18 +86,18 @@ class MainActivity : AppCompatActivity(), NetClient.Handler {
             }
         })
 
-        buttonStart.setOnClickListener { onButtonStartClick() }
-        buttonStop.setOnClickListener { onButtonStopClick() }
+        binding.buttonStart.setOnClickListener { onButtonStartClick() }
+        binding.buttonStop.setOnClickListener { onButtonStopClick() }
 
-        textViewInfo.movementMethod = ScrollingMovementMethod()
+        binding.textViewInfo.movementMethod = ScrollingMovementMethod()
 
-        editTextHost.setText(sharedPref.getString("host", "192.168.3.2"))
-        editTextPort.setText(sharedPref.getString("port", "65530"))
+        binding.editTextHost.setText(sharedPref.getString("host", "192.168.3.2"))
+        binding.editTextPort.setText(sharedPref.getString("port", "65530"))
     }
 
     private fun onButtonStartClick() {
 
-        if (editTextHost.text.isEmpty() || editTextPort.text.isEmpty()) {
+        if (binding.editTextHost.text.isEmpty() || binding.editTextPort.text.isEmpty()) {
             Toast.makeText(applicationContext, "Please enter host and port", Toast.LENGTH_LONG)
                 .show()
             return
@@ -118,16 +105,16 @@ class MainActivity : AppCompatActivity(), NetClient.Handler {
 
         // save host and port
         sharedPref.edit()
-            .putString("host", editTextHost.text.toString())
-            .putString("port", editTextPort.text.toString())
+            .putString("host", binding.editTextHost.text.toString())
+            .putString("port", binding.editTextPort.text.toString())
             .apply()
 
-        textViewInfo.text = getString(R.string.audio_starting)
+        binding.textViewInfo.text = getString(R.string.audio_starting)
         switchEnableState(false)
 
         Log.d("AudioShare", "click start")
 
-        netClient.start(editTextHost.text.toString(), editTextPort.text.toString().toInt())
+        netClient.start(binding.editTextHost.text.toString(), binding.editTextPort.text.toString().toInt())
     }
 
     private fun onButtonStopClick() {
@@ -135,25 +122,25 @@ class MainActivity : AppCompatActivity(), NetClient.Handler {
     }
 
     private fun switchEnableState(b: Boolean) {
-        editTextHost.isEnabled = b
-        editTextPort.isEnabled = b
-        buttonStart.isEnabled = b
-        buttonStop.isEnabled = !b
+        binding.editTextHost.isEnabled = b
+        binding.editTextPort.isEnabled = b
+        binding.buttonStart.isEnabled = b
+        binding.buttonStop.isEnabled = !b
     }
 
     override fun onNetError(e: String) {
-        textViewInfo.text = e
+        binding.textViewInfo.text = e
         switchEnableState(true)
     }
 
     override fun onAudioStop() {
         switchEnableState(true)
-        textViewInfo.text = getString(R.string.audio_stopped)
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, seekBarIdleVolume.progress, 0)
+        binding.textViewInfo.text = getString(R.string.audio_stopped)
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, binding.seekBarIdleVolume.progress, 0)
     }
 
     override fun onAudioStart() {
-        textViewInfo.text = getString(R.string.audio_started)
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, seekBarWorkVolume.progress, 0)
+        binding.textViewInfo.text = getString(R.string.audio_started)
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, binding.seekBarWorkVolume.progress, 0)
     }
 }
