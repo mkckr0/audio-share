@@ -22,6 +22,18 @@
         </Preference>
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="Theme">
+        <SwitchPreference
+            app:key="theme_use_wallpaper"
+            app:title="Dynamic Color from Wallpaper"
+            app:defaultValue="@bool/theme_use_wallpaper_default"/>
+        <EditTextPreference
+            app:key="theme_color"
+            app:title="Dynamic Color from Color"
+            app:defaultValue="@string/theme_color_default"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+
     <PreferenceCategory
         app:title="About"
         app:iconSpaceReserved="true">
