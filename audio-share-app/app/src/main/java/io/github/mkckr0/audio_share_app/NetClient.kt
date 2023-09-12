@@ -314,7 +314,9 @@ class NetClient(private val handler: Handler) {
             audioTrack?.play()
         }
 
-        handler.onAudioStart()
+        MainScope().launch(Dispatchers.Main) {
+            handler.onAudioStart()
+        }
 
         // send start playing
         sendCMD(ctx, CMD.CMD_START_PLAY)
@@ -386,9 +388,8 @@ class NetClient(private val handler: Handler) {
 
         MainScope().launch(Dispatchers.Main) {
             val e = exc.message
-            if (e != null && exc.message != "") {
-//                handler.onNetError(e)
-                handler.onNetError(e + "\n" + exc.stackTraceToString())
+            if (!e.isNullOrBlank()) {
+                handler.onNetError(e)
                 return@launch
             }
             handler.onNetError(exc.stackTraceToString())

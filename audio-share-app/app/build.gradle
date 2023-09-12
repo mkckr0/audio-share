@@ -45,6 +45,7 @@ android {
 
     buildFeatures {
         viewBinding true
+        buildConfig true
     }
 
     sourceSets {
@@ -63,12 +64,17 @@ android {
 
 dependencies {
 
+    def nav_version = "2.7.2"
+
     implementation 'androidx.core:core-ktx:1.10.1'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'com.google.protobuf:protobuf-kotlin-lite:3.21.12'
     implementation 'io.netty:netty-all:4.1.96.Final'
+    implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
+    implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
+    implementation 'androidx.preference:preference:1.2.1'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'

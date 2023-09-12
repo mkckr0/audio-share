@@ -1,13 +1,13 @@
 <resources>
     <string name="app_name">Audio Share</string>
-    <string name="start">Start</string>
-    <string name="stop">Stop</string>
-    <string name="port">65530</string>
-    <string name="host">192.168.3.2</string>
+    <string name="default_host">192.168.3.2</string>
+    <string name="default_port">65530</string>
     <string name="audio_starting">Starting</string>
     <string name="audio_stopped">Stopped</string>
     <string name="audio_started">Started</string>
     <string name="work_volume">Work Volume</string>
     <string name="idle_volume">Idle Volume</string>
-    <string name="ignore_battery_optimizations">Ignore Battery Optimizations</string>
+    <string name="project_url">https://github.com/mkckr0/audio-share</string>
+    <string name="nav_item_home">Home</string>
+    <string name="nav_item_settings">Settings</string>
 </resources>

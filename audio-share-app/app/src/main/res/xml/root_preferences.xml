@@ -1,0 +1,42 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+        app:title="Battery Optimization"
+        app:iconSpaceReserved="true">
+        <Preference
+            app:key="request_ignore_battery_optimizations"
+            app:title="Request Ignore Battery Optimizations"
+            app:summary="Not Ignored"
+            app:icon="@drawable/baseline_battery_saver">
+            <intent
+                android:action="android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+                android:data="package:io.github.mkckr0.audio_share_app" />
+        </Preference>
+
+        <Preference
+            app:key="battery_optimization"
+            app:title="Battery Optimization Settings"
+            app:icon="@drawable/baseline_settings">
+            <intent android:action="android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS"/>
+        </Preference>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="About"
+        app:iconSpaceReserved="true">
+        <Preference
+            app:title="Project"
+            app:summary="@string/project_url"
+            app:icon="@drawable/github_mark">
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:data="@string/project_url"/>
+        </Preference>
+        <Preference
+            app:key="version"
+            app:title="Version"
+            app:summary="0.0.1"
+            app:icon="@drawable/baseline_info"/>
+    </PreferenceCategory>
+</PreferenceScreen>

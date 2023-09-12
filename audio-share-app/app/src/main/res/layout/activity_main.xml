@@ -6,170 +6,25 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <LinearLayout
-        android:id="@+id/linearLayout"
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/nav_host_fragment_container"
+        android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        android:orientation="vertical"
-        android:paddingTop="80dp"
-        android:paddingBottom="30dp"
+        app:defaultNavHost="true"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_navigation"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navGraph="@navigation/nav_graph" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/buttonBatterySaverSettings"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/ignore_battery_optimizations"
-                android:textAllCaps="false" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/textView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical|end"
-                android:minWidth="110dp"
-                android:minHeight="48dp"
-                android:singleLine="true"
-                android:text="@string/work_volume"
-                android:textSize="18sp" />
-
-            <SeekBar
-                android:id="@+id/seekBarWorkVolume"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="7" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/textView2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical|end"
-                android:minWidth="110dp"
-                android:minHeight="48dp"
-                android:singleLine="true"
-                android:text="@string/idle_volume"
-                android:textSize="18sp" />
-
-            <SeekBar
-                android:id="@+id/seekBarIdleVolume"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="7" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:orientation="horizontal">
-
-            <EditText
-                android:id="@+id/editTextHost"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="7"
-                android:ems="10"
-                android:importantForAutofill="no"
-                android:inputType="none"
-                android:minHeight="48dp"
-                android:singleLine="true"
-                android:text="@string/host"
-                android:textAlignment="center"
-                android:textSize="18sp"
-                tools:ignore="LabelFor,SpeakableTextPresentCheck" />
-
-            <EditText
-                android:id="@+id/editTextPort"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="3"
-                android:ems="10"
-                android:importantForAutofill="no"
-                android:inputType="none"
-                android:minHeight="48dp"
-                android:singleLine="true"
-                android:text="@string/port"
-                android:textAlignment="center"
-                android:textSize="18sp"
-                tools:ignore="LabelFor,SpeakableTextPresentCheck" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center_horizontal"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/buttonStart"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="16dp"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:text="@string/start"
-                android:textAlignment="center"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/buttonStop"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:enabled="false"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:text="@string/stop"
-                android:textAlignment="center"
-                android:textSize="16sp" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="16dp"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/textViewInfo"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:scrollbars="vertical"
-                android:textSize="16sp" />
-        </LinearLayout>
-
-    </LinearLayout>
+        app:menu="@menu/bottom_navigation_menu" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
