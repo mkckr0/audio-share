@@ -80,7 +80,9 @@
             android:orientation="horizontal">
 
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/text_field_host_layout"
                 android:hint="Host"
+                app:errorEnabled="true"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="7">
@@ -93,7 +95,9 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/text_field_port_layout"
                 android:hint="Port"
+                app:errorEnabled="true"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="3"

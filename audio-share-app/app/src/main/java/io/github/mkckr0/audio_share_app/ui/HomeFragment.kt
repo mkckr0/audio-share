@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import com.google.android.material.slider.Slider
 import com.google.android.material.snackbar.Snackbar
@@ -88,6 +89,13 @@ class HomeFragment : Fragment() {
 
         binding.textFieldHost.setText(sharedPreferences.getString("host", getString(R.string.default_host)))
         binding.textFieldPort.setText(sharedPreferences.getString("port", getString(R.string.default_port)))
+        
+        binding.textFieldHost.doOnTextChanged { _, _, _, _ ->
+            binding.textFieldHostLayout.error = null
+        }
+        binding.textFieldPort.doOnTextChanged { _, _, _, _ ->
+            binding.textFieldPortLayout.error = null
+        }
     }
 
 //    override fun onStart() {
@@ -123,8 +131,12 @@ class HomeFragment : Fragment() {
             netClient.stop()
         } else {
             if (binding.textFieldHost.text.isNullOrBlank()  || binding.textFieldPort.text.isNullOrBlank()) {
-                Snackbar.make(requireView(), "Please enter host and port", Toast.LENGTH_LONG)
-                    .show()
+                if (binding.textFieldHost.text.isNullOrBlank()) {
+                    binding.textFieldHostLayout.error = "Host is Empty"
+                }
+                if (binding.textFieldPort.text.isNullOrBlank()) {
+                    binding.textFieldPortLayout.error = "Port is Empty"
+                }
                 return
             }
 
