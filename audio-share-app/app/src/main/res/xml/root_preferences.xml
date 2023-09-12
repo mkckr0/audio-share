@@ -26,10 +26,12 @@
         <SwitchPreference
             app:key="theme_use_wallpaper"
             app:title="Dynamic Color from Wallpaper"
+            app:icon="@drawable/baseline_wallpaper"
             app:defaultValue="@bool/theme_use_wallpaper_default"/>
         <EditTextPreference
             app:key="theme_color"
             app:title="Dynamic Color from Color"
+            app:icon="@drawable/baseline_color_lens"
             app:defaultValue="@string/theme_color_default"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
