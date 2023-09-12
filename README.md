@@ -31,7 +31,7 @@ Audio Share can share Windows computer's audio to Android phone over network, so
 
 - You need a computer with Windows 10 x86_64, and a phone with Android 9.0(Pie) API 28.
 - Download app.apk and AudioShareServer.exe from [latest release](https://github.com/mkckr0/audio-share/releases/latest).
-- Make sure AudioShareServer.exe in your computer and install app-debug.apk to your phone.
+- Make sure AudioShareServer.exe in your computer and install audio-share-app-x.x.x-release.apk to your phone.
 - Open AudioShareServer.exe in your computer and Audio Share app in your phone.
 - Check all arguments are correct, especially the "Host" part. Make sure your phone can connect your computer over this IP.
 - Click "Start Server" in AudioShareServer.exe and click "START" in app. Then enjoy the audio🎶.
@@ -39,8 +39,9 @@ Audio Share can share Windows computer's audio to Android phone over network, so
 
 ## Screenshot
 
-<img src="docs/img/show_01.jpg" width="40%" alt="docs/img/show_01.jpg">
-<img src="docs/img/show_02.jpg" width="30%" alt="docs/img/show_02.jpg">
+<img src="docs/img/show_01.jpg" width="40%" alt="docs/img/show_01.jpg"><br/>
+<img src="docs/img/show_02.png" width="30%" alt="docs/img/show_02.png">&nbsp;
+<img src="docs/img/show_03.png" width="30%" alt="docs/img/show_03.png">
 
 ## Compile from source
 
