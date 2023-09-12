@@ -14,10 +14,13 @@ import io.github.mkckr0.audio_share_app.R
 class SettingsFragment : PreferenceFragmentCompat() {
 
     private val tag = javaClass.simpleName
+    private lateinit var powerManager : PowerManager
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
 
         setPreferencesFromResource(R.xml.root_preferences, rootKey)
+
+        powerManager = requireActivity().getSystemService(Context.POWER_SERVICE) as PowerManager
 
         updateRequestIgnoreBatteryOptimizations()
 
@@ -41,9 +44,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun updateRequestIgnoreBatteryOptimizations() : Boolean {
-        val powerManager = requireActivity().getSystemService(Context.POWER_SERVICE) as PowerManager
         val preference = findPreference<Preference>("request_ignore_battery_optimizations")!!
-        val newSummary = if (powerManager.isIgnoringBatteryOptimizations(requireContext().packageName)) {
+        val newSummary = if (powerManager.isIgnoringBatteryOptimizations(BuildConfig.APPLICATION_ID)) {
             "Ignored"
         } else {
             "Not Ignored"
