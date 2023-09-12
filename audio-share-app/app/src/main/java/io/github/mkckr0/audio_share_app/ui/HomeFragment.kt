@@ -10,12 +10,10 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import com.google.android.material.slider.Slider
-import com.google.android.material.snackbar.Snackbar
 import io.github.mkckr0.audio_share_app.NetClient
 import io.github.mkckr0.audio_share_app.R
 import io.github.mkckr0.audio_share_app.databinding.FragmentHomeBinding
