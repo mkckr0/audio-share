@@ -1,6 +1,6 @@
 # Audio Share
 <p align="center">
-    <img src="docs/img/icon.png" width="20%" alt="docs/img/icon.png">
+    <img src="audio-share-app/app/src/main/ic_launcher-playstore.png" width="20%" alt="audio-share-app/app/src/main/ic_launcher-playstore.png">
 </p>
 
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/mkckr0/audio-share)](https://github.com/mkckr0/audio-share/releases/latest)
