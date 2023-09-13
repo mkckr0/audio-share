@@ -1,9 +1,7 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory
-        app:title="Battery Optimization"
-        app:iconSpaceReserved="true">
+    <PreferenceCategory app:title="Battery Optimization">
         <Preference
             app:key="request_ignore_battery_optimizations"
             app:title="Request Ignore Battery Optimizations"
@@ -17,6 +15,7 @@
         <Preference
             app:key="battery_optimization"
             app:title="Battery Optimization Settings"
+            app:summary="Change Battery Optimization Settings"
             app:icon="@drawable/baseline_settings">
             <intent android:action="android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS"/>
         </Preference>
@@ -27,6 +26,8 @@
             app:key="theme_use_wallpaper"
             app:title="Dynamic Color from Wallpaper"
             app:icon="@drawable/baseline_wallpaper"
+            app:summaryOn="On"
+            app:summaryOff="Off"
             app:defaultValue="@bool/theme_use_wallpaper_default"/>
         <EditTextPreference
             app:key="theme_color"
@@ -36,11 +37,9 @@
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
-    <PreferenceCategory
-        app:title="About"
-        app:iconSpaceReserved="true">
+    <PreferenceCategory app:title="About">
         <Preference
-            app:title="Project"
+            app:title="@string/app_name"
             app:summary="@string/project_url"
             app:icon="@drawable/github_mark">
             <intent
