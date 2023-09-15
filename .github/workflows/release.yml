@@ -19,27 +19,33 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: gradle
-    - run: mkdir ~/.android && echo "$release_jks" | base64 -d > ~/.android/release.jks
+        
+    - name: Create relese.jks
+      run: mkdir ~/.android && echo "$release_jks" | base64 -d > ~/.android/release.jks
       env:
         release_jks: ${{ secrets.RELEASE_JKS }}
+    - name: Create keystore.properties
+      run: echo -e "storeFile=$(ls ~/.android/release.jks)\nstorePassword=${store_pass}\nkeyAlias=${key_alias}\nkeyPassword=${key_pass}\n" > keystore.properties
+      env:
+        store_pass: ${{ secrets.STORE_PASS }}
+        key_alias: ${{ secrets.KEY_ALIAS }}
+        key_pass: ${{ secrets.KEY_PASS }}
+        
     - run: chmod +x gradlew
     - run: ./gradlew :app:assembleRelease
-      env:
-        store_pass: ${{ secrets.STORE_PASS }}
-        key_alias: ${{ secrets.KEY_ALIAS }}
-        key_pass: ${{ secrets.KEY_PASS }}
     - run: ./gradlew :app:signingReport
-      env:
-        store_pass: ${{ secrets.STORE_PASS }}
-        key_alias: ${{ secrets.KEY_ALIAS }}
-        key_pass: ${{ secrets.KEY_PASS }}
-    - run: sed -En 's/\s*versionName\s+"([^"]*)"/version=\1/p' app/build.gradle | tee $GITHUB_OUTPUT
+    
+    - name: Get versionName
+      run: sed -En 's/\s*versionName\s+"([^"]*)"/version=\1/p' app/build.gradle | tee $GITHUB_OUTPUT
       id: get_version
+      
     - uses: actions/upload-artifact@v3
       with:
         name: app
         path: audio-share-app/app/build/outputs/apk/release/*.apk
-    - run: sha256sum app/build/outputs/apk/release/*.apk | awk '{ printf "hash=%s", $1 }' | tee $GITHUB_OUTPUT
+        
+    - name: Get sha256sum
+      run: sha256sum app/build/outputs/apk/release/*.apk | awk '{ printf "hash=%s", $1 }' | tee $GITHUB_OUTPUT
       id: get_hash
       
   build_server:
@@ -62,7 +68,8 @@ jobs:
       with:
         name: server
         path: audio-share-server/x64/Release/*.exe
-    - run: sha256sum x64/Release/*.exe | awk '{ printf "hash=%s", $1 }' | tee $GITHUB_OUTPUT
+    - name: Get sha256num
+      run: sha256sum x64/Release/*.exe | awk '{ printf "hash=%s", $1 }' | tee $GITHUB_OUTPUT
       id: get_hash
       shell: bash
     
@@ -79,11 +86,13 @@ jobs:
     - uses: actions/download-artifact@v2
       with:
         name: server
-    - run: 'echo -e "sha256sum:\n$(ls *.apk): ${app_hash}\n$(ls *.exe): ${server_hash}\n" > notes'
+    - name: Generate release notes
+      run: 'echo -e "sha256sum:\n$(ls *.apk): ${app_hash}\n$(ls *.exe): ${server_hash}\n" > notes'
       env:
         app_hash: ${{ needs.build_app.outputs.hash }}
         server_hash: ${{ needs.build_server.outputs.hash }}
-    - run: gh release create "v$VERSION" -d -F notes -t "v$VERSION" *.apk *.exe
+    - name: Create Github Release
+      run: gh release create "v$VERSION" -d -F notes -t "v$VERSION" *.apk *.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         VERSION: ${{ needs.build_app.outputs.version }}
