@@ -21,7 +21,7 @@ jobs:
       env:
         release_jks: ${{ secrets.RELEASE_JKS }}
     - name: create keystore.properties
-    - run: echo -e "storeFile=$(ls ~/.android/release.jks)\nstorePassword=${store_pass}\nkeyAlias=${key_alias}\nkeyPassword=${key_pass}\n" > keystore.properties
+      run: echo -e "storeFile=$(ls ~/.android/release.jks)\nstorePassword=${store_pass}\nkeyAlias=${key_alias}\nkeyPassword=${key_pass}\n" > keystore.properties
       env:
         store_pass: ${{ secrets.STORE_PASS }}
         key_alias: ${{ secrets.KEY_ALIAS }}
