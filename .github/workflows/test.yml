@@ -16,14 +16,16 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: gradle
-    - run: mkdir ~/.android && echo "$release_jks" | base64 -d > ~/.android/release.jks
+    - name: create relese.jks
+      run: mkdir ~/.android && echo "$release_jks" | base64 -d > ~/.android/release.jks
       env:
         release_jks: ${{ secrets.RELEASE_JKS }}
-        
-    - run: chmod +x gradlew
-    # - run: ./gradlew :app:assembleRelease
-    - run: ./gradlew :app:signingReport
+    - name: create keystore.properties
+    - run: echo -e "storeFile=$(ls ~/.android/release.jks)\nstorePassword=${store_pass}\nkeyAlias=${key_alias}\nkeyPassword=${key_pass}\n" > keystore.properties
       env:
         store_pass: ${{ secrets.STORE_PASS }}
         key_alias: ${{ secrets.KEY_ALIAS }}
         key_pass: ${{ secrets.KEY_PASS }}
+        
+    - run: chmod +x gradlew
+    - run: ./gradlew :app:signingReport
