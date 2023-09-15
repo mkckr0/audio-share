@@ -143,7 +143,7 @@ class NetClient(private val handler: Handler) {
 
                 } else if (cmd == CMD.CMD_START_PLAY) {
                     val x = `in`.readableBytes()
-                    Log.d(tag, "readableBytes ${x}")
+                    Log.d(tag, "readableBytes $x")
                     if (`in`.readableBytes() < Int.SIZE_BYTES) {
                         `in`.resetReaderIndex()
                         return
@@ -360,10 +360,11 @@ class NetClient(private val handler: Handler) {
             8 -> AudioFormat.CHANNEL_OUT_7POINT1_SURROUND
             else -> AudioFormat.CHANNEL_INVALID
         }
+        Log.i(tag, "encoding: $encoding, channelMask: $channelMask, sampleRate: ${format.sampleRate}")
 
         val minBufferSize = AudioTrack.getMinBufferSize(format.sampleRate, channelMask, encoding)
 
-        return AudioTrack.Builder()
+        val builder = AudioTrack.Builder()
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -377,8 +378,12 @@ class NetClient(private val handler: Handler) {
                     .build()
             ).setBufferSizeInBytes(minBufferSize)
             .setTransferMode(AudioTrack.MODE_STREAM)
-            .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
-            .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
+        }
+
+        return builder.build()
     }
 
     private fun onFailed(exc: Throwable?) {

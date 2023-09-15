@@ -1,8 +1,13 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.kapt'
     id 'com.google.protobuf'
 }
+
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
     namespace 'io.github.mkckr0.audio_share_app'
@@ -10,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId "io.github.mkckr0.audio_share_app"
-        minSdk 28
+        minSdk 23
         targetSdk 34
         versionCode 3
         versionName "0.0.6"
@@ -20,10 +25,10 @@ android {
 
     signingConfigs {
         release {
-            storeFile file("${System.properties['user.home']}/.android/release.jks")
-            keyAlias System.getenv("key_alias")
-            storePassword System.getenv("store_pass")
-            keyPassword System.getenv("key_pass")
+            storeFile file(keystoreProperties["storeFile"])
+            keyAlias keystoreProperties["keyAlias"]
+            storePassword keystoreProperties["storePassword"]
+            keyPassword keystoreProperties["keyPassword"]
         }
     }
 
@@ -35,16 +40,14 @@ android {
             signingConfig signingConfigs.release
         }
     }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = '1.8'
+
+    kotlin {
+        jvmToolchain(17)
     }
 
     buildFeatures {
         viewBinding true
+        dataBinding true
         buildConfig true
     }
 
