@@ -3,6 +3,7 @@ package io.github.mkckr0.audio_share_app.model
 import android.app.Application
 import android.content.Context
 import android.media.AudioManager
+import android.os.Build
 import android.util.Log
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
@@ -17,7 +18,11 @@ class HomeViewModel(private val application: Application) : AndroidViewModel(app
     private val audioManager by lazy { application.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     private val netClient by lazy { NetClient(NetClientHandler()) }
 
-    val volumeFrom = audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC).toFloat()
+    val volumeFrom = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC).toFloat()
+    } else {
+        0f
+    }
     val volumeTo = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).toFloat()
 
     val workVolume = MutableLiveData<Int>().apply {
