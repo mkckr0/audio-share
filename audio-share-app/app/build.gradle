@@ -17,8 +17,8 @@ android {
         applicationId "io.github.mkckr0.audio_share_app"
         minSdk 23
         targetSdk 34
-        versionCode 3
-        versionName "0.0.6"
+        versionCode 4
+        versionName "0.0.7"
         archivesBaseName = "${rootProject.name}-$versionName"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -29,6 +29,7 @@ android {
             keyAlias keystoreProperties["keyAlias"]
             storePassword keystoreProperties["storePassword"]
             keyPassword keystoreProperties["keyPassword"]
+            enableV3Signing true
         }
     }
 
