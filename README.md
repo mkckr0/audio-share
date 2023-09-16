@@ -1,6 +1,6 @@
 # Audio Share
 <p align="center">
-    <img src="audio-share-app/app/src/main/ic_launcher-playstore.png" width="20%" alt="audio-share-app/app/src/main/ic_launcher-playstore.png">
+    <img src="metadata/en-US/images/icon.png" width="20%" alt="metadata/en-US/images/icon.png">
 </p>
 
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/mkckr0/audio-share)](https://github.com/mkckr0/audio-share/releases/latest)
@@ -35,13 +35,14 @@ Audio Share can share Windows computer's audio to Android phone over network, so
 - Open AudioShareServer.exe in your computer and Audio Share app in your phone.
 - Check all arguments are correct, especially the "Host" part. Make sure your phone can connect your computer over this IP.
 - Click "Start Server" in AudioShareServer.exe and click "▶" button in app. Then enjoy the audio🎶.
+
 > **Caution!!!**: This app doesn't support auto reconnecting feature at present. Once the app is killed  or disconnected by Android power saver, the audio playing will be stop. Adding app to the whitelist of power saver is recommended.
 
 ## Screenshot
 
 <img src="docs/img/show_01.jpg" width="40%" alt="docs/img/show_01.jpg"><br/>
-<img src="docs/img/show_02.png" width="30%" alt="docs/img/show_02.png">&nbsp;
-<img src="docs/img/show_03.png" width="30%" alt="docs/img/show_03.png">
+<img src="metadata/en-US/images/phoneScreenshots/1.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/1.png">&nbsp;
+<img src="metadata/en-US/images/phoneScreenshots/2.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/2.png">
 
 ## Compile from source
 

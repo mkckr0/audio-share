@@ -1,0 +1,2 @@
+- Change some configs to be compatible with F-Droid.
+- Prepare to submit to F-Droid.

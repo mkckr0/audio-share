@@ -1,0 +1,5 @@
+- Migrate components to [MDC-Android(Material Components for Android)](https://github.com/material-components/material-components-android).
+- Add a settings fragment and arrange them by Bottom Navigation Bar.
+- Add a default Material Theme.
+- Add Dynamic Color. Now Android 12+ devices can apply a dynamic theme according to wallpaper or a custom color. After set a dynamic color in settings fragment, you need to restart the app to let it be applied.
+- All theme support dark mode by switching system dark theme option.

@@ -1,0 +1,2 @@
+- Downgrade the minSdk version to Android 6.0(API 23). So that more Android phones can use this app.
+- Use Android ViewModel + Data Binding + LiveData to reduce the code.

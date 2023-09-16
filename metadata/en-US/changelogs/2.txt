@@ -1,0 +1,3 @@
+- Move the release procedure to Github Action.
+- The (debug) signing key of old releases has been lost, so I generate a new release signing key. The future release will all use this key. And thanks to Github's repo secrets, the signing key won't be lost. The old release should not be downloaded, so I remove them. If you have already installed an older apk, you can uninstall it then reinstall the lastest.
+- Upgrade some dependencies to newer version.
