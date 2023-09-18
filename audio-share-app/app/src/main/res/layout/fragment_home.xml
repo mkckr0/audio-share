@@ -138,10 +138,11 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_start"
                     style="@style/Widget.Material3.Button.IconButton"
-                    app:icon="@{viewModel.isPlaying ? @drawable/baseline_pause_circle : @drawable/baseline_play_circle,default=@drawable/baseline_play_circle}"
+                    app:icon="@{viewModel.isPlaying ? @drawable/baseline_pause_circle : @drawable/baseline_play_circle}"
                     app:iconSize="64dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    tools:icon="@drawable/baseline_play_circle"
                     tools:ignore="SpeakableTextPresentCheck" />
 
             </LinearLayout>
