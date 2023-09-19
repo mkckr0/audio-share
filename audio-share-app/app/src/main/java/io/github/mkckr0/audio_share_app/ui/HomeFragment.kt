@@ -17,14 +17,19 @@ class HomeFragment : Fragment() {
 
     private val tag = javaClass.simpleName
 
+    private var _binding: FragmentHomeBinding? = null
+    private val binding get() = _binding!!
     private val viewModel: HomeViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         Log.d(tag, "onCreateView")
+        _binding = FragmentHomeBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
-        val binding = FragmentHomeBinding.inflate(inflater, container, false)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
 
@@ -43,8 +48,11 @@ class HomeFragment : Fragment() {
         binding.textViewInfo.movementMethod = ScrollingMovementMethod()
         binding.textFieldHost.doOnTextChanged { _, _, _, _ -> viewModel.hostError.value = null }
         binding.textFieldPort.doOnTextChanged { _, _, _, _ -> viewModel.portError.value = null }
+    }
 
-        return binding.root
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     inner class VolumeSliderTouchListener : Slider.OnSliderTouchListener {
