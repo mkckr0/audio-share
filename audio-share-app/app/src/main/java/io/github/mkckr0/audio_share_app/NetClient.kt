@@ -360,14 +360,17 @@ class NetClient(private val handler: Handler) {
             8 -> AudioFormat.CHANNEL_OUT_7POINT1_SURROUND
             else -> AudioFormat.CHANNEL_INVALID
         }
+
         Log.i(tag, "encoding: $encoding, channelMask: $channelMask, sampleRate: ${format.sampleRate}")
 
         val minBufferSize = AudioTrack.getMinBufferSize(format.sampleRate, channelMask, encoding)
+        Log.i(tag, "miniBufferSize: $minBufferSize Bytes")
 
         val builder = AudioTrack.Builder()
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build()
             )
             .setAudioFormat(
@@ -376,7 +379,7 @@ class NetClient(private val handler: Handler) {
                     .setChannelMask(channelMask)
                     .setSampleRate(format.sampleRate)
                     .build()
-            ).setBufferSizeInBytes(minBufferSize)
+            ).setBufferSizeInBytes(minBufferSize * 4)
             .setTransferMode(AudioTrack.MODE_STREAM)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
