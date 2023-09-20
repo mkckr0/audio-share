@@ -78,16 +78,16 @@ asio::awaitable<void> audio_manager::do_loopback_recording(asio::io_context& ioc
     hr = pEndpoint->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, (void**)&pAudioClient);
     exit_on_failed(hr);
 
-    CComHeapPtr<WAVEFORMATEX> pDeviceFormat;
-    pAudioClient->GetMixFormat(&pDeviceFormat);
+    CComHeapPtr<WAVEFORMATEX> pCaptureFormat;
+    pAudioClient->GetMixFormat(&pCaptureFormat);
 
-    this->set_format(pDeviceFormat);
+    this->set_format(pCaptureFormat);
 
     constexpr int REFTIMES_PER_SEC = 10000000;      // 1 reference_time = 100ns
     constexpr int REFTIMES_PER_MILLISEC = 10000;
 
     const REFERENCE_TIME hnsRequestedDuration = 1 * REFTIMES_PER_SEC; // 1s
-    hr = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, hnsRequestedDuration, 0, pDeviceFormat, nullptr);
+    hr = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, hnsRequestedDuration, 0, pCaptureFormat, nullptr);
     exit_on_failed(hr);
 
     UINT32 bufferFrameCount{};
@@ -101,7 +101,7 @@ asio::awaitable<void> audio_manager::do_loopback_recording(asio::io_context& ioc
     hr = pAudioClient->Start();
     exit_on_failed(hr);
 
-    const REFERENCE_TIME hnsActualDuration = (long long)REFTIMES_PER_SEC * bufferFrameCount / pDeviceFormat->nSamplesPerSec;
+    const REFERENCE_TIME hnsActualDuration = (long long)REFTIMES_PER_SEC * bufferFrameCount / pCaptureFormat->nSamplesPerSec;
 
     UINT32 data_ckSize = 0;
     UINT32 frame_count = 0;
@@ -134,14 +134,14 @@ asio::awaitable<void> audio_manager::do_loopback_recording(asio::io_context& ioc
         hr = pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &dwFlags, NULL, NULL);
         exit_on_failed(hr);
 
-        int frame_bytes = pDeviceFormat->nChannels * pDeviceFormat->wBitsPerSample / 8;
-        int count = numFramesAvailable * frame_bytes;
+        int bytes_per_frame = pCaptureFormat->nBlockAlign;
+        int count = numFramesAvailable * bytes_per_frame;
 
-        this->broadcast_audio_data((const char*)pData, count);
+        this->broadcast_audio_data((const char*)pData, count, pCaptureFormat->nBlockAlign);
 
         data_ckSize += count;
         frame_count += numFramesAvailable;
-        seconds = frame_count / pDeviceFormat->nSamplesPerSec;
+        seconds = frame_count / pCaptureFormat->nSamplesPerSec;
         //std::cout << "numFramesAvailable: " << numFramesAvailable << " seconds: " << seconds << std::endl;
 
         hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
@@ -325,9 +325,11 @@ void audio_manager::set_format(WAVEFORMATEX* format)
     f->set_bits_per_sample(format->wBitsPerSample);
     _format.resize(f->ByteSizeLong());
     f->SerializeToArray(_format.data(), (int)_format.size());
+    spdlog::info("WAVEFORMATEX: wFormatTag: {}, nBlockAlign: {}", format->wFormatTag, format->nBlockAlign);
+    spdlog::info("AudioFormat:\n{}", f->DebugString());
 }
 
-void audio_manager::broadcast_audio_data(const char* data, size_t count)
+void audio_manager::broadcast_audio_data(const char* data, int count, int block_align)
 {
     if (count <= 0) {
         return;
@@ -336,7 +338,10 @@ void audio_manager::broadcast_audio_data(const char* data, size_t count)
     //spdlog::info("size: {}", count);
 
     // divide udp frame
-    constexpr int mtu = 1492, max_seg_size = mtu - 20 - 8;
+    constexpr int mtu = 1492;
+    int max_seg_size = mtu - 20 - 8;
+    max_seg_size -= max_seg_size % block_align; // one single sample can't be divided
+
     std::list<std::shared_ptr<std::vector<uint8_t>>> seg_list;
 
     for (int begin_pos = 0; begin_pos < count;) {

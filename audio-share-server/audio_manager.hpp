@@ -36,7 +36,7 @@ public:
 
 private:
     void set_format(WAVEFORMATEX* format);
-    void broadcast_audio_data(const char* data, size_t count);
+    void broadcast_audio_data(const char* data, int count, int block_align);
 
     std::shared_ptr<asio::ip::udp::socket> _udp_server;
     std::map<std::shared_ptr<asio::ip::tcp::socket>, std::shared_ptr<peer_info_t>> _playing_peer_list;
