@@ -48,6 +48,7 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	afx_msg void OnBnClickedStartServer();
 	afx_msg void OnBnClickedButtonHide();
+	afx_msg void OnBnClickedButtonRefresh();
 	afx_msg LRESULT OnNotifyIcon(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnDestroy();
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
@@ -58,4 +59,5 @@ public:
 	CEdit m_editPort;
 	CComboBox m_comboBoxAudioEndpoint;
 	CButton m_buttonServer;
+	CButton m_buttonRefresh;
 };

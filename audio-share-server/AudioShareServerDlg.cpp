@@ -128,6 +128,7 @@ void CAudioShareServerDlg::DoDataExchange(CDataExchange* pDX)
     DDX_Control(pDX, IDC_EDIT_PORT, m_editPort);
     DDX_Control(pDX, IDC_COMBO_AUDIO_ENDPOINT, m_comboBoxAudioEndpoint);
     DDX_Control(pDX, IDC_BUTTON_SERVER, m_buttonServer);
+    DDX_Control(pDX, IDC_BUTTON_REFRESH, m_buttonRefresh);
 }
 
 BEGIN_MESSAGE_MAP(CAudioShareServerDlg, CDialogEx)
@@ -139,6 +140,7 @@ BEGIN_MESSAGE_MAP(CAudioShareServerDlg, CDialogEx)
     ON_MESSAGE(WM_APP_NOTIFYICON, &CAudioShareServerDlg::OnNotifyIcon)
     ON_WM_DESTROY()
     ON_WM_CTLCOLOR()
+    ON_BN_CLICKED(IDC_BUTTON_REFRESH, &CAudioShareServerDlg::OnBnClickedButtonRefresh)
 END_MESSAGE_MAP()
 
 
@@ -196,20 +198,11 @@ BOOL CAudioShareServerDlg::OnInitDialog()
     m_editPort.SetWindowTextW(L"65530");
 
     // init endpoint list
-    m_endpoint_map = audio_manager::get_audio_endpoint_map();
-    for (auto&& [id, name] : m_endpoint_map) {
-        int nIndex = m_comboBoxAudioEndpoint.AddString(name.c_str());
-        m_comboBoxAudioEndpoint.SetItemDataPtr(nIndex, (void*)&id);
-    }
+    this->OnBnClickedButtonRefresh();
 
-    auto default_id = audio_manager::get_default_endpoint();
-    for (int nIndex = 0; nIndex < m_comboBoxAudioEndpoint.GetCount(); ++nIndex) {
-        auto endpoint = *(std::wstring*)m_comboBoxAudioEndpoint.GetItemDataPtr(nIndex);
-        if (endpoint == default_id) {
-            m_comboBoxAudioEndpoint.SetCurSel(nIndex);
-            break;
-        }
-    }
+    CPngImage pngImage;
+    pngImage.Load(IDB_PNG_REFRESH);
+    m_buttonRefresh.SetBitmap(pngImage);
 
     // create network_manager
     m_network_manger = std::make_unique<network_manager>();
@@ -318,6 +311,32 @@ void CAudioShareServerDlg::OnBnClickedButtonHide()
     ShowWindow(SW_HIDE);
 }
 
+void CAudioShareServerDlg::OnBnClickedButtonRefresh()
+{
+    m_comboBoxAudioEndpoint.Clear();
+    for (int nIndex = m_comboBoxAudioEndpoint.GetCount() - 1; nIndex >= 0; --nIndex) {
+        m_comboBoxAudioEndpoint.DeleteString(nIndex);
+    }
+
+    m_endpoint_map = audio_manager::get_audio_endpoint_map();
+    for (auto&& [id, name] : m_endpoint_map) {
+        int nIndex = m_comboBoxAudioEndpoint.AddString(name.c_str());
+        m_comboBoxAudioEndpoint.SetItemDataPtr(nIndex, (void*)&id);
+    }
+
+    spdlog::info("before: {}", m_comboBoxAudioEndpoint.GetCount());
+    auto default_id = audio_manager::get_default_endpoint();
+    for (int nIndex = 0; nIndex < m_comboBoxAudioEndpoint.GetCount(); ++nIndex) {
+        auto endpoint_id = *(std::wstring*)m_comboBoxAudioEndpoint.GetItemDataPtr(nIndex);
+        if (endpoint_id == default_id) {
+            m_comboBoxAudioEndpoint.SetCurSel(nIndex);
+            break;
+        }
+    }
+    spdlog::info("after: {}", m_comboBoxAudioEndpoint.GetCount());
+}
+
+
 LRESULT CAudioShareServerDlg::OnNotifyIcon(WPARAM wParam, LPARAM lParam)
 {
     auto event = LODWORD(lParam);
@@ -330,7 +349,7 @@ LRESULT CAudioShareServerDlg::OnNotifyIcon(WPARAM wParam, LPARAM lParam)
         ShowWindow(SW_NORMAL);
         SetForegroundWindow();
     }
-    else if (event == WM_RBUTTONDOWN) { 
+    else if (event == WM_RBUTTONDOWN) {
         // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-trackpopupmenu#remarks
         SetForegroundWindow();
         POINT pos{};

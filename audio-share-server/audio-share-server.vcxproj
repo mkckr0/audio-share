@@ -280,6 +280,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\AudioShareServer.ico" />
+    <Image Include="res\refresh.png" />
   </ItemGroup>
   <Import Project="settings.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
