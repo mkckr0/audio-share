@@ -96,6 +96,7 @@ void CAudioShareServerDlg::EnableInputControls(bool bEnable)
     m_comboBoxHost.EnableWindow(bEnable);
     m_editPort.EnableWindow(bEnable);
     m_comboBoxAudioEndpoint.EnableWindow(bEnable);
+    m_buttonRefresh.EnableWindow(bEnable);
 }
 
 // copy from https://devblogs.microsoft.com/oldnewthing/20190802-00/?p=102747
@@ -340,7 +341,6 @@ void CAudioShareServerDlg::OnBnClickedButtonRefresh()
         m_comboBoxAudioEndpoint.SetItemDataPtr(nIndex, (void*)&id);
     }
 
-    spdlog::info("before: {}", m_comboBoxAudioEndpoint.GetCount());
     auto default_id = audio_manager::get_default_endpoint();
     for (int nIndex = 0; nIndex < m_comboBoxAudioEndpoint.GetCount(); ++nIndex) {
         auto endpoint_id = *(std::wstring*)m_comboBoxAudioEndpoint.GetItemDataPtr(nIndex);
@@ -349,9 +349,7 @@ void CAudioShareServerDlg::OnBnClickedButtonRefresh()
             break;
         }
     }
-    spdlog::info("after: {}", m_comboBoxAudioEndpoint.GetCount());
 }
-
 
 LRESULT CAudioShareServerDlg::OnNotifyIcon(WPARAM wParam, LPARAM lParam)
 {

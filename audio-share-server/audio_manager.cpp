@@ -68,8 +68,9 @@ asio::awaitable<void> audio_manager::do_loopback_recording(asio::io_context& ioc
 {
     HRESULT hr{};
 
-    CoInitializeGuard coInitializeGuard;
-    exit_on_failed(coInitializeGuard.result());
+    // CoInitialize has been called by Dialog
+    //CoInitializeGuard coInitializeGuard;
+    //exit_on_failed(coInitializeGuard.result());
 
     CComPtr<IMMDeviceEnumerator> pEnumerator;
     hr = pEnumerator.CoCreateInstance(__uuidof(MMDeviceEnumerator));
