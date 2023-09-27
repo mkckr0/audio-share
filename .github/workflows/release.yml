@@ -13,6 +13,7 @@ jobs:
       - run: |
           git config user.name mkckr0
           git config user.email 26296627+mkckr0@users.noreply.github.com
+          if [[ -z $(git status -s) ]]; then exit 0 ; fi
           git add .
           git commit -m "Apply version $(bash ./script/get_version.sh -n)"
           git push
