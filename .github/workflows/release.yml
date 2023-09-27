@@ -36,7 +36,7 @@ jobs:
     - run: ./gradlew :app:signingReport
     
     - name: Get versionName
-      run: sed -En 's/\s*versionName\s*[=\s]\s*"([^"]*)"/version=\1/p' app/build.gradle* | tee $GITHUB_OUTPUT
+      run: sed -En 's/versionName\s*=\s*"([^"]*)"/version=\1/p' app/build.gradle.kts | tee $GITHUB_OUTPUT
       id: get_version
       
     - uses: actions/upload-artifact@v3
