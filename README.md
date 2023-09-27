@@ -15,7 +15,6 @@
 [![GitHub language count](https://img.shields.io/github/languages/count/mkckr0/audio-share)](https://img.shields.io/github/languages/count/mkckr0/audio-share)
 [![GitHub top language](https://img.shields.io/github/languages/top/mkckr0/audio-share)](https://img.shields.io/github/languages/top/mkckr0/audio-share)
 [![GitHub repo size](https://img.shields.io/github/repo-size/mkckr0/audio-share)](https://img.shields.io/github/repo-size/mkckr0/audio-share)
-[![Lines of code](https://tokei.rs/b1/github/mkckr0/audio-share)](https://tokei.rs/b1/github/mkckr0/audio-share)
 [![GitHub all releases](https://img.shields.io/github/downloads/mkckr0/audio-share/total)](https://img.shields.io/github/downloads/mkckr0/audio-share/total)
 [![GitHub issues](https://img.shields.io/github/issues/mkckr0/audio-share)](https://img.shields.io/github/issues/mkckr0/audio-share)
 [![GitHub closed issues](https://img.shields.io/github/issues-closed/mkckr0/audio-share)](https://img.shields.io/github/issues-closed/mkckr0/audio-share)
@@ -23,7 +22,12 @@
 [![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/mkckr0/audio-share)](https://img.shields.io/github/issues-pr-closed/mkckr0/audio-share)
 [![Build App](https://github.com/mkckr0/audio-share/actions/workflows/build_app.yml/badge.svg)](https://github.com/mkckr0/audio-share/actions/workflows/build_app.yml)
 [![Build Server](https://github.com/mkckr0/audio-share/actions/workflows/build_server.yml/badge.svg)](https://github.com/mkckr0/audio-share/actions/workflows/build_server.yml)
+[![Release](https://github.com/mkckr0/audio-share/actions/workflows/release.yml/badge.svg)](https://github.com/mkckr0/audio-share/actions/workflows/release.yml)
 [![lzzyOnDroid](https://img.shields.io/endpoint?url=https://apt.izzysoft.de/fdroid/api/v1/shield/io.github.mkckr0.audio_share_app)](https://apt.izzysoft.de/fdroid/index/apk/io.github.mkckr0.audio_share_app)
+[![F-Droid](https://img.shields.io/f-droid/v/io.github.mkckr0.audio_share_app?logo=F-Droid)](https://f-droid.org/packages/io.github.mkckr0.audio_share_app)
+
+<a href="https://f-droid.org/packages/io.github.mkckr0.audio_share_app"><img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" height="75"></a>
+<a href="https://apt.izzysoft.de/fdroid/index/apk/io.github.mkckr0.audio_share_app"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="75"></a>
 
 Audio Share can share Windows computer's audio to Android phone over network, so your phone becomes the speaker of computer. (You needn't to buy a new speaker😄.)
 
@@ -40,7 +44,9 @@ Audio Share can share Windows computer's audio to Android phone over network, so
 
 ## Screenshot
 
-<img src="docs/img/show_01.jpg" width="40%" alt="docs/img/show_01.jpg"><br/>
+<p>
+<img src="docs/img/show_01.png" width="40%" alt="docs/img/show_01.png">
+</p>
 <img src="metadata/en-US/images/phoneScreenshots/1.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/1.png">&nbsp;
 <img src="metadata/en-US/images/phoneScreenshots/2.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/2.png">
 
@@ -53,3 +59,35 @@ Audio Share can share Windows computer's audio to Android phone over network, so
 
 - App side
     - Android Studio will import all dependencies automatically.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=mkckr0/audio-share&type=Date)](https://star-history.com/#mkckr0/audio-share&Date)
+
+## License
+This project is licensed under the [Apache-2.0 license](https://opensource.org/license/apache-2-0) .
+```
+   Copyright 2022-2023 mkckr0 <https://github.com/mkckr0>
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+```
+
+## Used third-party libraries
+
+- [Asio](https://github.com/chriskohlhoff/asio) licensed under the [BSL-1.0 license](http://www.boost.org/LICENSE_1_0.txt).
+- [Protocol Buffers]() licensed under the [LICENSE](https://github.com/protocolbuffers/protobuf/blob/main/LICENSE).
+- [spdlog](https://github.com/gabime/spdlog) licensed under the [MIT license](https://github.com/gabime/spdlog/blob/v1.x/LICENSE).
+- [{fmt}](https://github.com/fmtlib/fmt) licensed under the [LICENSE](https://github.com/fmtlib/fmt/blob/master/LICENSE).
+- [Netty](https://github.com/netty/netty) licensed under the [Apache-2.0 license](http://www.apache.org/licenses/LICENSE-2.0).
+- [Material Components for Android](https://github.com/material-components/material-components-android) licensed under the [Apache-2.0 license](http://www.apache.org/licenses/LICENSE-2.0).
+- [Protobuf Plugin for Gradle](https://github.com/google/protobuf-gradle-plugin)  licensed under the [LICENSE](https://github.com/google/protobuf-gradle-plugin/blob/master/LICENSE).
