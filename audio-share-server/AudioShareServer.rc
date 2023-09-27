@@ -117,8 +117,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,0
- PRODUCTVERSION 1,0,0,0
+ FILEVERSION 0,0,0,0
+ PRODUCTVERSION 0,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -134,11 +134,11 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "FileDescription", "Audio Share Server"
-            VALUE "FileVersion", "1.0.0.0"
+            VALUE "FileVersion", "0.0.0"
             VALUE "LegalCopyright", "Copyright (c) 2022-2023 mkckr0.  All rights reserved."
             VALUE "OriginalFilename", "AudioShareServer.exe"
             VALUE "ProductName", "Audio Share Server"
-            VALUE "ProductVersion", "1.0.0.0"
+            VALUE "ProductVersion", "0.0.0"
         END
     END
     BLOCK "VarFileInfo"
