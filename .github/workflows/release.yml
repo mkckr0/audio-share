@@ -11,6 +11,7 @@ jobs:
         working-directory: audio-share-app
     outputs:
       version: ${{ steps.get_version.outputs.version }}
+      version_code: ${{ steps.get_version_code.outputs.version_code }}
       hash: ${{ steps.get_hash.outputs.hash }}
     steps:
     - uses: actions/checkout@v3
@@ -38,7 +39,11 @@ jobs:
     - name: Get versionName
       run: sed -En 's/versionName\s*=\s*"([^"]*)"/version=\1/p' app/build.gradle.kts | tee $GITHUB_OUTPUT
       id: get_version
-      
+    
+    - name: Get versionCode
+      run: sed -En 's/versionCode\s*=\s*([0-9]*)/version_code=\1/p' app/build.gradle.kts | tee $GITHUB_OUTPUT
+      id: get_version_code
+
     - uses: actions/upload-artifact@v3
       with:
         name: app
@@ -63,7 +68,7 @@ jobs:
         vcpkgGitCommitId: 9edb1b8e590cc086563301d735cae4b6e732d2d2
     - run: vcpkg integrate install
     - run: vcpkg install asio:x64-windows-static-md protobuf:x64-windows-static-md spdlog:x64-windows-static-md
-    - run: msbuild /m /p:Configuration=Release
+    - run: msbuild /m /p:Configuration=Release,Platform=x64
     - uses: actions/upload-artifact@v3
       with:
         name: server
@@ -87,8 +92,9 @@ jobs:
       with:
         name: server
     - name: Generate release notes
-      run: 'echo -e "sha256sum:\n$(ls *.apk): ${app_hash}\n$(ls *.exe): ${server_hash}\n" > notes'
+      run: 'echo -e "$(cat ../metadata/en-US/changelogs/${version_code}.txt)\n---\nsha256sum:\n$(ls *.apk): ${app_hash}\n$(ls *.exe): ${server_hash}\n" > notes'
       env:
+        version_code: ${{ needs.build_app.outputs.version_code }}
         app_hash: ${{ needs.build_app.outputs.hash }}
         server_hash: ${{ needs.build_server.outputs.hash }}
     - name: Create Github Release
