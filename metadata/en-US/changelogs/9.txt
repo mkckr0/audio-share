@@ -1,0 +1,4 @@
+- Let UDP packet align to nBlockAlign, so can avoid the invalid audio data.
+- Increase the app's BufferSizeInBytes. It may make playback smoother.
+- Keep the server's version same as app's.
+- Add a refresh button for server's "Audio Endpoint" list.
