@@ -4,14 +4,25 @@ on:
   workflow_dispatch:
 
 jobs:
+  apply_version:
+    runs-on: ubuntu-lastest
+  steps:
+    - uses: actions/checkout@v3
+    - run: ./script/apply_version.sh
+    - run: |
+        git config user.name mkckr0
+        git config user.email 26296627+mkckr0@users.noreply.github.com
+        git add .
+        git commit -m "Apply Version $(sed -n '1p' VERSION)"
+        git push
+
   build_app:
+    needs: [ apply_version ]
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: audio-share-app
     outputs:
-      version: ${{ steps.get_version.outputs.version }}
-      version_code: ${{ steps.get_version_code.outputs.version_code }}
       hash: ${{ steps.get_hash.outputs.hash }}
     steps:
     - uses: actions/checkout@v3
@@ -54,6 +65,7 @@ jobs:
       id: get_hash
       
   build_server:
+    needs: [ apply_version ]
     runs-on: windows-latest
     defaults:
       run:
@@ -79,10 +91,10 @@ jobs:
       shell: bash
     
   release:
+    needs: [ build_app, build_server ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs: [ build_app, build_server ]
     steps:
     - uses: actions/checkout@v3
     - uses: actions/download-artifact@v2
@@ -92,13 +104,11 @@ jobs:
       with:
         name: server
     - name: Generate release notes
-      run: 'echo -e "$(cat ../metadata/en-US/changelogs/${version_code}.txt)\n---\nsha256sum:\n$(ls *.apk): ${app_hash}\n$(ls *.exe): ${server_hash}\n" > notes'
+      run: 'echo -e "$(cat ../metadata/en-US/changelogs/$(sed -n "2p" VERSION).txt)\n---\nsha256sum:\n$(ls *.apk): ${app_hash}\n$(ls *.exe): ${server_hash}\n" > notes'
       env:
-        version_code: ${{ needs.build_app.outputs.version_code }}
         app_hash: ${{ needs.build_app.outputs.hash }}
         server_hash: ${{ needs.build_server.outputs.hash }}
     - name: Create Github Release
-      run: gh release create "v$VERSION" -d -F notes -t "v$VERSION" *.apk *.exe
+      run: gh release create "v$VERSION" -d -F notes -t "v$(sed -n '1p' VERSION)" *.apk *.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        VERSION: ${{ needs.build_app.outputs.version }}
