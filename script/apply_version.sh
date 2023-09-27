@@ -1,7 +1,7 @@
 pushd $(dirname $0)/.. &>/dev/null
 
-version_name=$(sed -n '1p' VERSION)
-version_code=$(sed -n '2p' VERSION)
+version_name=$(./script/get_version.sh -n)
+version_code=$(./script/get_version.sh -c)
 file_version0=$version_name.0
 file_version1=$(echo $file_version0 | sed -En 's|\.|,|gp')
 product_version=$file_version1
