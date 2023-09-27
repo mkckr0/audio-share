@@ -14,7 +14,7 @@ jobs:
           git config user.name mkckr0
           git config user.email 26296627+mkckr0@users.noreply.github.com
           git add .
-          git commit -m "Apply Version $(sed -n '1p' VERSION)"
+          git commit -m "Apply version $(bash ./script/get_version.sh -n)"
           git push
 
   build_app:
@@ -111,6 +111,8 @@ jobs:
           app_hash: ${{ needs.build_app.outputs.hash }}
           server_hash: ${{ needs.build_server.outputs.hash }}
       - name: Create Github Release
-        run: gh release create "v$VERSION" -d -F notes -t "v$(bash ./script/get_version.sh -n)" *.apk *.exe
+        run: |
+          version=$(bash ./script/get_version.sh -n)
+          gh release create "v$version" -d -F notes -t "v$version" *.apk *.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
