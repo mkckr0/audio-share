@@ -7,14 +7,14 @@ jobs:
   apply_version:
     runs-on: ubuntu-lastest
     steps:
-      - uses: actions/checkout@v3
-      - run: ./script/apply_version.sh
-      - run: |
-          git config user.name mkckr0
-          git config user.email 26296627+mkckr0@users.noreply.github.com
-          git add .
-          git commit -m "Apply Version $(sed -n '1p' VERSION)"
-          git push
+    - uses: actions/checkout@v3
+    - run: ./script/apply_version.sh
+    - run: |
+        git config user.name mkckr0
+        git config user.email 26296627+mkckr0@users.noreply.github.com
+        git add .
+        git commit -m "Apply Version $(sed -n '1p' VERSION)"
+        git push
 
   build_app:
     needs: [ apply_version ]
