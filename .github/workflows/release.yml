@@ -107,7 +107,7 @@ jobs:
         with:
           name: server
       - name: Generate release notes
-        run: 'echo -e "$(cat ../metadata/en-US/changelogs/$(bash ./script/get_version.sh -c).txt)\n---\nsha256sum:\n$(ls *.apk): ${app_hash}\n$(ls *.exe): ${server_hash}\n" > notes'
+        run: 'echo -e "$(cat ./metadata/en-US/changelogs/$(bash ./script/get_version.sh -c).txt)\n---\nsha256sum:\n$(ls *.apk): ${app_hash}\n$(ls *.exe): ${server_hash}\n" > notes'
         env:
           app_hash: ${{ needs.build_app.outputs.hash }}
           server_hash: ${{ needs.build_server.outputs.hash }}
