@@ -1,4 +1,4 @@
-﻿// Microsoft Visual C++ generated resource script.
+// Microsoft Visual C++ generated resource script.
 //
 #pragma code_page(65001)
 
@@ -81,13 +81,13 @@ IDR_MAINFRAME           ICON                    "res\\AudioShareServer.ico"
 // Dialog
 //
 
-IDD_ABOUTBOX DIALOGEX 0, 0, 164, 70
+IDD_ABOUTBOX DIALOGEX 0, 0, 159, 70
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About Audio Share Server"
 FONT 10, "Microsoft Sans Serif", 400, 0, 0x0
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,14,14,20,20
-    LTEXT           "Audio Share Server, Version 0.0.9",IDC_STATIC,43,14,114,8,SS_NOPREFIX
+    LTEXT           "Audio Share Server, Version 0.0.9",IDC_STATIC,38,14,114,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 2022-2023",IDC_STATIC,39,25,79,12,SS_CENTERIMAGE
     DEFPUSHBUTTON   "OK",IDOK,66,48,50,14,WS_GROUP
     CONTROL         "mkckr0",IDC_MFCLINK1,"MfcLink",WS_TABSTOP,118,27,21,9
@@ -159,7 +159,7 @@ BEGIN
     IDD_ABOUTBOX, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 157
+        RIGHTMARGIN, 152
         TOPMARGIN, 7
         BOTTOMMARGIN, 63
     END
@@ -246,7 +246,7 @@ BEGIN
     IDS_ABOUTBOX            "About"
 END
 
-#endif    // Chinese (Simplified, China) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -261,8 +261,8 @@ END
 #define _AFX_NO_TRACKER_RESOURCES
 #define _AFX_NO_PROPERTY_RESOURCES
 
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
-LANGUAGE 4, 2
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #include "res\AudioShareServer.rc2"  // non-Microsoft Visual C++ edited resources
 #include "l.CHS\afxres.rc"      // Standard components
 #if !defined(_AFXDLL)
