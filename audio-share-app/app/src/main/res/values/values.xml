@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="audio_buffer_size_scale">4</string>
+    <string name="audio_tcp_connect_timeout">3000</string>
     <bool name="theme_use_wallpaper_default">true</bool>
     <bool name="debug_enable_copy_exception">false</bool>
     <string name="theme_color_default">#496727</string>
