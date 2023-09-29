@@ -194,25 +194,25 @@ asio::awaitable<void> network_manager::accept_tcp_loop(tcp_acceptor acceptor)
         spdlog::info("{} {}", __func__, peer->remote_endpoint());
 
         // Keep-Alive
-        peer->set_option(ip::tcp::socket::keep_alive(true), ec);
-        if (ec) {
-            spdlog::info("{} {}", __func__, ec);
-        }
-        using tcp_keepidle = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPIDLE>;
-        peer->set_option(tcp_keepidle(3), ec);
-        if (ec) {
-            spdlog::info("{} {}", __func__, ec);
-        }
-        using tcp_keepintvl = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPINTVL>;
-        peer->set_option(tcp_keepintvl(2), ec);
-        if (ec) {
-            spdlog::info("{} {}", __func__, ec);
-        }
-        using tcp_keepcnt = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPCNT>;
-        peer->set_option(tcp_keepcnt(3), ec);
-        if (ec) {
-            spdlog::info("{} {}", __func__, ec);
-        }
+        //peer->set_option(ip::tcp::socket::keep_alive(true), ec);
+        //if (ec) {
+        //    spdlog::info("{} {}", __func__, ec);
+        //}
+        //using tcp_keepidle = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPIDLE>;
+        //peer->set_option(tcp_keepidle(3), ec);
+        //if (ec) {
+        //    spdlog::info("{} {}", __func__, ec);
+        //}
+        //using tcp_keepintvl = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPINTVL>;
+        //peer->set_option(tcp_keepintvl(2), ec);
+        //if (ec) {
+        //    spdlog::info("{} {}", __func__, ec);
+        //}
+        //using tcp_keepcnt = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPCNT>;
+        //peer->set_option(tcp_keepcnt(3), ec);
+        //if (ec) {
+        //    spdlog::info("{} {}", __func__, ec);
+        //}
 
         // No-Delay
         peer->set_option(ip::tcp::no_delay(true), ec);
