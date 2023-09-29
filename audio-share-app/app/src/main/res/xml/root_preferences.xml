@@ -52,6 +52,16 @@
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="Debug">
+        <SwitchPreference
+            app:key="debug_enable_copy_exception"
+            app:title="Enable Copying Exception Message"
+            app:icon="@drawable/baseline_content_copy"
+            app:summaryOn="On"
+            app:summaryOff="Off"
+            app:defaultValue="@bool/debug_enable_copy_exception"/>
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="About">
         <Preference
             app:title="@string/app_name"
