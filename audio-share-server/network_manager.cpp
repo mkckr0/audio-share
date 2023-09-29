@@ -116,19 +116,21 @@ void network_manager::start_server(const std::string& host, const uint16_t port,
         future.get();
     }
     catch (...) {
-        _net_thread.join();
-        audio_manager = nullptr;
-        _ioc = nullptr;
+        stop_server();
         throw;
     }
 }
 
 void network_manager::stop_server()
 {
-    _ioc->stop();
+    if (_ioc) {
+        _ioc->stop();
+    }
     _net_thread.join();
+    _udp_server = nullptr;
     audio_manager = nullptr;
     _ioc = nullptr;
+    _playing_peer_list.clear();
 }
 
 asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> peer)
