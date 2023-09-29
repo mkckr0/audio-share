@@ -141,7 +141,8 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
         if (ec) {
             remove_playing_peer(peer);
             peer->shutdown(ip::tcp::socket::shutdown_both);
-            spdlog::info("{} {}", __func__, ec.message());
+            peer->close();
+            spdlog::info("{} {}", __func__, ec);
             co_return;
         }
 
@@ -174,6 +175,7 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
             spdlog::error("{} error cmd", __func__);
             remove_playing_peer(peer);
             peer->shutdown(ip::tcp::socket::shutdown_both);
+            peer->close();
             co_return;
         }
     }
@@ -185,17 +187,37 @@ asio::awaitable<void> network_manager::accept_tcp_loop(tcp_acceptor acceptor)
         auto peer = std::make_shared<tcp_socket>(acceptor.get_executor());
         auto [ec] = co_await acceptor.async_accept(*peer);
         if (ec) {
-            spdlog::error("{} {}", __func__, ec.message());
+            spdlog::error("{} {}", __func__, ec);
             co_return;
         }
+
         spdlog::info("{} {}", __func__, peer->remote_endpoint());
+
+        // Keep-Alive
         peer->set_option(ip::tcp::socket::keep_alive(true), ec);
         if (ec) {
-            spdlog::info("{} {}", __func__, ec.message());
+            spdlog::info("{} {}", __func__, ec);
         }
+        using tcp_keepidle = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPIDLE>;
+        peer->set_option(tcp_keepidle(3), ec);
+        if (ec) {
+            spdlog::info("{} {}", __func__, ec);
+        }
+        using tcp_keepintvl = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPINTVL>;
+        peer->set_option(tcp_keepintvl(2), ec);
+        if (ec) {
+            spdlog::info("{} {}", __func__, ec);
+        }
+        using tcp_keepcnt = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPCNT>;
+        peer->set_option(tcp_keepcnt(3), ec);
+        if (ec) {
+            spdlog::info("{} {}", __func__, ec);
+        }
+
+        // No-Delay
         peer->set_option(ip::tcp::no_delay(true), ec);
         if (ec) {
-            spdlog::info("{} {}", __func__, ec.message());
+            spdlog::info("{} {}", __func__, ec);
         }
 
         asio::co_spawn(acceptor.get_executor(), read_loop(peer), asio::detached);
@@ -209,7 +231,7 @@ asio::awaitable<void> network_manager::accept_udp_loop()
         ip::udp::endpoint udp_peer;
         auto [ec, _] = co_await _udp_server->async_receive_from(asio::buffer(&id, sizeof(id)), udp_peer);
         if (ec) {
-            spdlog::info("{} {}", __func__, ec.message());
+            spdlog::info("{} {}", __func__, ec);
             co_return;
         }
 
