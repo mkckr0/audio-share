@@ -21,29 +21,26 @@
 #include <set>
 #include <map>
 #include <vector>
+
 #include <asio.hpp>
+#include <asio/use_awaitable.hpp>
+
 #include <mmreg.h>
 #include <mmdeviceapi.h>
 
+class network_manager;
+
 class audio_manager
 {
+    using steady_timer = asio::as_tuple_t<asio::use_awaitable_t<>>::as_default_on_t<asio::steady_timer>;
+
+    std::shared_ptr<network_manager> _network_manager;
+
 public:
-
-    struct peer_info_t {
-        int id = 0;
-        std::shared_ptr<asio::ip::tcp::socket> tcp_peer;
-        asio::ip::udp::endpoint udp_peer;
-    };
-
-    audio_manager();
+    audio_manager(std::shared_ptr<network_manager> network_manager);
     ~audio_manager();
 
     asio::awaitable<void> do_loopback_recording(asio::io_context& ioc, const std::wstring& endpoint_id);
-
-    int add_playing_peer(std::shared_ptr<asio::ip::tcp::socket> peer);
-    void remove_playing_peer(std::shared_ptr<asio::ip::tcp::socket> peer);
-    void fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer);
-    void init_udp_server(std::shared_ptr<asio::ip::udp::socket> udp_server);
 
     const std::vector<uint8_t>& get_format() const;
 
@@ -52,12 +49,7 @@ public:
 
 private:
     void set_format(WAVEFORMATEX* format);
-    void broadcast_audio_data(const char* data, int count, int block_align);
 
-    std::shared_ptr<asio::ip::udp::socket> _udp_server;
-    std::map<std::shared_ptr<asio::ip::tcp::socket>, std::shared_ptr<peer_info_t>> _playing_peer_list;
     std::vector<uint8_t> _format;
-
-    constexpr static int _endpoint_state_mask = DEVICE_STATE_ACTIVE;
 };
 
