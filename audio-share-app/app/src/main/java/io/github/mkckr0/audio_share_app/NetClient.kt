@@ -30,6 +30,7 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
+import io.netty.channel.ConnectTimeoutException
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.DatagramChannel
 import io.netty.channel.socket.DatagramPacket
@@ -43,6 +44,7 @@ import io.netty.handler.codec.MessageToMessageEncoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -411,11 +413,11 @@ class NetClient(private val handler: Handler) {
         }
 
         MainScope().launch(Dispatchers.Main) {
-            val e = exc.message
-            if (!e.isNullOrBlank()) {
-                handler.onNetError(e)
+            if (exc is ConnectTimeoutException || exc is IOException) {
+                handler.onNetError(exc.message!!)
                 return@launch
             }
+            Log.d(tag, exc.stackTraceToString())
             handler.onNetError(exc.stackTraceToString())
         }
 
