@@ -24,6 +24,12 @@
 
 template<> struct fmt::formatter<asio::ip::tcp::endpoint> : fmt::ostream_formatter {};
 template<> struct fmt::formatter<asio::ip::udp::endpoint> : fmt::ostream_formatter {};
+template <> struct fmt::formatter<asio::error_code> : fmt::formatter<std::string> {
+    template <typename FormatContext>
+    auto format(asio::error_code& ec, FormatContext& ctx) const {
+        return formatter<string_view>::format(ec.message(), ctx);
+    }
+};
 
 std::string wchars_to_mbs(const wchar_t* src);
 
