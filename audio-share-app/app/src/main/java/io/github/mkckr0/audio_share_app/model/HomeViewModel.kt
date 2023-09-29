@@ -90,33 +90,41 @@ class HomeViewModel(private val application: Application) : AndroidViewModel(app
         }
     }
 
-    fun startPlay() {
+    fun switchPlay() {
         if (netClient.isPlaying()) {
-            netClient.stop()
+            stopPlay()
         } else {
-            if (host.value.isNullOrBlank()  || port.value.isNullOrBlank()) {
-                if (host.value.isNullOrBlank()) {
-                    hostError.value = "Host is Empty"
-                }
-                if (port.value.isNullOrBlank()) {
-                    portError.value = "Port is Empty"
-                }
-                return
-            }
-
-            // save host and port
-            sharedPreferences.edit()
-                .putString("host", host.value)
-                .putString("port", port.value)
-                .apply()
-
-            isPlaying.value = true
-            info.value = application.getString(R.string.audio_starting)
-
-            Log.d("AudioShare", "click start")
-
-            netClient.start(host.value!!, port.value!!.toInt())
+            startPlay()
         }
+    }
+
+    private fun startPlay() {
+        if (host.value.isNullOrBlank()  || port.value.isNullOrBlank()) {
+            if (host.value.isNullOrBlank()) {
+                hostError.value = "Host is Empty"
+            }
+            if (port.value.isNullOrBlank()) {
+                portError.value = "Port is Empty"
+            }
+            return
+        }
+
+        // save host and port
+        sharedPreferences.edit()
+            .putString("host", host.value)
+            .putString("port", port.value)
+            .apply()
+
+        isPlaying.value = true
+        info.value = application.getString(R.string.audio_starting)
+
+        Log.d("AudioShare", "click start")
+
+        netClient.start(host.value!!, port.value!!.toInt())
+    }
+
+    private fun stopPlay() {
+        netClient.stop()
     }
 
     inner class NetClientHandler : NetClient.Handler {

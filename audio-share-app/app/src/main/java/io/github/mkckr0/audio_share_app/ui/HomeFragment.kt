@@ -80,7 +80,7 @@ class HomeFragment : Fragment() {
 
         viewModel.hostError.observe(viewLifecycleOwner) { binding.textFieldHostLayout.error = it }
         viewModel.portError.observe(viewLifecycleOwner) { binding.textFieldPortLayout.error = it }
-        binding.buttonStart.setOnClickListener { viewModel.startPlay() }
+        binding.buttonStart.setOnClickListener { viewModel.switchPlay() }
         binding.textViewInfo.setOnLongClickListener {
             val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
             if (!sharedPreferences.getBoolean("debug_enable_copy_exception", resources.getBoolean(R.bool.debug_enable_copy_exception))) {
