@@ -5,9 +5,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="pb">
-      <UniqueIdentifier>{5b46bb51-5f76-4cb0-a0ca-40438f6873dc}</UniqueIdentifier>
-    </Filter>
     <Filter Include="protos">
       <UniqueIdentifier>{94d4e31b-5c0c-42d3-a25d-1112166d6b9b}</UniqueIdentifier>
     </Filter>
@@ -38,16 +35,16 @@
     <ClInclude Include="targetver.h">
       <Filter>mfc</Filter>
     </ClInclude>
-    <ClInclude Include="client.pb.h">
-      <Filter>pb</Filter>
-    </ClInclude>
-    <ClInclude Include="audio_manager.hpp">
+    <ClInclude Include="..\server-core\audio_manager.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="common.hpp">
+    <ClInclude Include="..\server-core\common.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="network_manager.hpp">
+    <ClInclude Include="..\server-core\network_manager.hpp">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\server-core\client.pb.h">
       <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
@@ -61,16 +58,16 @@
     <ClCompile Include="pch.cpp">
       <Filter>mfc</Filter>
     </ClCompile>
-    <ClCompile Include="client.pb.cc">
-      <Filter>pb</Filter>
-    </ClCompile>
-    <ClCompile Include="audio_manager.cpp">
+    <ClCompile Include="..\server-core\audio_manager.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="network_manager.cpp">
+    <ClCompile Include="..\server-core\common.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="common.cpp">
+    <ClCompile Include="..\server-core\network_manager.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\server-core\client.pb.cc">
       <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>
