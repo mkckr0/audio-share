@@ -61,7 +61,8 @@ Audio Share can share Windows computer's audio to Android phone over network, so
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=mkckr0/audio-share&type=Date)](https://star-history.com/#mkckr0/audio-share&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=mkckr0/audio-share&type=Date)](https://star-history.com/#mkckr0/audio-share&Date)[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmkckr0%2Faudio-share.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmkckr0%2Faudio-share?ref=badge_shield)
+
 
 ## License
 This project is licensed under the [Apache-2.0 license](https://opensource.org/license/apache-2-0) .
@@ -80,6 +81,9 @@ This project is licensed under the [Apache-2.0 license](https://opensource.org/l
    See the License for the specific language governing permissions and
    limitations under the License.
 ```
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmkckr0%2Faudio-share.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmkckr0%2Faudio-share?ref=badge_large)
 
 ## Used third-party libraries
 
