@@ -35,16 +35,16 @@
     <ClInclude Include="targetver.h">
       <Filter>mfc</Filter>
     </ClInclude>
-    <ClInclude Include="..\server-core\audio_manager.hpp">
+    <ClInclude Include="..\server-core\src\audio_manager.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\server-core\common.hpp">
+    <ClInclude Include="..\server-core\src\client.pb.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\server-core\network_manager.hpp">
+    <ClInclude Include="..\server-core\src\common.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\server-core\client.pb.h">
+    <ClInclude Include="..\server-core\src\network_manager.hpp">
       <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
@@ -58,16 +58,16 @@
     <ClCompile Include="pch.cpp">
       <Filter>mfc</Filter>
     </ClCompile>
-    <ClCompile Include="..\server-core\audio_manager.cpp">
+    <ClCompile Include="..\server-core\src\audio_manager.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="..\server-core\common.cpp">
+    <ClCompile Include="..\server-core\src\client.pb.cc">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="..\server-core\network_manager.cpp">
+    <ClCompile Include="..\server-core\src\common.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="..\server-core\client.pb.cc">
+    <ClCompile Include="..\server-core\src\network_manager.cpp">
       <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>
