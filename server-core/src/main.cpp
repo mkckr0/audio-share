@@ -1,9 +1,9 @@
+#include "audio_manager.hpp"
+#include "network_manager.hpp"
+
 #include <cxxopts.hpp>
 #include <iostream>
 #include <spdlog/spdlog.h>
-
-#include "audio_manager.hpp"
-#include "network_manager.hpp"
 
 int main(int argc, char* argv[])
 {

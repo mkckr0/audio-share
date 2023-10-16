@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-#ifdef WIN32
+#ifdef _WINDOWS
 
 #include "audio_manager.hpp"
 #include "client.pb.h"
@@ -25,7 +25,6 @@
 #include <iostream>
 #include <vector>
 
-#include <sdkddkver.h>
 #include <atlbase.h>
 #include <combaseapi.h>
 #include <mmreg.h>
@@ -42,17 +41,19 @@ constexpr inline void exit_on_failed(HRESULT hr);
 void print_endpoints(CComPtr<IMMDeviceCollection> pColletion);
 void set_format(std::shared_ptr<AudioFormat> _format, WAVEFORMATEX* format);
 
-using namespace detail;
+namespace detail {
 
-detail::audio_manager_impl::audio_manager_impl()
+audio_manager_impl::audio_manager_impl()
 {
     CoInitializeEx(nullptr, COINIT::COINIT_MULTITHREADED);
 }
 
-detail::audio_manager_impl::~audio_manager_impl()
+audio_manager_impl::~audio_manager_impl()
 {
     CoUninitialize();
 }
+
+} // namespace detail
 
 void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> network_manager, const std::string& endpoint_id)
 {
@@ -276,15 +277,13 @@ constexpr inline void exit_on_failed(HRESULT hr)
     }
 }
 
-namespace detail {
-
 std::string wchars_to_mbs(const std::wstring& src)
 {
     UINT cp = GetACP();
-    int n = WideCharToMultiByte(cp, 0, src.data(), src.size(), nullptr, 0, 0, 0);
+    int n = WideCharToMultiByte(cp, 0, src.data(), (int)src.size(), nullptr, 0, 0, 0);
 
     std::vector<char> buf(n);
-    WideCharToMultiByte(cp, 0, src.data(), src.size(), buf.data(), (int)buf.size(), 0, 0);
+    WideCharToMultiByte(cp, 0, src.data(), (int)src.size(), buf.data(), (int)buf.size(), 0, 0);
     std::string dst(buf.data(), buf.size());
     return dst;
 }
@@ -292,10 +291,10 @@ std::string wchars_to_mbs(const std::wstring& src)
 std::wstring mbs_to_wchars(const std::string& src)
 {
     UINT cp = GetACP();
-    int n = MultiByteToWideChar(cp, 0, src.data(), src.size(), nullptr, 0);
+    int n = MultiByteToWideChar(cp, 0, src.data(), (int)src.size(), nullptr, 0);
 
     std::vector<wchar_t> buf(n);
-    MultiByteToWideChar(cp, 0, src.data(), src.size(), buf.data(), (int)buf.size());
+    MultiByteToWideChar(cp, 0, src.data(), (int)src.size(), buf.data(), (int)buf.size());
     std::wstring dst(buf.data(), buf.size());
     return dst;
 }
@@ -338,6 +337,4 @@ std::wstring wstr_win_err(int err)
     return msg;
 }
 
-}
-
-#endif // WIN32
+#endif // _WINDOWS

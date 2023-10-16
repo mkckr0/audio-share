@@ -17,7 +17,10 @@
 #ifndef _AUDIO_MANAGER_HPP
 #define _AUDIO_MANAGER_HPP
 
-#ifdef WIN32
+#ifdef _WINDOWS
+
+#include <sdkddkver.h>
+#include <string>
 
 class network_manager;
 
@@ -29,12 +32,12 @@ public:
     ~audio_manager_impl();
 };
 
+} // namespace detail
+
 std::string wchars_to_mbs(const std::wstring& src);
 std::wstring mbs_to_wchars(const std::string& src);
 std::string str_win_err(int err);
 std::wstring wstr_win_err(int err);
 
-}
-
-#endif // WIN32
+#endif // _WINDOWS
 #endif // !_AUDIO_MANAGER_HPP

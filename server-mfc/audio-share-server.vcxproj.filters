@@ -15,6 +15,12 @@
     <Filter Include="core">
       <UniqueIdentifier>{6d6c92e5-a2ca-4cdf-b769-4ce21d5da55c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="pb">
+      <UniqueIdentifier>{35fa908a-04fb-4a4b-935a-a786e97f9720}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\win32">
+      <UniqueIdentifier>{ea996a12-e14f-4199-b10f-89b867c96785}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AudioShareServer.h">
@@ -35,17 +41,20 @@
     <ClInclude Include="targetver.h">
       <Filter>mfc</Filter>
     </ClInclude>
+    <ClInclude Include="client.pb.h">
+      <Filter>pb</Filter>
+    </ClInclude>
     <ClInclude Include="..\server-core\src\audio_manager.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\server-core\src\client.pb.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\server-core\src\common.hpp">
+    <ClInclude Include="..\server-core\src\formatter.hpp">
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="..\server-core\src\network_manager.hpp">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\server-core\src\win32\audio_manager_impl.hpp">
+      <Filter>core\win32</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -58,17 +67,17 @@
     <ClCompile Include="pch.cpp">
       <Filter>mfc</Filter>
     </ClCompile>
+    <ClCompile Include="client.pb.cc">
+      <Filter>pb</Filter>
+    </ClCompile>
     <ClCompile Include="..\server-core\src\audio_manager.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\server-core\src\client.pb.cc">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\server-core\src\common.cpp">
       <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="..\server-core\src\network_manager.cpp">
       <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\server-core\src\win32\audio_manager_impl.cpp">
+      <Filter>core\win32</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
