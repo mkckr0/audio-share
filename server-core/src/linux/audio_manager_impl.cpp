@@ -59,7 +59,9 @@ struct roundtrip {
     }
 };
 
-detail::audio_manager_impl::audio_manager_impl()
+namespace detail {
+
+audio_manager_impl::audio_manager_impl()
 {
     pw_init(nullptr, nullptr);
     spdlog::info("pipewire header_version: {}, library_version: {}", pw_get_headers_version(), pw_get_library_version());
@@ -74,7 +76,7 @@ detail::audio_manager_impl::audio_manager_impl()
     };
 }
 
-detail::audio_manager_impl::~audio_manager_impl()
+audio_manager_impl::~audio_manager_impl()
 {
     pw_core_disconnect(_core);
     pw_context_destroy(_context);
@@ -82,6 +84,8 @@ detail::audio_manager_impl::~audio_manager_impl()
     pw_deinit();
     delete _roundtrip;
 }
+
+} // namespace detail
 
 void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> network_manager, const std::string& endpoint_id)
 {

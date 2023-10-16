@@ -27,7 +27,6 @@
 
 #include "audio_manager.hpp"
 #include "network_manager.hpp"
-#include "common.hpp"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -222,7 +221,8 @@ BOOL CAudioShareServerDlg::OnInitDialog()
     m_buttonRefresh.SetBitmap(pngImage);
 
     // create network_manager
-    m_network_manger = std::make_unique<network_manager>();
+    m_audio_manager = std::make_unique<audio_manager>();
+    m_network_manager = std::make_unique<network_manager>(m_audio_manager);
 
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -279,7 +279,7 @@ HCURSOR CAudioShareServerDlg::OnQueryDragIcon()
 
 void CAudioShareServerDlg::OnBnClickedStartServer()
 {
-    if (!m_network_manger) {
+    if (!m_network_manager) {
         AfxMessageBox(L"network_manager is nullptr", MB_OK | MB_ICONSTOP);
         EndDialog(-1);
         return;
@@ -295,11 +295,11 @@ void CAudioShareServerDlg::OnBnClickedStartServer()
         CString host_str, port_str;
         m_comboBoxHost.GetWindowText(host_str);
         m_editPort.GetWindowText(port_str);
-        std::string host = wchars_to_mbs(host_str);
+        std::string host = wchars_to_mbs(host_str.GetString());
         std::uint16_t port = std::stoi(wchars_to_mbs(port_str.GetString()));
-        auto endpoint = *(std::wstring*)m_comboBoxAudioEndpoint.GetItemDataPtr(m_comboBoxAudioEndpoint.GetCurSel());
+        auto endpoint = (const char*)m_comboBoxAudioEndpoint.GetItemDataPtr(m_comboBoxAudioEndpoint.GetCurSel());
         try {
-            m_network_manger->start_server(host, port, endpoint);
+            m_network_manager->start_server(host, port, endpoint);
         }
         catch (std::exception& e) {
             AfxMessageBox(CString(e.what()), MB_OK | MB_ICONSTOP);
@@ -315,7 +315,7 @@ void CAudioShareServerDlg::OnBnClickedStartServer()
     else {
         // stop
         m_buttonServer.EnableWindow(false);
-        m_network_manger->stop_server();
+        m_network_manager->stop_server();
 
         EnableInputControls(true);
         m_buttonServer.EnableWindow(true);
@@ -333,20 +333,17 @@ void CAudioShareServerDlg::OnBnClickedButtonRefresh()
     m_comboBoxAudioEndpoint.Clear();
     for (int nIndex = m_comboBoxAudioEndpoint.GetCount() - 1; nIndex >= 0; --nIndex) {
         m_comboBoxAudioEndpoint.DeleteString(nIndex);
+        free(m_comboBoxAudioEndpoint.GetItemDataPtr(nIndex));
     }
 
-    m_endpoint_map = audio_manager::get_audio_endpoint_map();
-    for (auto&& [id, name] : m_endpoint_map) {
-        int nIndex = m_comboBoxAudioEndpoint.AddString(name.c_str());
-        m_comboBoxAudioEndpoint.SetItemDataPtr(nIndex, (void*)&id);
-    }
-
-    auto default_id = audio_manager::get_default_endpoint();
-    for (int nIndex = 0; nIndex < m_comboBoxAudioEndpoint.GetCount(); ++nIndex) {
-        auto endpoint_id = *(std::wstring*)m_comboBoxAudioEndpoint.GetItemDataPtr(nIndex);
-        if (endpoint_id == default_id) {
+    audio_manager::endpoint_list_t endpoint_list;
+    int default_index = m_audio_manager->get_endpoint_list(endpoint_list);
+    for (int i = 0; i < endpoint_list.size(); ++i) {
+        auto&& [id, name] = endpoint_list[i];
+        int nIndex = m_comboBoxAudioEndpoint.AddString(mbs_to_wchars(name).c_str());
+        m_comboBoxAudioEndpoint.SetItemDataPtr(nIndex, _strdup(id.c_str()));
+        if (default_index == i) {
             m_comboBoxAudioEndpoint.SetCurSel(nIndex);
-            break;
         }
     }
 }
