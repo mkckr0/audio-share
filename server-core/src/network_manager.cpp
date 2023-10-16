@@ -132,14 +132,15 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
         cmd_t cmd = cmd_t::cmd_none;
         auto [ec, _] = co_await asio::async_read(*peer, asio::buffer(&cmd, sizeof(cmd)));
         if (ec) {
+            spdlog::info("close  {}", peer->remote_endpoint());
             remove_playing_peer(peer);
             peer->shutdown(ip::tcp::socket::shutdown_both);
             peer->close();
-            spdlog::info("{} {}", __func__, ec);
+            spdlog::trace("{} {}", __func__, ec);
             co_return;
         }
 
-        spdlog::info("cmd {}", (uint32_t)cmd);
+        spdlog::trace("cmd {}", (uint32_t)cmd);
 
         if (cmd == cmd_t::cmd_get_format) {
             auto format = _audio_manager->get_format_binary();
@@ -182,7 +183,7 @@ asio::awaitable<void> network_manager::accept_tcp_loop(tcp_acceptor acceptor)
             co_return;
         }
 
-        spdlog::info("{} {}", __func__, peer->remote_endpoint());
+        spdlog::info("accept {}", peer->remote_endpoint());
 
         // Keep-Alive
         // peer->set_option(ip::tcp::socket::keep_alive(true), ec);
@@ -242,7 +243,7 @@ int network_manager::add_playing_peer(std::shared_ptr<tcp_socket> peer)
     info->id = ++g_id;
     info->tcp_peer = peer;
 
-    spdlog::info("{} add id:{} tcp://{}", __func__, info->id, peer->remote_endpoint());
+    spdlog::trace("{} add id:{} tcp://{}", __func__, info->id, peer->remote_endpoint());
     return info->id;
 }
 
@@ -254,7 +255,7 @@ void network_manager::remove_playing_peer(std::shared_ptr<tcp_socket> peer)
     }
 
     _playing_peer_list.erase(peer);
-    spdlog::info("{} remove tcp://{}", __func__, peer->remote_endpoint());
+    spdlog::trace("{} remove tcp://{}", __func__, peer->remote_endpoint());
 }
 
 void network_manager::fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer)
@@ -269,7 +270,7 @@ void network_manager::fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer)
     }
 
     it->second->udp_peer = udp_peer;
-    spdlog::info("{} fill udp peer id:{} tcp://{} udp://{}", __func__, id, it->second->tcp_peer->remote_endpoint(), udp_peer);
+    spdlog::trace("{} fill udp peer id:{} tcp://{} udp://{}", __func__, id, it->second->tcp_peer->remote_endpoint(), udp_peer);
 }
 
 void network_manager::broadcast_audio_data(const char* data, int count, int block_align)

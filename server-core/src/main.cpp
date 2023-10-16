@@ -34,10 +34,11 @@ int main(int argc, char* argv[])
             class audio_manager audio_manager;
             audio_manager::endpoint_list_t endpoint_list;
             int default_index = audio_manager.get_endpoint_list(endpoint_list);
-            spdlog::info("endpoint_list: {}", endpoint_list.size());
+            fmt::println("endpoint_list:");
             for (int i = 0; i < endpoint_list.size(); ++i) {
-                spdlog::info("\t{} id: {:4} name: {}", (default_index == i ? '*' : ' '), endpoint_list[i].first, endpoint_list[i].second);
+                fmt::println("\t{} id: {:4} name: {}", (default_index == i ? '*' : ' '), endpoint_list[i].first, endpoint_list[i].second);
             }
+            fmt::println("total: {}", endpoint_list.size());
             return EXIT_SUCCESS;
         }
 
