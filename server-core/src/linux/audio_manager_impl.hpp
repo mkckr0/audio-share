@@ -30,6 +30,9 @@ namespace detail {
 
 class audio_manager_impl {
 protected:
+    audio_manager_impl();
+    ~audio_manager_impl();
+
     struct pw_main_loop* _loop;
     struct pw_context* _context;
     struct pw_core* _core;

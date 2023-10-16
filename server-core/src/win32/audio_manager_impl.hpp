@@ -19,18 +19,20 @@
 
 #ifdef WIN32
 
-#include <sdkddkver.h>
-
-#include <mmreg.h>
-#include <mmdeviceapi.h>
-
 class network_manager;
 
 namespace detail {
 
 class audio_manager_impl {
-protected:
+public:
+    audio_manager_impl();
+    ~audio_manager_impl();
 };
+
+std::string wchars_to_mbs(const std::wstring& src);
+std::wstring mbs_to_wchars(const std::string& src);
+std::string str_win_err(int err);
+std::wstring wstr_win_err(int err);
 
 }
 
