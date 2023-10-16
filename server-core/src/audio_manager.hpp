@@ -14,42 +14,49 @@
    limitations under the License.
 */
 
-#pragma once
-
-#include <sdkddkver.h>
-
-#include <set>
-#include <map>
-#include <vector>
+#ifndef _BASIC_AUDIO_MANAGER_HPP
+#define _BASIC_AUDIO_MANAGER_HPP
 
 #include <asio.hpp>
 #include <asio/use_awaitable.hpp>
 
-#include <mmreg.h>
-#include <mmdeviceapi.h>
+#include <memory>
+
+#ifdef linux
+#include "linux/audio_manager_impl.hpp"
+#endif
+
+#ifdef win32
+#include "win32/audio_manager_impl.hpp"
+#endif
+
+#include "client.pb.h"
 
 class network_manager;
 
-class audio_manager
-{
-    using steady_timer = asio::as_tuple_t<asio::use_awaitable_t<>>::as_default_on_t<asio::steady_timer>;
-
-    std::shared_ptr<network_manager> _network_manager;
-
+class audio_manager : private detail::audio_manager_impl, public std::enable_shared_from_this<audio_manager> {
 public:
-    audio_manager(std::shared_ptr<network_manager> network_manager);
+    using endpoint_list_t = std::vector<std::pair<std::string, std::string>>;
+    using AudioFormat = io::github::mkckr0::audio_share_app::pb::AudioFormat;
+
+    audio_manager();
     ~audio_manager();
 
-    asio::awaitable<void> do_loopback_recording(asio::io_context& ioc, const std::wstring& endpoint_id);
+    void start_loopback_recording(std::shared_ptr<network_manager> network_manager, const std::string& endpoint_id);
+    void do_loopback_recording(std::shared_ptr<network_manager> network_manager, const std::string& endpoint_id);
 
-    const std::vector<uint8_t>& get_format() const;
+    std::string get_format_binary();
 
-    static std::map<std::wstring, std::wstring> get_audio_endpoint_map();
-    static std::wstring get_default_endpoint();
+    /// @brief Get audio endpoint list and the default endpoint index.
+    /// @param endpoint_list Empty audio endpoint list.
+    /// @return Default endpoint index in endpoint_list. Start from 0. If no default, return -1.
+    int get_endpoint_list(endpoint_list_t& endpoint_list);
 
+    std::string get_default_endpoint();
+    
 private:
-    void set_format(WAVEFORMATEX* format);
-
-    std::vector<uint8_t> _format;
+    std::thread _record_thread;
+    std::shared_ptr<AudioFormat> _format;
 };
 
+#endif // !_BASIC_AUDIO_MANAGER_HPP

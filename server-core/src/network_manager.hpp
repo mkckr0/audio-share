@@ -14,9 +14,8 @@
    limitations under the License.
 */
 
-#pragma once
-
-#include <sdkddkver.h>
+#ifndef _NETWORK_MANAGER_HPP
+#define _NETWORK_MANAGER_HPP
 
 #include <memory>
 #include <vector>
@@ -34,6 +33,7 @@ class network_manager : public std::enable_shared_from_this<network_manager>
     using tcp_acceptor = default_token::as_default_on_t<asio::ip::tcp::acceptor>;
     using tcp_socket = default_token::as_default_on_t<asio::ip::tcp::socket>;
     using udp_socket = default_token::as_default_on_t<asio::ip::udp::socket>;
+    using steady_timer = default_token::as_default_on_t<asio::steady_timer>;
 
     struct peer_info_t {
         int id = 0;
@@ -49,12 +49,13 @@ class network_manager : public std::enable_shared_from_this<network_manager>
 
 public:
 
-    network_manager() {}
+    network_manager(std::shared_ptr<audio_manager>& audio_manager);
 
     static std::vector<std::wstring> get_local_addresss();
 
-    void start_server(const std::string& host, const uint16_t port, const std::wstring& endpoint_id);
+    void start_server(const std::string& host, const uint16_t port, const std::string& endpoint_id);
     void stop_server();
+    void wait_server();
 
     asio::awaitable<void> accept_tcp_loop(tcp_acceptor acceptor);
     asio::awaitable<void> read_loop(std::shared_ptr<tcp_socket> peer);
@@ -65,13 +66,13 @@ public:
     void fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer);
 
     void broadcast_audio_data(const char* data, int count, int block_align);
-
+    
 private:
-    std::unique_ptr<class audio_manager> audio_manager;
-
+    std::shared_ptr<audio_manager> _audio_manager;
     std::shared_ptr<asio::io_context> _ioc;
     std::thread _net_thread;
-
     std::unique_ptr<udp_socket> _udp_server;
     std::map<std::shared_ptr<tcp_socket>, std::shared_ptr<peer_info_t>> _playing_peer_list;
 };
+
+#endif // !_NETWORK_MANAGER_HPP
