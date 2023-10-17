@@ -66,11 +66,17 @@
     "buildPresets": [
         {
             "name": "linux-Release",
-            "configurePreset": "linux-Release"
+            "configurePreset": "linux-Release",
+            "targets": [
+                "install/strip"
+            ]
         },
         {
             "name": "windows-Release",
-            "configurePreset": "windows-Release"
+            "configurePreset": "windows-Release",
+            "targets": [
+                "install/strip"
+            ]
         }
     ]
 }
