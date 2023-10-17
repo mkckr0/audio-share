@@ -60,3 +60,5 @@ if(${PLATFORM_NAME} STREQUAL "linux")
 	pkg_check_modules(pipewire REQUIRED IMPORTED_TARGET libpipewire-0.3)
 	target_link_libraries(server-cmd PRIVATE PkgConfig::pipewire)
 endif()
+
+install(TARGETS server-cmd)
