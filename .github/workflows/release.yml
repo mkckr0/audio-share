@@ -83,7 +83,9 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: server-mfc
-          path: x64/Release/*.exe
+          path: |
+            x64/Release/*.exe
+            x64/Release/*.sha256
 
   build_server_core:
     name: Build server-core
@@ -154,6 +156,6 @@ jobs:
       - name: Create Github Release
         run: |
           version=$(bash ./scripts/get_version.sh -n)
-          gh release create "v$version" -d -F notes -t "v$version" release_bin/*
+          gh release create "v$version" -d -F notes -t "v$version" release_bin/*/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
