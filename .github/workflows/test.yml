@@ -37,6 +37,7 @@ jobs:
           VCPKG_DEFAULT_TRIPLET: ${{ matrix.vcpkg_triplet }}
       - uses: lukka/run-cmake@v10
         with:
+          cmakeListsTxtPath: ${{ github.workspace }}/server-core
           configurePreset: ${{ matrix.cmake_preset }}
           configurePresetAdditionalArgs: "['--target install']"
       - uses: actions/upload-artifact@v3
