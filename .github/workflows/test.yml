@@ -45,7 +45,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: server-core_${{ matrix.os }}
-          path: out/install/${{ matrix.cmake_preset }}/bin/*
+          path: server-core/out/install/${{ matrix.cmake_preset }}/bin/*
       - name: Get sha256num
         run: sha256sum out/install/${{ matrix.cmake_preset }}/bin/* | awk '{ printf "hash=%s", $1 }' | tee $GITHUB_OUTPUT
         id: get_hash
