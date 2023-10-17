@@ -10,8 +10,8 @@ echo VERSION: \
     version_name=$version_name \
     version_code=$version_code
 
-sed -Ebi "s|versionName\s*=\s*\"[^\"]*\"|versionName = \"$version_name\"|g" client-android/app/build.gradle.kts
-sed -Ebi "s|versionCode\s*=\s*[0-9]*|versionCode = $version_code|g" client-android/app/build.gradle.kts
+sed -Ebi "s|versionName\s*=\s*\"[^\"]*\"|versionName = \"$version_name\"|g" android-app/app/build.gradle.kts
+sed -Ebi "s|versionCode\s*=\s*[0-9]*|versionCode = $version_code|g" android-app/app/build.gradle.kts
 
 sed -Ebi "s|\tVERSION\s+[0-9.]*|\tVERSION $version_name|g" server-core/CMakeLists.txt
 

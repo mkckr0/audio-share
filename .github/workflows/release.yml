@@ -16,7 +16,7 @@ jobs:
           git config user.email 26296627+mkckr0@users.noreply.github.com
           if [ -z "$(git status -s)" ]; then exit 0; fi
           git add .
-          git commit -m "Apply version $(bash ./script/get_version.sh -n)"
+          git commit -m "Apply version $(bash ./scripts/get_version.sh -n)"
           git push
 
   build_app:
@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: client-android
+        working-directory: android-app
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v3
@@ -56,8 +56,8 @@ jobs:
         with:
           name: app
           path: |
-            client-android/app/build/outputs/apk/release/*.apk
-            client-android/app/build/outputs/apk/release/*.sha256
+            android-app/app/build/outputs/apk/release/*.apk
+            android-app/app/build/outputs/apk/release/*.sha256
 
   build_server_mfc:
     name: Build server-mfc
@@ -142,18 +142,18 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v3
-      - run: chmod +x ./script/get_version.sh
+      - run: chmod +x ./scripts/get_version.sh
       - uses: actions/download-artifact@v3
         with:
           path: release_bin
       - name: Generate release notes
-        run: 'echo -e "$(cat ./metadata/en-US/changelogs/$(bash ./script/get_version.sh -c).txt)" > notes'
+        run: 'echo -e "$(cat ./metadata/en-US/changelogs/$(bash ./scripts/get_version.sh -c).txt)" > notes'
         env:
           app_hash: ${{ needs.build_app.outputs.hash }}
           server_hash: ${{ needs.build_server.outputs.hash }}
       - name: Create Github Release
         run: |
-          version=$(bash ./script/get_version.sh -n)
+          version=$(bash ./scripts/get_version.sh -n)
           gh release create "v$version" -d -F notes -t "v$version" release_bin/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
