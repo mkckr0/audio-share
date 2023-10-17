@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
         }
 
         if (result.count("version")) {
-            fmt::println("{}\nversion: {}\nurl: {}", AUDIO_SHARE_BIN_NAME, AUDIO_SHARE_VERSION, AUDIO_SHARE_HOMEPAGE);
+            fmt::println("{}\nversion: {}\nurl: {}\n", AUDIO_SHARE_BIN_NAME, AUDIO_SHARE_VERSION, AUDIO_SHARE_HOMEPAGE);
             return EXIT_SUCCESS;
         }
 
