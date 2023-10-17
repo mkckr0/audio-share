@@ -26,6 +26,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Install Linux Deps
         run: sudo apt install libpipewire-0.3-dev
+        if: ${{ matrix.os == "ubuntu-latest" }}
       - uses: lukka/get-cmake@latest
       - uses: lukka/run-vcpkg@v11
         with:
