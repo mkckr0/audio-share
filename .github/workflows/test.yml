@@ -37,7 +37,7 @@ jobs:
       - run: vcpkg install asio protobuf spdlog cxxopts
       - uses: lukka/run-cmake@v10
         with:
-          cmakeListsTxtPath: ${{ github.workspace }}/server-core
+          cmakeListsTxtPath: ${{ github.workspace }}/server-core/CMakeLists.txt
           configurePreset: ${{ matrix.cmake_preset }}
           configurePresetAdditionalArgs: "['--target install']"
       - uses: actions/upload-artifact@v3
