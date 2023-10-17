@@ -13,9 +13,11 @@ jobs:
           - os: windows-latest
             vcpkg_triplet: x64-windows-static-md
             cmake_preset: windows-Release
+            platform: windows
           - os: ubuntu-latest
             vcpkg_triplet: x64-linux
             cmake_preset: linux-Release
+            platform: linux
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -40,11 +42,12 @@ jobs:
           cmakeListsTxtPath: ${{ github.workspace }}/server-core/CMakeLists.txt
           configurePreset: ${{ matrix.cmake_preset }}
           buildPreset: ${{ matrix.cmake_preset }}
+      - name: Pack
+        run: bash pack.sh ${{ matrix.platform }}
       - uses: actions/upload-artifact@v3
         with:
-          name: server-core_${{ matrix.os }}
-          path: server-core/out/install/${{ matrix.cmake_preset }}/bin/*
-      - name: Get sha256num
-        run: sha256sum out/install/${{ matrix.cmake_preset }}/bin/* | awk '{ printf "hash=%s", $1 }' | tee $GITHUB_OUTPUT
-        id: get_hash
-        shell: bash
+          name: server-core-${{ matrix.platform }}
+          path: |
+            server-core/out/install/*.sha256
+            server-core/out/install/*.tar.gz
+            server-core/out/install/*.zip
