@@ -39,7 +39,7 @@ jobs:
         with:
           cmakeListsTxtPath: ${{ github.workspace }}/server-core/CMakeLists.txt
           configurePreset: ${{ matrix.cmake_preset }}
-          configurePresetAdditionalArgs: "['-DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake']"
+          configurePresetAdditionalArgs: "[\"-DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake\"]"
           buildPreset: ${{ matrix.cmake_preset }}
           buildPresetAdditionalArgs: "['--target install/strip']"
       - uses: actions/upload-artifact@v3
