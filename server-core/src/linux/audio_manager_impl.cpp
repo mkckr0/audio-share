@@ -90,6 +90,14 @@ audio_manager_impl::~audio_manager_impl()
 void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> network_manager, const std::string& endpoint_id)
 {
     spdlog::info("endpoint_id: {}", endpoint_id);
+    endpoint_list_t endpoint_list;
+    get_endpoint_list(endpoint_list);
+    auto it = std::find_if(endpoint_list.begin(), endpoint_list.end(), [&](const std::pair<std::string, std::string>& e) {
+        return e.first == endpoint_id;
+    });
+    if (it != endpoint_list.end()) {
+        spdlog::info("select audio endpoint: {}", it->second);
+    }
 
     struct user_data_t {
         struct pw_stream* stream;
