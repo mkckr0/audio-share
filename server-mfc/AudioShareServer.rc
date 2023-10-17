@@ -87,7 +87,7 @@ CAPTION "About Audio Share Server"
 FONT 10, "Microsoft Sans Serif", 400, 0, 0x0
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,14,14,20,20
-    LTEXT           "Audio Share Server, Version 0.0.9",IDC_STATIC,38,14,114,8,SS_NOPREFIX
+    LTEXT           "Audio Share Server, Version 0.0.10",IDC_STATIC,38,14,114,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 2022-2023",IDC_STATIC,39,25,79,12,SS_CENTERIMAGE
     DEFPUSHBUTTON   "OK",IDOK,66,48,50,14,WS_GROUP
     CONTROL         "mkckr0",IDC_MFCLINK1,"MfcLink",WS_TABSTOP,118,27,21,9
@@ -117,8 +117,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,9,0
- PRODUCTVERSION 0,0,9,0
+ FILEVERSION 0,0,10,0
+ PRODUCTVERSION 0,0,10,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -134,11 +134,11 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "FileDescription", "Audio Share Server"
-            VALUE "FileVersion", "0.0.9.0"
+            VALUE "FileVersion", "0.0.10.0"
             VALUE "LegalCopyright", "Copyright (c) 2022-2023 mkckr0.  All rights reserved."
             VALUE "OriginalFilename", "AudioShareServer.exe"
             VALUE "ProductName", "Audio Share Server"
-            VALUE "ProductVersion", "0.0.9"
+            VALUE "ProductVersion", "0.0.10"
         END
     END
     BLOCK "VarFileInfo"
