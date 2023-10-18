@@ -87,7 +87,6 @@ class NetClient(private val handler: Handler, private val application: Applicati
 
         override fun channelInactive(ctx: ChannelHandlerContext) {
             Log.d(tag, "disconnected")
-            parent.onFailed(IOException("Connection close by peer"))
         }
 
         class TcpMessage {
@@ -196,7 +195,9 @@ class NetClient(private val handler: Handler, private val application: Applicati
 
         @Deprecated("Deprecated in Java")
         override fun exceptionCaught(ctx: ChannelHandlerContext?, cause: Throwable?) {
-            Log.d(tag, "exceptionCaught")
+            if (cause != null) {
+                Log.d(tag, cause.stackTraceToString())
+            }
             parent.onFailed(cause)
         }
 
@@ -441,7 +442,6 @@ class NetClient(private val handler: Handler, private val application: Applicati
 
         MainScope().launch(Dispatchers.Main) {
             if (exc is ConnectTimeoutException || exc is IOException) {
-                Log.d(tag, exc.message!!)
                 handler.onNetError(exc.message!!)
                 return@launch
             }
