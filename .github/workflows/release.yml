@@ -84,8 +84,8 @@ jobs:
         with:
           name: server-mfc
           path: |
-            server-mfc/x64/Release/*.exe
-            server-mfc/x64/Release/*.sha256
+            x64/Release/*.exe
+            x64/Release/*.sha256
 
   build_server_core:
     name: Build server-core
