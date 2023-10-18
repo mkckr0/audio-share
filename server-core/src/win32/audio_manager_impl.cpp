@@ -113,10 +113,16 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
     int seconds {};
 
-    using namespace std::literals;
+    using namespace std::chrono_literals;
+    asio::steady_timer timer(*network_manager->_ioc);
+    std::error_code ec;
 
     do {
-        std::this_thread::sleep_for(1ms);
+        timer.expires_after(1ms);
+        timer.wait(ec);
+        if (ec) {
+            break;
+        }
 
         UINT32 next_packet_size = 0;
         hr = pCaptureClient->GetNextPacketSize(&next_packet_size);
