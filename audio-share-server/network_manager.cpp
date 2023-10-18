@@ -126,11 +126,11 @@ void network_manager::stop_server()
     if (_ioc) {
         _ioc->stop();
     }
-    _playing_peer_list.clear();
     _net_thread.join();
     _udp_server = nullptr;
     audio_manager = nullptr;
     _ioc = nullptr;
+    _playing_peer_list.clear();
 }
 
 asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> peer)
