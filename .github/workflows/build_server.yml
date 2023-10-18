@@ -1,0 +1,51 @@
+name: Build Server
+
+on:
+  workflow_dispatch:
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#    branches: [ "main" ]
+
+env:
+  # Path to the solution file relative to the root of the project.
+  SOLUTION_FILE_PATH: .
+
+  # Configuration type to build.
+  # You can convert this to a build matrix if you need coverage of multiple configuration types.
+  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+  BUILD_CONFIGURATION: Release
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ./server-mfc
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: run-vcpkg
+      # You may pin to the exact commit or the version.
+      # uses: lukka/run-vcpkg@831e6cd560cc8688a4967c5766e4215afbd196d9
+      uses: lukka/run-vcpkg@v10.6
+      with:
+        vcpkgGitCommitId: 6f7ffeb18f99796233b958aaaf14ec7bd4fb64b2
+
+    - name: vcpkg integrate install
+      run: vcpkg integrate install
+
+    - name: Intall dependencies
+      run: vcpkg install asio:x64-windows-static-md protobuf:x64-windows-static-md spdlog:x64-windows-static-md 
+
+    - name: Build
+      # Add additional options to the MSBuild command line here (like platform or verbosity level).
+      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
+      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}

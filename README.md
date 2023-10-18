@@ -21,6 +21,8 @@
 [![GitHub closed issues](https://img.shields.io/github/issues-closed/mkckr0/audio-share)](https://img.shields.io/github/issues-closed/mkckr0/audio-share)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/mkckr0/audio-share)](https://img.shields.io/github/issues-pr/mkckr0/audio-share)
 [![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/mkckr0/audio-share)](https://img.shields.io/github/issues-pr-closed/mkckr0/audio-share)
+[![Build App](https://github.com/mkckr0/audio-share/actions/workflows/build_app.yml/badge.svg)](https://github.com/mkckr0/audio-share/actions/workflows/build_app.yml)
+[![Build Server](https://github.com/mkckr0/audio-share/actions/workflows/build_server.yml/badge.svg)](https://github.com/mkckr0/audio-share/actions/workflows/build_server.yml)
 [![Release](https://github.com/mkckr0/audio-share/actions/workflows/release.yml/badge.svg)](https://github.com/mkckr0/audio-share/actions/workflows/release.yml)
 [![F-Droid](https://img.shields.io/f-droid/v/io.github.mkckr0.audio_share_app?logo=F-Droid)](https://f-droid.org/packages/io.github.mkckr0.audio_share_app)
 
