@@ -43,7 +43,7 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 - Download the `audio-share-server-cmd-windows.zip` for Windows, the `audio-share-server-cmd-linux.tar.gz` for Linux.
 - Uncompress the archive file.
 - Find the LAN address of your computer, such as `192.168.3.2`. Then run `as-cmd -b 192.168.3.2` to start the server. It will use the default port `65530` and select a default audio endpoint.
-- The operation of app is same as [Usage for Windows GUI](#Usage%20for%20Windows%20GUI).
+- The operation of app is same as [Usage for Windows GUI](#usage-for-windows-gui).
 
 ## Screenshot
 
