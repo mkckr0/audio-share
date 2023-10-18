@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if(WIN32)
-	add_compile_definitions(_UNICODE UNICODE)
+	add_compile_definitions(_UNICODE UNICODE _WIN32_WINNT=0x0A00)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")

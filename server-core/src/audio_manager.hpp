@@ -17,18 +17,18 @@
 #ifndef _BASIC_AUDIO_MANAGER_HPP
 #define _BASIC_AUDIO_MANAGER_HPP
 
-#ifdef linux
-#include "linux/audio_manager_impl.hpp"
-#endif
-
-#ifdef _WINDOWS
-#include "win32/audio_manager_impl.hpp"
-#endif
-
 #include <asio.hpp>
 #include <asio/use_awaitable.hpp>
 
 #include <memory>
+
+#ifdef linux
+#include "linux/audio_manager_impl.hpp"
+#endif
+
+#ifdef WIN32
+#include "win32/audio_manager_impl.hpp"
+#endif
 
 #include "client.pb.h"
 

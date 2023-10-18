@@ -26,7 +26,6 @@
 
 #include <mmdeviceapi.h>
 
-class audio_manager;
 class network_manager;
 
 // CAudioShareServerDlg dialog
@@ -38,9 +37,8 @@ public:
 	~CAudioShareServerDlg();
 
 private:
-	std::shared_ptr<audio_manager> m_audio_manager;
-	std::shared_ptr<network_manager> m_network_manager;
-
+	std::map<std::wstring, std::wstring> m_endpoint_map;	// <id, name>
+	std::shared_ptr<network_manager> m_network_manger;
 	void EnableInputControls(bool bEnable = true);
 	COLORREF GetBrushColor(HBRUSH brush);
 	bool ShowNotifyIcon(bool bEnable = true);

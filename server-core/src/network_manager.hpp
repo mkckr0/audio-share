@@ -17,10 +17,6 @@
 #ifndef _NETWORK_MANAGER_HPP
 #define _NETWORK_MANAGER_HPP
 
-#ifdef _WINDOWS
-#include <sdkddkver.h>
-#endif
-
 #include <memory>
 #include <vector>
 #include <string>

@@ -22,13 +22,13 @@
 #include <list>
 #include <ranges>
 
-#ifdef _WINDOWS
+#ifdef WIN32
 #include <iphlpapi.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "Iphlpapi.lib")
-#endif // _WINDOWS
+#endif // WIN32
 
 #include <spdlog/spdlog.h>
 #include <fmt/ranges.h>
@@ -44,7 +44,7 @@ std::vector<std::wstring> network_manager::get_local_addresss()
 {
     std::vector<std::wstring> address_list;
 
-#ifdef _WINDOWS
+#ifdef WIN32
     ULONG family = AF_INET;
     ULONG flags = GAA_FLAG_INCLUDE_ALL_INTERFACES;
 
@@ -70,7 +70,7 @@ std::vector<std::wstring> network_manager::get_local_addresss()
     }
 
     free(pAddresses);
-#endif // _WINDOWS
+#endif // WIN32
 
     std::sort(address_list.begin(), address_list.end());
     return address_list;

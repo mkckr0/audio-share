@@ -39,7 +39,7 @@ protected:
     struct roundtrip* _roundtrip;
 };
 
-} // namespace detail
+}
 
 #endif // linux
 #endif // !_AUDIO_MANAGER_HPP
