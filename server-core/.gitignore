@@ -1,4 +1,2 @@
 *.pb.h
 *.pb.cc
-.vscode
-out
