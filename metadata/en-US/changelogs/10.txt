@@ -1,0 +1,4 @@
+- Now, you can share Linux audio to Android phone!
+- Add cmd version of server. Windows or Linux Computer can use `as-cmd` to start a server.
+- Add heartbeat for TCP connection alive detection. Because Android app is killed but doesn't send `RST` or `FIN` to server in some cases.
+- Add `AudioTrack Buffer Size Scale` and `TCP Connect Timeout`. These two options can be set on app's Settings.
