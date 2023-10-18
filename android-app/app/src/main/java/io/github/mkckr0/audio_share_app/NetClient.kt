@@ -14,8 +14,6 @@
  *    limitations under the License.
  */
 
-@file:OptIn(ExperimentalTime::class)
-
 package io.github.mkckr0.audio_share_app
 
 import android.app.Application
@@ -29,7 +27,6 @@ import io.github.mkckr0.audio_share_app.pb.*
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
 import io.netty.channel.Channel
-import io.netty.channel.ChannelFuture
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
@@ -46,8 +43,6 @@ import io.netty.handler.codec.ByteToMessageDecoder
 import io.netty.handler.codec.MessageToByteEncoder
 import io.netty.handler.codec.MessageToMessageDecoder
 import io.netty.handler.codec.MessageToMessageEncoder
-import io.netty.handler.timeout.ReadTimeoutHandler
-import io.netty.handler.timeout.WriteTimeoutHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
@@ -55,13 +50,6 @@ import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.time.Period
-import java.util.Timer
-import kotlin.concurrent.timer
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.ExperimentalTime
-import kotlin.time.TimeMark
-import kotlin.time.TimeSource
 
 @Sharable
 class NetClient(private val handler: Handler, private val application: Application) {
@@ -77,75 +65,6 @@ class NetClient(private val handler: Handler, private val application: Applicati
         fun onNetError(e: String)
         fun onAudioStop()
         fun onAudioStart()
-    }
-
-    enum class CMD {
-        CMD_NONE,
-        CMD_GET_FORMAT,
-        CMD_START_PLAY,
-        CMD_HEARTBEAT,
-    }
-
-    private var tcpChannel: Channel? = null
-    private var udpChannel: Channel? = null
-    private var heartbeatTimer: Timer? = null
-    private var heartbeatLastTick = TimeSource.Monotonic.markNow()
-    private var _audioTrack: AudioTrack? = null
-    private val audioTrack get() = _audioTrack!!
-
-    fun start(host: String, port: Int) {
-        MainScope().launch(Dispatchers.IO) {
-            val workerGroup = NioEventLoopGroup()
-            try {
-                val connectTimeout = sharedPreferences.getString(
-                    "audio_tcp_connect_timeout",
-                    application.getString(R.string.audio_tcp_connect_timeout)
-                )!!.toInt()
-                val remoteAddress = InetSocketAddress(host, port)
-                val f = Bootstrap().group(workerGroup)
-                    .channel(NioSocketChannel::class.java)
-                    .option(ChannelOption.TCP_NODELAY, true)
-                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout)
-                    .handler(object : ChannelInitializer<SocketChannel>() {
-                        override fun initChannel(ch: SocketChannel) {
-                            ch.pipeline()
-                                .addLast(TcpChannelAdapter.TcpMessageEncoder())
-                                .addLast(TcpChannelAdapter.TcpMessageDecoder())
-                                .addLast(TcpChannelAdapter(this@NetClient))
-                        }
-                    }).connect(remoteAddress).sync()
-
-                if (!f.isSuccess) {
-                    if (f.cause() != null) {
-                        onFailed(f.cause())
-                    }
-                    return@launch
-                }
-
-                tcpChannel = f.channel()
-                Log.d(tag, "tcpChannel.localAddress: ${tcpChannel!!.localAddress()}")
-
-                udpChannel = Bootstrap().group(workerGroup)
-                    .channel(NioDatagramChannel::class.java)
-                    .handler(object : ChannelInitializer<DatagramChannel>() {
-                        override fun initChannel(ch: DatagramChannel) {
-                            ch.pipeline()
-                                .addLast(UdpChannelAdapter.UdpMessageEncoder(remoteAddress))
-                                .addLast(UdpChannelAdapter.UdpMessageDecoder())
-                                .addLast(UdpChannelAdapter(this@NetClient))
-                        }
-                    }).bind((tcpChannel!!.localAddress() as InetSocketAddress).hostString, 0).sync().channel()
-
-                Log.d(tag, "udpChannel.localAddress: ${udpChannel!!.localAddress()}")
-
-                tcpChannel?.closeFuture()?.sync()
-                udpChannel?.closeFuture()?.sync()
-            } catch (e: Exception) {
-                onFailed(e)
-            } finally {
-                workerGroup.shutdownGracefully()
-            }
-        }
     }
 
     class TcpChannelAdapter(private val parent: NetClient) : ChannelInboundHandlerAdapter() {
@@ -168,9 +87,7 @@ class NetClient(private val handler: Handler, private val application: Applicati
 
         override fun channelInactive(ctx: ChannelHandlerContext) {
             Log.d(tag, "disconnected")
-            if (parent.tcpChannel != null) {
-                parent.onFailed(IOException("Connection close by peer"))
-            }
+            parent.onFailed(IOException("Connection close by peer"))
         }
 
         class TcpMessage {
@@ -192,19 +109,9 @@ class NetClient(private val handler: Handler, private val application: Applicati
                         val id = msg.id
                         if (id > 0) {
                             parent.udpChannel?.writeAndFlush(id)
-                            parent.heartbeatLastTick = TimeSource.Monotonic.markNow()
-                            parent.heartbeatTimer = timer(null, true, 0, 3000) {
-                                if (TimeSource.Monotonic.markNow() - parent.heartbeatLastTick > 5.seconds) {
-                                    parent.onFailed(IOException("Heartbeat Timeout"))
-                                }
-                                parent.sendCMD(ctx, CMD.CMD_HEARTBEAT)
-                            }
-                            Log.d(tag, "start heartbeat")
                         } else {
                             Log.e(tag, "id <= 0")
                         }
-                    } else if (msg.cmd == CMD.CMD_HEARTBEAT) {
-                        parent.heartbeatLastTick = TimeSource.Monotonic.markNow()
                     } else {
                         Log.e(tag, "error cmd")
                     }
@@ -333,7 +240,7 @@ class NetClient(private val handler: Handler, private val application: Applicati
 //            Log.d(tag, "channelRead udp")
             try {
                 if (msg is FloatArray) {
-                    parent.audioTrack.write(
+                    parent.audioTrack?.write(
                         msg, 0, msg.size, AudioTrack.WRITE_NON_BLOCKING
                     )
                 } else {
@@ -345,35 +252,94 @@ class NetClient(private val handler: Handler, private val application: Applicati
         }
     }
 
+    enum class CMD {
+        CMD_NONE,
+        CMD_GET_FORMAT,
+        CMD_START_PLAY,
+    }
+
+    private var tcpChannel: Channel? = null
+    private var udpChannel: Channel? = null
+    private var audioTrack: AudioTrack? = null
+
+    fun start(host: String, port: Int) {
+        MainScope().launch(Dispatchers.IO) {
+            val workerGroup = NioEventLoopGroup()
+            try {
+                val connectTimeout = sharedPreferences.getString(
+                    "audio_tcp_connect_timeout",
+                    application.getString(R.string.audio_tcp_connect_timeout)
+                )!!.toInt()
+                val remoteAddress = InetSocketAddress(host, port)
+                val f = Bootstrap().group(workerGroup)
+                    .channel(NioSocketChannel::class.java)
+                    .option(ChannelOption.TCP_NODELAY, true)
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout)
+                    .handler(object : ChannelInitializer<SocketChannel>() {
+                        override fun initChannel(ch: SocketChannel) {
+                            ch.pipeline()
+                                .addLast(TcpChannelAdapter.TcpMessageEncoder())
+                                .addLast(TcpChannelAdapter.TcpMessageDecoder())
+                                .addLast(TcpChannelAdapter(this@NetClient))
+                        }
+                    }).connect(remoteAddress).sync()
+
+                if (!f.isSuccess) {
+                    if (f.cause() != null) {
+                        onFailed(f.cause())
+                    }
+                    return@launch
+                }
+
+                tcpChannel = f.channel()
+
+                udpChannel = Bootstrap()
+                    .group(workerGroup)
+                    .channel(NioDatagramChannel::class.java)
+                    .handler(object : ChannelInitializer<DatagramChannel>() {
+                        override fun initChannel(ch: DatagramChannel) {
+                            ch.pipeline()
+                                .addLast(UdpChannelAdapter.UdpMessageEncoder(remoteAddress))
+                                .addLast(UdpChannelAdapter.UdpMessageDecoder())
+                                .addLast(UdpChannelAdapter(this@NetClient))
+                        }
+                    }).bind(remoteAddress.port).channel()   // local udp port is same as remote
+
+                tcpChannel?.closeFuture()?.sync()
+                udpChannel?.closeFuture()?.sync()
+            } catch (e: Exception) {
+                onFailed(e)
+            } finally {
+                workerGroup.shutdownGracefully()
+            }
+        }
+    }
+
     fun stop() {
         destroy()
         handler.onAudioStop()
     }
 
     private fun destroy() {
-        heartbeatTimer?.cancel()
-        heartbeatTimer = null
         tcpChannel?.close()
-        tcpChannel = null
         udpChannel?.close()
-        udpChannel = null
-        _audioTrack = null
+        audioTrack = null
     }
 
     fun isPlaying(): Boolean {
-        return _audioTrack != null
+        return audioTrack != null
     }
 
     private fun sendCMD(ctx: ChannelHandlerContext, cmd: CMD) {
-        ctx.writeAndFlush(cmd.ordinal)
+        ctx.writeAndFlush(cmd.ordinal).sync()
     }
 
     private fun onGetFormat(ctx: ChannelHandlerContext, format: Client.AudioFormat) {
 
-        _audioTrack = createAudioTrack(format)
+        audioTrack = createAudioTrack(format)
 
         MainScope().launch(Dispatchers.IO) {
-            audioTrack.play()
+            audioTrack?.play()
         }
 
         MainScope().launch(Dispatchers.Main) {
