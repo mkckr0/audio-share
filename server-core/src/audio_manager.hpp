@@ -26,7 +26,7 @@
 #include "linux/audio_manager_impl.hpp"
 #endif
 
-#ifdef WIN32
+#ifdef win32
 #include "win32/audio_manager_impl.hpp"
 #endif
 

@@ -59,7 +59,7 @@ struct roundtrip {
     }
 };
 
-detail::audio_manager_impl::audio_manager_impl()
+audio_manager::audio_manager()
 {
     pw_init(NULL, NULL);
     spdlog::info("pipewire header_version: {}, library_version: {}", pw_get_headers_version(), pw_get_library_version());
@@ -72,9 +72,11 @@ detail::audio_manager_impl::audio_manager_impl()
         ._sync = 0,
         ._loop = _loop,
     };
+
+    _format = std::make_shared<AudioFormat>();
 }
 
-detail::audio_manager_impl::~audio_manager_impl()
+audio_manager::~audio_manager()
 {
     pw_core_disconnect(_core);
     pw_context_destroy(_context);
@@ -211,6 +213,11 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     pw_main_loop_run(_loop);
 
     pw_stream_destroy(user_data.stream);
+}
+
+std::string audio_manager::get_format_binary()
+{
+    return _format->SerializeAsString();
 }
 
 int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
