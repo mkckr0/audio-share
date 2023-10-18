@@ -221,8 +221,8 @@ BOOL CAudioShareServerDlg::OnInitDialog()
     m_buttonRefresh.SetBitmap(pngImage);
 
     // create network_manager
-    m_audio_manager = std::make_shared<audio_manager>();
-    m_network_manager = std::make_shared<network_manager>(m_audio_manager);
+    m_audio_manager = std::make_unique<audio_manager>();
+    m_network_manager = std::make_unique<network_manager>(m_audio_manager);
 
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
