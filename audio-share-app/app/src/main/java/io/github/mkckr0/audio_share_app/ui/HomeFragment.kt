@@ -16,36 +16,18 @@
 
 package io.github.mkckr0.audio_share_app.ui
 
-import android.animation.Animator
-import android.animation.Animator.AnimatorListener
-import android.animation.AnimatorListenerAdapter
-import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
-import android.graphics.Color
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AnimationSet
-import android.widget.TextView
-import androidx.core.content.ContextCompat.getSystemService
-import androidx.core.content.res.ResourcesCompat.ThemeCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.google.android.material.slider.Slider
-import com.google.android.material.snackbar.Snackbar
-import io.github.mkckr0.audio_share_app.R
 import io.github.mkckr0.audio_share_app.databinding.FragmentHomeBinding
 import io.github.mkckr0.audio_share_app.model.HomeViewModel
-import kotlinx.coroutines.NonCancellable.start
 
 class HomeFragment : Fragment() {
 
@@ -79,26 +61,7 @@ class HomeFragment : Fragment() {
         viewModel.hostError.observe(viewLifecycleOwner) { binding.textFieldHostLayout.error = it }
         viewModel.portError.observe(viewLifecycleOwner) { binding.textFieldPortLayout.error = it }
         binding.buttonStart.setOnClickListener { viewModel.startPlay() }
-        binding.textViewInfo.setOnLongClickListener {
-            ValueAnimator.ofInt(0).apply {
-                duration = 100
-                addListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationStart(animation: Animator) {
-                        val typedValue = TypedValue()
-                        this@HomeFragment.requireContext().theme.resolveAttribute(com.google.android.material.R.attr.colorSurfaceVariant, typedValue, true)
-                        binding.textViewInfo.setBackgroundColor(typedValue.data)
-                        val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("label", (it as TextView).text))
-                        Snackbar.make(requireView(), "The Exception Message has been copied.", Snackbar.LENGTH_SHORT).show()
-                    }
-                    override fun onAnimationEnd(animation: Animator) {
-                        binding.textViewInfo.setBackgroundColor(0)
-                    }
-                })
-                start()
-            }
-            true
-        }
+        binding.textViewInfo.movementMethod = ScrollingMovementMethod()
         binding.textFieldHost.doOnTextChanged { _, _, _, _ -> viewModel.hostError.value = null }
         binding.textFieldPort.doOnTextChanged { _, _, _, _ -> viewModel.portError.value = null }
     }
