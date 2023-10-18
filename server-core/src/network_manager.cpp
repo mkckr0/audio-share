@@ -120,8 +120,8 @@ void network_manager::stop_server()
     _net_thread.join();
     _audio_manager->stop();
     _playing_peer_list.clear();
-    _ioc = nullptr;
     _udp_server = nullptr;
+    _ioc = nullptr;
     spdlog::info("server stopped");
 }
 
