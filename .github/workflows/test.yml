@@ -13,23 +13,21 @@ jobs:
     outputs:
       hash: ${{ steps.get_hash.outputs.hash }}
     steps:
-      - run: echo ${{ github.workspace }} ~
+      - uses: actions/checkout@v3
+      - uses: microsoft/setup-msbuild@v1
+      - uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: e57b2167e66c847f991bd6bce1355b85acd944e8
+      - run: vcpkg integrate install
+      - run: vcpkg install asio protobuf spdlog
+        env:
+          VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
+      - run: msbuild /m /p:Configuration=Release,Platform=x64
+      - uses: actions/upload-artifact@v3
+        with:
+          name: server
+          path: x64/Release/*.exe
+      - name: Get sha256num
+        run: sha256sum x64/Release/*.exe | awk '{ printf "hash=%s", $1 }' | tee $GITHUB_OUTPUT
+        id: get_hash
         shell: bash
-      # - uses: actions/checkout@v3
-      # - uses: microsoft/setup-msbuild@v1
-      # - uses: lukka/run-vcpkg@v11
-      #   with:
-      #     vcpkgGitCommitId: e57b2167e66c847f991bd6bce1355b85acd944e8
-      # - run: vcpkg integrate install
-      # - run: vcpkg install asio protobuf spdlog
-      #   env:
-      #     VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
-      # - run: msbuild /m /p:Configuration=Release,Platform=x64
-      # - uses: actions/upload-artifact@v3
-      #   with:
-      #     name: server
-      #     path: x64/Release/*.exe
-      # - name: Get sha256num
-      #   run: sha256sum x64/Release/*.exe | awk '{ printf "hash=%s", $1 }' | tee $GITHUB_OUTPUT
-      #   id: get_hash
-      #   shell: bash
