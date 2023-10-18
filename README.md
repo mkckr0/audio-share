@@ -31,19 +31,18 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 ## Usage for Windows GUI
 
 - You need a computer with Windows 10 x86_64, and a phone with Android 6.0(API 23)+.
-- Download APK file and AudioShareServer.exe from [latest release](https://github.com/mkckr0/audio-share/releases/latest).
-- Open the AudioShareServer.exe on your computer. The default arguments may work well. But you may still have to check the "Host" part. It's normally the LAN address. Make sure your phone can connect your computer over this IP address. Then Click "Start Server" button.
-- Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step. Click "▶" button and enjoy the audio🎶.
+- Download app.apk and AudioShareServer.exe from [latest release](https://github.com/mkckr0/audio-share/releases/latest).
+- Make sure AudioShareServer.exe in your computer and install audio-share-app-x.x.x-release.apk to your phone.
+- Open AudioShareServer.exe in your computer and Audio Share app in your phone.
+- Check all arguments are correct, especially the "Host" part. Make sure your phone can connect your computer over this IP.
+- Click "Start Server" in AudioShareServer.exe and click "▶" button in app. Then enjoy the audio🎶.
 
 > **Caution!!!**: This app doesn't support auto reconnecting feature at present. Once the app is killed  or disconnected by Android power saver, the audio playing will be stop. Adding app to the whitelist of power saver is recommended.
 
 ## Usage for Windows/Linux CMD
 
-- Your Linux distro must have a PipeWire. Rocky Linux 9 works well.
-- Download the `audio-share-server-cmd-windows.zip` for Windows, the `audio-share-server-cmd-linux.tar.gz` for Linux.
-- Uncompress the archive file.
-- Find the LAN address of your computer, such as `192.168.3.2`. Then run `as-cmd -b 192.168.3.2` to start the server. It will use the default port `65530` and select a default audio endpoint.
-- The operation of app is same as [Usage for Windows GUI](#Usage%20for%20Windows%20GUI).
+
+
 
 ## Screenshot
 
@@ -54,21 +53,13 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 
 ## Compile from source
 
-- Android App
-    - Android Studio will import all dependencies automatically.
-
-- Server MFC
-    - vcpkg is required for install dependencies.
-    - Run `vcpkg install asio protobuf spdlog` to install deps. The vcpkg triplet is `x64-windows-static-md`.
+- Server side
+    - vcpkg is required for install dependencies. The dependencies are below:   
+    `vcpkg install asio:x64-windows-static-md protobuf:x64-windows-static-md spdlog:x64-windows-static-md`
     - Visual Studio 2022 with "Desktop development with C++" workload and "C++ MFC for latest v143 build tools (x86 & x64)" option is required for compiling.
 
-- Server CMD
-    - CMake and a compiler support C++20 is required. Linux also need `libpipewire-dev` or `pipewire-devel`.
-    - Install vcpkg, and set `VPCKG_ROOT` env. This env is required by `CMakePresets.json`.
-    - Run `vcpkg install asio protobuf spdlog cxxopts` to install deps. The vcpkg triplet is `x64-windows-static-md` for Windows, `x64-linux` for Linux.
-    - Run `cmake --preset linux-Release` to configure.
-    - Run `cmake --build --preset linux-Release` to build. The `as-cmd` is located in `out/install/linux-Release/bin/as-cmd`.
-    - For Windows, replace `linux` to `windows` in previous two steps.
+- App side
+    - Android Studio will import all dependencies automatically.
 
 ## Star History
 
