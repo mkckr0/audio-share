@@ -14,6 +14,8 @@
  *    limitations under the License.
  */
 
+@file:OptIn(ExperimentalTime::class)
+
 package io.github.mkckr0.audio_share_app
 
 import android.app.Application
@@ -27,6 +29,7 @@ import io.github.mkckr0.audio_share_app.pb.*
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
 import io.netty.channel.Channel
+import io.netty.channel.ChannelFuture
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
@@ -43,6 +46,8 @@ import io.netty.handler.codec.ByteToMessageDecoder
 import io.netty.handler.codec.MessageToByteEncoder
 import io.netty.handler.codec.MessageToMessageDecoder
 import io.netty.handler.codec.MessageToMessageEncoder
+import io.netty.handler.timeout.ReadTimeoutHandler
+import io.netty.handler.timeout.WriteTimeoutHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
@@ -50,10 +55,12 @@ import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.time.Period
 import java.util.Timer
 import kotlin.concurrent.timer
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
+import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
 @Sharable
@@ -82,7 +89,6 @@ class NetClient(private val handler: Handler, private val application: Applicati
     private var tcpChannel: Channel? = null
     private var udpChannel: Channel? = null
     private var heartbeatTimer: Timer? = null
-    @OptIn(ExperimentalTime::class)
     private var heartbeatLastTick = TimeSource.Monotonic.markNow()
     private var _audioTrack: AudioTrack? = null
     private val audioTrack get() = _audioTrack!!
@@ -173,7 +179,6 @@ class NetClient(private val handler: Handler, private val application: Applicati
             var id: Int = 0
         }
 
-        @OptIn(ExperimentalTime::class)
         override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
             Log.d(tag, "channelRead tcp")
             try {
