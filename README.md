@@ -28,9 +28,9 @@
 
 <a href="https://f-droid.org/packages/io.github.mkckr0.audio_share_app"><img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" height="75"></a>
 
-Audio Share can share Windows/Linux computer's audio to Android phone over network, so your phone becomes the speaker of computer. (You needn't to buy a new speaker😄.)
+Audio Share can share Windows computer's audio to Android phone over network, so your phone becomes the speaker of computer. (You needn't to buy a new speaker😄.)
 
-## Usage for Windows GUI
+## Usage
 
 - You need a computer with Windows 10 x86_64, and a phone with Android 6.0(API 23)+.
 - Download app.apk and AudioShareServer.exe from [latest release](https://github.com/mkckr0/audio-share/releases/latest).
@@ -40,11 +40,6 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 - Click "Start Server" in AudioShareServer.exe and click "▶" button in app. Then enjoy the audio🎶.
 
 > **Caution!!!**: This app doesn't support auto reconnecting feature at present. Once the app is killed  or disconnected by Android power saver, the audio playing will be stop. Adding app to the whitelist of power saver is recommended.
-
-## Usage for Windows/Linux CMD
-
-
-
 
 ## Screenshot
 
@@ -90,11 +85,9 @@ This project is licensed under the [Apache-2.0 license](https://opensource.org/l
 ## Used third-party libraries
 
 - [Asio](https://github.com/chriskohlhoff/asio) licensed under the [BSL-1.0 license](http://www.boost.org/LICENSE_1_0.txt).
-- [Protocol Buffers](https://github.com/protocolbuffers/protobuf) licensed under the [LICENSE](https://github.com/protocolbuffers/protobuf/blob/main/LICENSE).
+- [Protocol Buffers]() licensed under the [LICENSE](https://github.com/protocolbuffers/protobuf/blob/main/LICENSE).
 - [spdlog](https://github.com/gabime/spdlog) licensed under the [MIT license](https://github.com/gabime/spdlog/blob/v1.x/LICENSE).
 - [{fmt}](https://github.com/fmtlib/fmt) licensed under the [LICENSE](https://github.com/fmtlib/fmt/blob/master/LICENSE).
-- [cxxopts](https://github.com/jarro2783/cxxopts) licensed under the [MIT license](https://github.com/jarro2783/cxxopts/blob/master/LICENSE)
 - [Netty](https://github.com/netty/netty) licensed under the [Apache-2.0 license](http://www.apache.org/licenses/LICENSE-2.0).
 - [Material Components for Android](https://github.com/material-components/material-components-android) licensed under the [Apache-2.0 license](http://www.apache.org/licenses/LICENSE-2.0).
-- [Protobuf Plugin for Gradle](https://github.com/google/protobuf-gradle-plugin) licensed under the [LICENSE](https://github.com/google/protobuf-gradle-plugin/blob/master/LICENSE).
-- [PipeWire](https://gitlab.freedesktop.org/pipewire/pipewire) licensed under the [LICENSE](https://gitlab.freedesktop.org/pipewire/pipewire/-/blob/master/LICENSE).
+- [Protobuf Plugin for Gradle](https://github.com/google/protobuf-gradle-plugin)  licensed under the [LICENSE](https://github.com/google/protobuf-gradle-plugin/blob/master/LICENSE).
