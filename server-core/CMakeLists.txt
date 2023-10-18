@@ -43,7 +43,7 @@ add_executable(server-cmd
 )
 set_target_properties(server-cmd PROPERTIES OUTPUT_NAME ${AUDIO_SHARE_BIN_NAME})
 if(UNIX)
-	target_link_options(server-cmd PRIVATE "-static-libstdc++")
+	target_link_options(server-cmd PRIVATE "-static-libgcc" "-static-libstdc++")
 endif(UNIX)
 
 find_package(asio CONFIG REQUIRED)
