@@ -33,8 +33,6 @@ import io.netty.channel.ChannelInboundHandlerAdapter
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.ConnectTimeoutException
-import io.netty.channel.epoll.EpollChannelConfig
-import io.netty.channel.epoll.EpollChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.DatagramChannel
 import io.netty.channel.socket.DatagramPacket
@@ -275,6 +273,7 @@ class NetClient(private val handler: Handler, private val application: Applicati
                 val remoteAddress = InetSocketAddress(host, port)
                 val f = Bootstrap().group(workerGroup)
                     .channel(NioSocketChannel::class.java)
+                    .option(ChannelOption.SO_KEEPALIVE, true)
                     .option(ChannelOption.TCP_NODELAY, true)
                     .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout)
                     .handler(object : ChannelInitializer<SocketChannel>() {
