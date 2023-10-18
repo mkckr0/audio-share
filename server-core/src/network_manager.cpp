@@ -89,6 +89,7 @@ void network_manager::start_server(const std::string& host, const uint16_t port,
 
         _audio_manager->start_loopback_recording(shared_from_this(), endpoint_id);
         asio::co_spawn(*_ioc, accept_tcp_loop(std::move(acceptor)), asio::detached);
+        asio::co_spawn(*_ioc, check_alive(), asio::detached);
 
         // start tcp success
         spdlog::info("tcp listen success on {}", endpoint);
@@ -132,10 +133,7 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
         cmd_t cmd = cmd_t::cmd_none;
         auto [ec, _] = co_await asio::async_read(*peer, asio::buffer(&cmd, sizeof(cmd)));
         if (ec) {
-            spdlog::info("close  {}", peer->remote_endpoint());
-            remove_playing_peer(peer);
-            peer->shutdown(ip::tcp::socket::shutdown_both);
-            peer->close();
+            close_session(peer);
             spdlog::trace("{} {}", __func__, ec);
             co_return;
         }
@@ -150,24 +148,44 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
                 asio::buffer(&size, sizeof(size)),
                 asio::buffer(format),
             };
-            co_await asio::async_write(*peer, buffers);
+            auto [ec, _] = co_await asio::async_write(*peer, buffers);
+            if (ec) {
+                close_session(peer);
+                spdlog::trace("{} {}", __func__, ec);
+                co_return;
+            }
         } else if (cmd == cmd_t::cmd_start_play) {
             int id = add_playing_peer(peer);
             if (id <= 0) {
                 spdlog::error("{} id error", __func__);
-                peer->shutdown(ip::tcp::socket::shutdown_both);
+                close_session(peer);
+                spdlog::trace("{} {}", __func__, ec);
                 continue;
             }
             std::array<asio::const_buffer, 2> buffers = {
                 asio::buffer(&cmd, sizeof(cmd)),
                 asio::buffer(&id, sizeof(id)),
             };
-            co_await asio::async_write(*peer, buffers);
+            auto [ec, _] = co_await asio::async_write(*peer, buffers);
+            if (ec) {
+                close_session(peer);
+                spdlog::trace("{} {}", __func__, ec);
+                co_return;
+            }
+        } else if (cmd == cmd_t::cmd_heartbeat) {
+            auto it = _playing_peer_list.find(peer);
+            if (it != _playing_peer_list.end()) {
+                it->second->last_tick = std::chrono::steady_clock::now();
+                auto [ec, _] = co_await asio::async_write(*peer, asio::buffer(&cmd, sizeof(cmd)));
+                if (ec) {
+                    close_session(peer);
+                    spdlog::trace("{} {}", __func__, ec);
+                    co_return;
+                }
+            }
         } else {
             spdlog::error("{} error cmd", __func__);
-            remove_playing_peer(peer);
-            peer->shutdown(ip::tcp::socket::shutdown_both);
-            peer->close();
+            close_session(peer);
             co_return;
         }
     }
@@ -184,27 +202,6 @@ asio::awaitable<void> network_manager::accept_tcp_loop(tcp_acceptor acceptor)
         }
 
         spdlog::info("accept {}", peer->remote_endpoint());
-
-        // Keep-Alive
-        // peer->set_option(ip::tcp::socket::keep_alive(true), ec);
-        // if (ec) {
-        //    spdlog::info("{} {}", __func__, ec);
-        //}
-        // using tcp_keepidle = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPIDLE>;
-        // peer->set_option(tcp_keepidle(3), ec);
-        // if (ec) {
-        //    spdlog::info("{} {}", __func__, ec);
-        //}
-        // using tcp_keepintvl = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPINTVL>;
-        // peer->set_option(tcp_keepintvl(2), ec);
-        // if (ec) {
-        //    spdlog::info("{} {}", __func__, ec);
-        //}
-        // using tcp_keepcnt = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPCNT>;
-        // peer->set_option(tcp_keepcnt(3), ec);
-        // if (ec) {
-        //    spdlog::info("{} {}", __func__, ec);
-        //}
 
         // No-Delay
         peer->set_option(ip::tcp::no_delay(true), ec);
@@ -231,6 +228,37 @@ asio::awaitable<void> network_manager::accept_udp_loop()
     }
 }
 
+asio::awaitable<void> network_manager::check_alive()
+{
+    using namespace std::chrono_literals;
+    steady_timer timer(*_ioc);
+    while (true) {
+        timer.expires_after(1s);
+        auto [ec] = co_await timer.async_wait();
+        if (ec) {
+            co_return;
+        }
+        auto now = std::chrono::steady_clock::now();
+        for (auto it = _playing_peer_list.begin(); it != _playing_peer_list.end();) {
+            if (now - it->second->last_tick > _heartbeat_timeout) {
+                spdlog::info("{} timeout", it->first->remote_endpoint());
+                it = close_session(it->first);
+            } else {
+                ++it;
+            }
+        }
+    }
+}
+
+auto network_manager::close_session(std::shared_ptr<tcp_socket> peer) -> playing_peer_list_t::iterator
+{
+    spdlog::info("close {}", peer->remote_endpoint());
+    auto it = remove_playing_peer(peer);
+    peer->shutdown(ip::tcp::socket::shutdown_both);
+    peer->close();
+    return it;
+}
+
 int network_manager::add_playing_peer(std::shared_ptr<tcp_socket> peer)
 {
     if (_playing_peer_list.contains(peer)) {
@@ -241,26 +269,28 @@ int network_manager::add_playing_peer(std::shared_ptr<tcp_socket> peer)
     auto info = _playing_peer_list[peer] = std::make_shared<peer_info_t>();
     static int g_id = 0;
     info->id = ++g_id;
-    info->tcp_peer = peer;
+    info->last_tick = std::chrono::steady_clock::now();
 
     spdlog::trace("{} add id:{} tcp://{}", __func__, info->id, peer->remote_endpoint());
     return info->id;
 }
 
-void network_manager::remove_playing_peer(std::shared_ptr<tcp_socket> peer)
+auto network_manager::remove_playing_peer(std::shared_ptr<tcp_socket> peer) -> playing_peer_list_t::iterator
 {
-    if (!_playing_peer_list.contains(peer)) {
+    auto it = _playing_peer_list.find(peer);
+    if (it == _playing_peer_list.end()) {
         spdlog::error("{} repeat remove tcp://{}", __func__, peer->remote_endpoint());
-        return;
+        return it;
     }
 
-    _playing_peer_list.erase(peer);
+    it = _playing_peer_list.erase(it);
     spdlog::trace("{} remove tcp://{}", __func__, peer->remote_endpoint());
+    return it;
 }
 
 void network_manager::fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer)
 {
-    auto it = std::find_if(_playing_peer_list.begin(), _playing_peer_list.end(), [id](const std::pair<std::shared_ptr<tcp_socket>, std::shared_ptr<peer_info_t>>& e) {
+    auto it = std::find_if(_playing_peer_list.begin(), _playing_peer_list.end(), [id](const playing_peer_list_t::value_type& e) {
         return e.second->id == id;
     });
 
@@ -270,7 +300,7 @@ void network_manager::fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer)
     }
 
     it->second->udp_peer = udp_peer;
-    spdlog::trace("{} fill udp peer id:{} tcp://{} udp://{}", __func__, id, it->second->tcp_peer->remote_endpoint(), udp_peer);
+    spdlog::trace("{} fill udp peer id:{} tcp://{} udp://{}", __func__, id, it->first->remote_endpoint(), udp_peer);
 }
 
 void network_manager::broadcast_audio_data(const char* data, int count, int block_align)
@@ -296,9 +326,11 @@ void network_manager::broadcast_audio_data(const char* data, int count, int bloc
         begin_pos += real_seg_size;
     }
 
-    for (auto seg : seg_list) {
-        for (auto& [peer, info] : _playing_peer_list) {
-            _udp_server->async_send_to(asio::buffer(*seg), info->udp_peer, [seg](const asio::error_code& ec, std::size_t bytes_transferred) {});
+    _ioc->post([seg_list = std::move(seg_list), self = shared_from_this()] {
+        for (auto seg : seg_list) {
+            for (auto& [peer, info] : self->_playing_peer_list) {
+                self->_udp_server->async_send_to(asio::buffer(*seg), info->udp_peer, [seg](const asio::error_code& ec, std::size_t bytes_transferred) {});
+            }
         }
-    }
+    });
 }

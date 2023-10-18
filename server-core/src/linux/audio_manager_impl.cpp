@@ -92,7 +92,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     spdlog::info("endpoint_id: {}", endpoint_id);
     endpoint_list_t endpoint_list;
     get_endpoint_list(endpoint_list);
-    auto it = std::find_if(endpoint_list.begin(), endpoint_list.end(), [&](const std::pair<std::string, std::string>& e) {
+    auto it = std::find_if(endpoint_list.begin(), endpoint_list.end(), [&](const endpoint_list_t::value_type& e) {
         return e.first == endpoint_id;
     });
     if (it != endpoint_list.end()) {

@@ -41,14 +41,17 @@ class network_manager : public std::enable_shared_from_this<network_manager>
 
     struct peer_info_t {
         int id = 0;
-        std::shared_ptr<tcp_socket> tcp_peer;
         asio::ip::udp::endpoint udp_peer;
+        std::chrono::steady_clock::time_point last_tick;
     };
+
+    using playing_peer_list_t = std::map<std::shared_ptr<tcp_socket>, std::shared_ptr<peer_info_t>>;
 
     enum class cmd_t : uint32_t {
         cmd_none = 0,
         cmd_get_format = 1,
         cmd_start_play = 2,
+        cmd_heartbeat = 3,
     };
 
 public:
@@ -61,14 +64,18 @@ public:
     void stop_server();
     void wait_server();
 
+private:
     asio::awaitable<void> accept_tcp_loop(tcp_acceptor acceptor);
     asio::awaitable<void> read_loop(std::shared_ptr<tcp_socket> peer);
     asio::awaitable<void> accept_udp_loop();
-
+    asio::awaitable<void> check_alive();
+    
+    playing_peer_list_t::iterator close_session(std::shared_ptr<tcp_socket> peer);
     int add_playing_peer(std::shared_ptr<tcp_socket> peer);
-    void remove_playing_peer(std::shared_ptr<tcp_socket> peer);
+    playing_peer_list_t::iterator remove_playing_peer(std::shared_ptr<tcp_socket> peer);
     void fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer);
 
+public:
     void broadcast_audio_data(const char* data, int count, int block_align);
     
     std::shared_ptr<asio::io_context> _ioc;
@@ -76,7 +83,8 @@ private:
     std::shared_ptr<audio_manager> _audio_manager;
     std::thread _net_thread;
     std::unique_ptr<udp_socket> _udp_server;
-    std::map<std::shared_ptr<tcp_socket>, std::shared_ptr<peer_info_t>> _playing_peer_list;
+    playing_peer_list_t _playing_peer_list;
+    constexpr static auto _heartbeat_timeout = std::chrono::seconds(5);
 };
 
 #endif // !_NETWORK_MANAGER_HPP
