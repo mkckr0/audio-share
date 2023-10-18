@@ -22,8 +22,6 @@ jobs:
         working-directory: server-core
     outputs:
       hash: ${{ steps.get_hash.outputs.hash }}
-    env:
-      VCPKG_DEFAULT_TRIPLET: ${{ matrix.vcpkg_triplet }}
     steps:
       - uses: actions/checkout@v3
       - name: Install Linux Deps
@@ -33,6 +31,8 @@ jobs:
       - uses: lukka/run-vcpkg@v11
         with:
           vcpkgGitCommitId: e57b2167e66c847f991bd6bce1355b85acd944e8
+        env:
+          VCPKG_DEFAULT_TRIPLET: ${{ matrix.vcpkg_triplet }}
       - run: vcpkg integrate install
       - run: vcpkg install asio protobuf spdlog cxxopts
       - uses: lukka/run-cmake@v10
