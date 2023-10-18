@@ -1,4 +1,3 @@
-#include "config.h"
 #include "audio_manager.hpp"
 #include "network_manager.hpp"
 
@@ -8,7 +7,7 @@
 
 int main(int argc, char* argv[])
 {
-    cxxopts::Options options(AUDIO_SHARE_BIN_NAME, "Example:\n  " AUDIO_SHARE_BIN_NAME " -l 192.168.3.2:65530 -e 48\n");
+    cxxopts::Options options("audio-share-server-cmd", "Example:\n  audio-share-server-cmd -l 192.168.3.2:65530 -e 48\n");
 
     // clang-format off
     options.add_options()
@@ -16,8 +15,7 @@ int main(int argc, char* argv[])
         ("l,list", "List all enpoints")
         ("b,bind", "The server bind address. The default port is 65530", cxxopts::value<std::string>(), "<host>[:<port>]")
         ("e,endpoint", "Specify the endpoint id. If not set, will use default", cxxopts::value<std::string>(), "[endpoint]")
-        ("V,verbose", "Set log level to \"trace\"")
-        ("v,version", "Show version")
+        ("v,verbose", "Set log level to \"trace\"")
         ;
     // clang-format on
 
@@ -25,11 +23,6 @@ int main(int argc, char* argv[])
         auto result = options.parse(argc, argv);
         if (result.count("help")) {
             std::cout << options.help();
-            return EXIT_SUCCESS;
-        }
-
-        if (result.count("version")) {
-            fmt::println("{}\nversion: {}\nurl: {}", AUDIO_SHARE_BIN_NAME, AUDIO_SHARE_VERSION, AUDIO_SHARE_HOMEPAGE);
             return EXIT_SUCCESS;
         }
 

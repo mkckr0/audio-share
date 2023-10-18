@@ -1,7 +1,7 @@
 pushd $(dirname $0)/.. &>/dev/null
 
-version_name=$(bash ./scripts/get_version.sh -n)
-version_code=$(bash ./scripts/get_version.sh -c)
+version_name=$(bash ./script/get_version.sh -n)
+version_code=$(bash ./script/get_version.sh -c)
 file_version0=$version_name.0
 file_version1=$(echo $file_version0 | sed -En 's|\.|,|gp')
 product_version=$file_version1
@@ -12,8 +12,6 @@ echo VERSION: \
 
 sed -Ebi "s|versionName\s*=\s*\"[^\"]*\"|versionName = \"$version_name\"|g" client-android/app/build.gradle.kts
 sed -Ebi "s|versionCode\s*=\s*[0-9]*|versionCode = $version_code|g" client-android/app/build.gradle.kts
-
-sed -Ebi "s|\tVERSION\s+[0-9.]*|\tVERSION $version_name|g" server-core/CMakeLists.txt
 
 sed -Ebi "s|Audio Share Server, Version [^\"]*|Audio Share Server, Version $version_name|g" server-mfc/AudioShareServer.rc
 sed -Ebi "s|FILEVERSION [0-9,]*|FILEVERSION $file_version1|g" server-mfc/AudioShareServer.rc

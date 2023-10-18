@@ -1,16 +1,10 @@
 cmake_minimum_required(VERSION 3.20.0)
 
-project(audio-share
-	VERSION 0.0.0
-	HOMEPAGE_URL "https://github.com/mkckr0/audio-share"
-)
+project(audio-share)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-set(AUDIO_SHARE_BIN_NAME "as-cmd")
-configure_file(src/config.h.in config.h)
 
 if(WIN32)
 	add_compile_definitions(_UNICODE UNICODE)
@@ -41,7 +35,7 @@ add_executable(server-cmd
 	${lib_src_list}
 	"src/main.cpp"
 )
-set_target_properties(server-cmd PROPERTIES OUTPUT_NAME ${AUDIO_SHARE_BIN_NAME})
+set_target_properties(server-cmd PROPERTIES OUTPUT_NAME "audio-share-server-cmd")
 
 find_package(asio CONFIG REQUIRED)
 target_link_libraries(server-cmd PRIVATE asio::asio)
