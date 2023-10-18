@@ -61,12 +61,12 @@ struct roundtrip {
 
 detail::audio_manager_impl::audio_manager_impl()
 {
-    pw_init(nullptr, nullptr);
+    pw_init(NULL, NULL);
     spdlog::info("pipewire header_version: {}, library_version: {}", pw_get_headers_version(), pw_get_library_version());
 
-    _loop = pw_main_loop_new(nullptr);
-    _context = pw_context_new(pw_main_loop_get_loop(_loop), nullptr, 0);
-    _core = pw_context_connect(_context, nullptr, 0);
+    _loop = pw_main_loop_new(NULL);
+    _context = pw_context_new(pw_main_loop_get_loop(_loop), NULL, 0);
+    _core = pw_context_connect(_context, NULL, 0);
     _roundtrip = new roundtrip {
         ._core = _core,
         ._sync = 0,
@@ -91,12 +91,9 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
         struct pw_stream* stream;
         std::shared_ptr<class network_manager> network_manager;
         std::shared_ptr<AudioFormat> format;
-        int block_align;
     } user_data = {
-        .stream = nullptr,
         .network_manager = network_manager,
         .format = _format,
-        .block_align = 0,
     };
 
     static const struct pw_stream_events stream_events = {
@@ -104,7 +101,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
         .param_changed = [](void* data, uint32_t id, const struct spa_pod* param) {
             struct user_data_t* user_data = (struct user_data_t*)data;
 
-            if (param == nullptr || id != SPA_PARAM_Format) {
+            if (param == NULL || id != SPA_PARAM_Format) {
                 return;
             }
             
@@ -157,8 +154,6 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
                 break;
             }
 
-            user_data->block_align = user_data->format->bits_per_sample() / 8 * user_data->format->channels();
-            spdlog::info("block_align: {}", user_data->block_align);
             spdlog::info("AudioFormat:\n{}", user_data->format->DebugString()); },
 
         .process = [](void* data) {
@@ -166,13 +161,13 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
             struct pw_buffer *b;
             struct spa_buffer *buf;
     
-            if ((b = pw_stream_dequeue_buffer(user_data->stream)) == nullptr) {
+            if ((b = pw_stream_dequeue_buffer(user_data->stream)) == NULL) {
                 pw_log_warn("out of buffers: %m");
                 return;
             }
     
             buf = b->buffer;
-            if (buf->datas[0].data == nullptr) {
+            if (buf->datas[0].data == NULL) {
                 return;
             }
     
@@ -180,15 +175,12 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
                 return;
             }
             
-            if (spdlog::get_level() == spdlog::level::trace) {
-                auto it = std::max_element(
-                    (float*)((char*)buf->datas[0].data + buf->datas[0].chunk->offset),
-                    (float*)((char*)buf->datas[0].data + buf->datas[0].chunk->offset + buf->datas[0].chunk->size)
-                );
-                spdlog::trace("offset: {}, size: {}, stride: {}, max: {}", buf->datas[0].chunk->offset, buf->datas[0].chunk->size, buf->datas[0].chunk->stride, *it);
-            }
+            auto it = std::max_element((float*)((char*)buf->datas[0].data + buf->datas[0].chunk->offset), (float*)((char*)buf->datas[0].data + buf->datas[0].chunk->offset + buf->datas[0].chunk->size));
+            spdlog::trace("offset: {}, size: {}, stride: {}, max: {}", buf->datas[0].chunk->offset, buf->datas[0].chunk->size, buf->datas[0].chunk->stride, *it);
 
-            user_data->network_manager->broadcast_audio_data((const char*)buf->datas[0].data + buf->datas[0].chunk->offset, buf->datas[0].chunk->size, user_data->block_align);
+            int block_align = user_data->format->bits_per_sample() / 8 * user_data->format->channels();
+
+            user_data->network_manager->broadcast_audio_data((const char*)buf->datas[0].data + buf->datas[0].chunk->offset, buf->datas[0].chunk->size, block_align);
     
             pw_stream_queue_buffer(user_data->stream, b); },
     };
@@ -197,7 +189,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
         PW_KEY_MEDIA_TYPE, "Audio",
         PW_KEY_MEDIA_CATEGORY, "Capture",
         PW_KEY_MEDIA_ROLE, "Music",
-        nullptr);
+        NULL);
 
     user_data.stream = pw_stream_new_simple(pw_main_loop_get_loop(_loop), "audio-share-server", props, &stream_events, &user_data);
 
