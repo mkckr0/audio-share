@@ -45,7 +45,7 @@ namespace detail {
 
 audio_manager_impl::audio_manager_impl()
 {
-    CoInitializeEx(nullptr, COINIT::COINIT_MULTITHREADED);
+    (void)CoInitializeEx(nullptr, COINIT::COINIT_MULTITHREADED);
 }
 
 audio_manager_impl::~audio_manager_impl()
@@ -152,7 +152,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
         hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
         exit_on_failed(hr);
 
-    } while (true);
+    } while (!_stoppped);
 }
 
 int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)

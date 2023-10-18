@@ -43,6 +43,7 @@ public:
     ~audio_manager();
 
     void start_loopback_recording(std::shared_ptr<network_manager> network_manager, const std::string& endpoint_id);
+    void stop();
     void do_loopback_recording(std::shared_ptr<network_manager> network_manager, const std::string& endpoint_id);
 
     std::string get_format_binary();
@@ -56,6 +57,7 @@ public:
     
 private:
     std::thread _record_thread;
+    std::atomic_bool _stoppped;
     std::shared_ptr<AudioFormat> _format;
 };
 
