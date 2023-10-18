@@ -108,6 +108,8 @@ void network_manager::start_server(const std::string& host, const uint16_t port,
     _net_thread = std::thread([self = shared_from_this()] {
         self->_ioc->run();
     });
+
+    spdlog::info("server started");
 }
 
 void network_manager::stop_server()
@@ -115,11 +117,12 @@ void network_manager::stop_server()
     if (_ioc) {
         _ioc->stop();
     }
-    _playing_peer_list.clear();
     _net_thread.join();
-    _udp_server = nullptr;
-    _audio_manager = nullptr;
+    _audio_manager->stop();
+    _playing_peer_list.clear();
     _ioc = nullptr;
+    _udp_server = nullptr;
+    spdlog::info("server stopped");
 }
 
 void network_manager::wait_server()
@@ -189,6 +192,7 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
             co_return;
         }
     }
+    spdlog::info("stop {}", __func__);
 }
 
 asio::awaitable<void> network_manager::accept_tcp_loop(tcp_acceptor acceptor)
@@ -211,6 +215,7 @@ asio::awaitable<void> network_manager::accept_tcp_loop(tcp_acceptor acceptor)
 
         asio::co_spawn(acceptor.get_executor(), read_loop(peer), asio::detached);
     }
+    spdlog::info("stop {}", __func__);
 }
 
 asio::awaitable<void> network_manager::accept_udp_loop()

@@ -79,6 +79,7 @@ public:
     void broadcast_audio_data(const char* data, int count, int block_align);
     
     std::shared_ptr<asio::io_context> _ioc;
+
 private:
     std::shared_ptr<audio_manager> _audio_manager;
     std::thread _net_thread;
