@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <bool name="theme_use_wallpaper_default">true</bool>
-    <bool name="debug_enable_copy_exception">false</bool>
     <string name="theme_color_default">#496727</string>
 </resources>

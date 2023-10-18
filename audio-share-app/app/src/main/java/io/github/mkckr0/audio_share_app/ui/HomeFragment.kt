@@ -34,14 +34,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationSet
-import android.widget.EditText
 import android.widget.TextView
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.content.res.ResourcesCompat.ThemeCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.preference.PreferenceManager
 import com.google.android.material.slider.Slider
 import com.google.android.material.snackbar.Snackbar
 import io.github.mkckr0.audio_share_app.R
@@ -82,10 +80,6 @@ class HomeFragment : Fragment() {
         viewModel.portError.observe(viewLifecycleOwner) { binding.textFieldPortLayout.error = it }
         binding.buttonStart.setOnClickListener { viewModel.startPlay() }
         binding.textViewInfo.setOnLongClickListener {
-            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
-            if (!sharedPreferences.getBoolean("debug_enable_copy_exception", resources.getBoolean(R.bool.debug_enable_copy_exception))) {
-                return@setOnLongClickListener false
-            }
             ValueAnimator.ofInt(0).apply {
                 duration = 100
                 addListener(object : AnimatorListenerAdapter() {
@@ -103,7 +97,7 @@ class HomeFragment : Fragment() {
                 })
                 start()
             }
-            return@setOnLongClickListener true
+            true
         }
         binding.textFieldHost.doOnTextChanged { _, _, _, _ -> viewModel.hostError.value = null }
         binding.textFieldPort.doOnTextChanged { _, _, _, _ -> viewModel.portError.value = null }
