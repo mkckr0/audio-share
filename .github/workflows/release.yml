@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: client-android
+        working-directory: audio-share-app
     outputs:
       hash: ${{ steps.get_hash.outputs.hash }}
     steps:
@@ -60,7 +60,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: app
-          path: client-android/app/build/outputs/apk/release/*.apk
+          path: audio-share-app/app/build/outputs/apk/release/*.apk
           
       - name: Get sha256sum
         run: sha256sum app/build/outputs/apk/release/*.apk | awk '{ printf "hash=%s", $1 }' | tee $GITHUB_OUTPUT
@@ -71,7 +71,7 @@ jobs:
     runs-on: windows-latest
     defaults:
       run:
-        working-directory: server-mfc
+        working-directory: audio-share-server
     outputs:
       hash: ${{ steps.get_hash.outputs.hash }}
     steps:
@@ -84,7 +84,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: server
-          path: server-mfc/x64/Release/*.exe
+          path: audio-share-server/x64/Release/*.exe
       - name: Get sha256num
         run: sha256sum x64/Release/*.exe | awk '{ printf "hash=%s", $1 }' | tee $GITHUB_OUTPUT
         id: get_hash

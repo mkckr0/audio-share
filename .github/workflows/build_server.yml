@@ -24,7 +24,7 @@ jobs:
     runs-on: windows-latest
     defaults:
       run:
-        working-directory: ./server-mfc
+        working-directory: ./audio-share-server
 
     steps:
     - uses: actions/checkout@v3
