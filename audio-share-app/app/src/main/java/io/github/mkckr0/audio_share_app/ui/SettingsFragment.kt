@@ -22,7 +22,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
-import android.text.InputType
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -35,7 +34,7 @@ import io.github.mkckr0.audio_share_app.R
 class SettingsFragment : PreferenceFragmentCompat() {
 
     private val tag = javaClass.simpleName
-    private lateinit var powerManager: PowerManager
+    private lateinit var powerManager : PowerManager
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
 
@@ -43,26 +42,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         powerManager = requireActivity().getSystemService(Context.POWER_SERVICE) as PowerManager
 
-        findPreference<EditTextPreference>("audio_buffer_size_scale")!!.apply {
-            setOnBindEditTextListener {
-                it.inputType = InputType.TYPE_CLASS_NUMBER
-                it.setSelection(it.length())
-            }
-            setSummaryProvider { "${(it as EditTextPreference).text}x" }
-        }
-        findPreference<EditTextPreference>("audio_tcp_connect_timeout")!!.apply {
-            setOnBindEditTextListener {
-                it.inputType = InputType.TYPE_CLASS_NUMBER
-                it.setSelection(it.length())
-            }
-            setSummaryProvider { "${(it as EditTextPreference).text}ms" }
-        }
-
         updateRequestIgnoreBatteryOptimizations()
 
         findPreference<Preference>("version")!!.apply {
-            summary =
-                "${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE})-${BuildConfig.BUILD_TYPE}"
+            summary = "${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE})-${BuildConfig.BUILD_TYPE}"
         }
 
         if (!DynamicColors.isDynamicColorAvailable()) {
@@ -78,12 +61,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 setOnPreferenceChangeListener { _, newValue ->
                     try {
                         Color.parseColor(newValue as String)
-                    } catch (e: IllegalArgumentException) {
-                        Snackbar.make(
-                            requireView(),
-                            "Color String is not valid",
-                            Snackbar.LENGTH_LONG
-                        ).show()
+                    } catch (e : IllegalArgumentException) {
+                        Snackbar.make(requireView(), "Color String is not valid", Snackbar.LENGTH_LONG).show()
                         return@setOnPreferenceChangeListener false
                     }
                     return@setOnPreferenceChangeListener true
@@ -106,14 +85,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }, 2000)
     }
 
-    private fun updateRequestIgnoreBatteryOptimizations(): Boolean {
+    private fun updateRequestIgnoreBatteryOptimizations() : Boolean {
         val preference = findPreference<Preference>("request_ignore_battery_optimizations")!!
-        val newSummary =
-            if (powerManager.isIgnoringBatteryOptimizations(BuildConfig.APPLICATION_ID)) {
-                "Ignored"
-            } else {
-                "Not Ignored"
-            }
+        val newSummary = if (powerManager.isIgnoringBatteryOptimizations(BuildConfig.APPLICATION_ID)) {
+            "Ignored"
+        } else {
+            "Not Ignored"
+        }
         val changed = newSummary != preference.summary
         preference.summary = newSummary
         return changed

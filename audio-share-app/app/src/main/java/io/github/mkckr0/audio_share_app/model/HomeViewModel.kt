@@ -32,7 +32,7 @@ class HomeViewModel(private val application: Application) : AndroidViewModel(app
 
     private val sharedPreferences by lazy { PreferenceManager.getDefaultSharedPreferences(application) }
     private val audioManager by lazy { application.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
-    private val netClient by lazy { NetClient(NetClientHandler(), application) }
+    private val netClient by lazy { NetClient(NetClientHandler()) }
 
     val volumeFrom = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
         audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC).toFloat()

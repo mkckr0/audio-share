@@ -16,13 +16,11 @@
 
 package io.github.mkckr0.audio_share_app
 
-import android.app.Application
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.Build
 import android.util.Log
-import androidx.preference.PreferenceManager
 import io.github.mkckr0.audio_share_app.pb.*
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
@@ -52,14 +50,9 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 @Sharable
-class NetClient(private val handler: Handler, private val application: Application) {
+class NetClient(private val handler: Handler) {
 
     private val tag = NetClient::class.simpleName
-    private val sharedPreferences by lazy {
-        PreferenceManager.getDefaultSharedPreferences(
-            application
-        )
-    }
 
     interface Handler {
         fun onNetError(e: String)
@@ -266,16 +259,12 @@ class NetClient(private val handler: Handler, private val application: Applicati
         MainScope().launch(Dispatchers.IO) {
             val workerGroup = NioEventLoopGroup()
             try {
-                val connectTimeout = sharedPreferences.getString(
-                    "audio_tcp_connect_timeout",
-                    application.getString(R.string.audio_tcp_connect_timeout)
-                )!!.toInt()
                 val remoteAddress = InetSocketAddress(host, port)
                 val f = Bootstrap().group(workerGroup)
                     .channel(NioSocketChannel::class.java)
                     .option(ChannelOption.SO_KEEPALIVE, true)
                     .option(ChannelOption.TCP_NODELAY, true)
-                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout)
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000)
                     .handler(object : ChannelInitializer<SocketChannel>() {
                         override fun initChannel(ch: SocketChannel) {
                             ch.pipeline()
@@ -356,7 +345,6 @@ class NetClient(private val handler: Handler, private val application: Applicati
             0x0003 -> {
                 AudioFormat.ENCODING_PCM_FLOAT
             }
-
             0x0001 -> {
                 when (format.bitsPerSample) {
                     8 -> AudioFormat.ENCODING_PCM_8BIT
@@ -366,17 +354,14 @@ class NetClient(private val handler: Handler, private val application: Applicati
                     } else {
                         AudioFormat.ENCODING_INVALID
                     }
-
                     32 -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         AudioFormat.ENCODING_PCM_32BIT
                     } else {
                         AudioFormat.ENCODING_INVALID
                     }
-
                     else -> AudioFormat.ENCODING_INVALID
                 }
             }
-
             else -> {
                 AudioFormat.ENCODING_INVALID
             }
@@ -394,21 +379,10 @@ class NetClient(private val handler: Handler, private val application: Applicati
             else -> AudioFormat.CHANNEL_INVALID
         }
 
-        Log.i(
-            tag,
-            "encoding: $encoding, channelMask: $channelMask, sampleRate: ${format.sampleRate}"
-        )
+        Log.i(tag, "encoding: $encoding, channelMask: $channelMask, sampleRate: ${format.sampleRate}")
 
         val minBufferSize = AudioTrack.getMinBufferSize(format.sampleRate, channelMask, encoding)
-        val bufferSizeScale = sharedPreferences.getString(
-            "audio_buffer_size_scale",
-            application.getString(R.string.audio_buffer_size_scale)
-        )!!.toInt()
-        val bufferSize = minBufferSize * bufferSizeScale
-        Log.i(
-            tag,
-            "minBufferSize: $minBufferSize, bufferSizeScale: $bufferSizeScale, bufferSize: $bufferSize Bytes"
-        )
+        Log.i(tag, "miniBufferSize: $minBufferSize Bytes")
 
         val builder = AudioTrack.Builder()
             .setAudioAttributes(
@@ -423,7 +397,7 @@ class NetClient(private val handler: Handler, private val application: Applicati
                     .setChannelMask(channelMask)
                     .setSampleRate(format.sampleRate)
                     .build()
-            ).setBufferSizeInBytes(bufferSize)
+            ).setBufferSizeInBytes(minBufferSize * 4)
             .setTransferMode(AudioTrack.MODE_STREAM)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

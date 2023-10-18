@@ -14,24 +14,7 @@
    limitations under the License.
 -->
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-
-    <PreferenceCategory app:title="Audio">
-        <EditTextPreference
-            app:key="audio_buffer_size_scale"
-            app:title="AudioTrack Buffer Size Scale"
-            app:icon="@drawable/baseline_1x_mobiledata"
-            app:defaultValue="@string/audio_buffer_size_scale"
-            tools:summary="4x" />
-
-        <EditTextPreference
-            app:key="audio_tcp_connect_timeout"
-            app:title="TCP Connect Timeout"
-            app:icon="@drawable/baseline_timer_3"
-            app:defaultValue="@string/audio_tcp_connect_timeout"
-            tools:summary="3000ms" />
-    </PreferenceCategory>
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory app:title="Battery Optimization">
         <Preference
