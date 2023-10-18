@@ -50,7 +50,7 @@ jobs:
       - run: ./gradlew :app:signingReport
 
       - name: Checksum
-        run: sha256sum app/build/outputs/apk/release/*.apk | tee $(ls app/build/outputs/apk/release/*.apk).sha256
+        run: cd app/build/outputs/apk/release/ && sha256sum *.apk | tee $(ls *.apk).sha256
 
       - uses: actions/upload-artifact@v3
         with:
@@ -78,7 +78,7 @@ jobs:
       - run: vcpkg install asio protobuf spdlog
       - run: msbuild /m /p:Configuration=Release,Platform=x64
       - name: Checksum
-        run: sha256sum x64/Release/*.exe | tee $(ls x64/Release/*.exe).sha256
+        run: cd x64/Release/ && sha256sum *.exe | tee $(ls *.exe).sha256
         shell: bash
       - uses: actions/upload-artifact@v3
         with:
