@@ -33,6 +33,8 @@ import io.netty.channel.ChannelInboundHandlerAdapter
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.ConnectTimeoutException
+import io.netty.channel.epoll.EpollChannelConfig
+import io.netty.channel.epoll.EpollChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.DatagramChannel
 import io.netty.channel.socket.DatagramPacket
@@ -229,8 +231,7 @@ class NetClient(private val handler: Handler, private val application: Applicati
                 val buf = ByteBuffer.allocate(msg.content().readableBytes())
                 msg.content().readBytes(buf)
                 buf.flip()
-                // keep PCM sample always be LE.
-                val floatBuffer = buf.order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer()
+                val floatBuffer = buf.order(ByteOrder.nativeOrder()).asFloatBuffer()
                 val floatArray = FloatArray(floatBuffer.capacity())
                 floatBuffer.get(floatArray)
                 out.add(floatArray)
@@ -398,8 +399,6 @@ class NetClient(private val handler: Handler, private val application: Applicati
             tag,
             "encoding: $encoding, channelMask: $channelMask, sampleRate: ${format.sampleRate}"
         )
-
-        Log.i(tag, "native order: ${ByteOrder.nativeOrder()}")
 
         val minBufferSize = AudioTrack.getMinBufferSize(format.sampleRate, channelMask, encoding)
         val bufferSizeScale = sharedPreferences.getString(
