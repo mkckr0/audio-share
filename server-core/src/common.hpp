@@ -14,10 +14,11 @@
    limitations under the License.
 */
 
-#ifndef _FORMATTER
-#define _FORMATTER
+#pragma once
 
-#include <fmt/ostream.h>
+#include <sdkddkver.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
 #include <asio.hpp>
 
@@ -30,4 +31,8 @@ template <> struct fmt::formatter<asio::error_code> : fmt::formatter<std::string
     }
 };
 
-#endif // !_FORMATTER
+std::string wchars_to_mbs(const wchar_t* src);
+
+std::string str_win_err(int err);
+
+std::wstring wstr_win_err(int err);

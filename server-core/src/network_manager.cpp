@@ -15,36 +15,25 @@
 */
 
 #include "network_manager.hpp"
-#include "formatter.hpp"
-
+#include "common.hpp"
 #include "audio_manager.hpp"
 
-#include <list>
-#include <ranges>
+#include <iostream>
 
-#ifdef WIN32
-#include <iphlpapi.h>
 #include <winsock2.h>
+#include <iphlpapi.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "Iphlpapi.lib")
-#endif // WIN32
 
-#include <spdlog/spdlog.h>
-#include <fmt/ranges.h>
+#include <asio/experimental/as_single.hpp>
 
 namespace ip = asio::ip;
-
-network_manager::network_manager(std::shared_ptr<audio_manager>& audio_manager)
-    : _audio_manager(audio_manager)
-{
-}
 
 std::vector<std::wstring> network_manager::get_local_addresss()
 {
     std::vector<std::wstring> address_list;
 
-#ifdef WIN32
     ULONG family = AF_INET;
     ULONG flags = GAA_FLAG_INCLUDE_ALL_INTERFACES;
 
@@ -61,7 +50,7 @@ std::vector<std::wstring> network_manager::get_local_addresss()
 
             for (auto pUnicast = pCurrentAddress->FirstUnicastAddress; pUnicast; pUnicast = pUnicast->Next) {
                 auto sockaddr = (sockaddr_in*)pUnicast->Address.lpSockaddr;
-                wchar_t buf[20] {};
+                wchar_t buf[20]{};
                 if (InetNtop(AF_INET, &sockaddr->sin_addr, buf, std::size(buf))) {
                     address_list.push_back(buf);
                 }
@@ -70,43 +59,66 @@ std::vector<std::wstring> network_manager::get_local_addresss()
     }
 
     free(pAddresses);
-#endif // WIN32
 
     std::sort(address_list.begin(), address_list.end());
     return address_list;
 }
 
-void network_manager::start_server(const std::string& host, const uint16_t port, const std::string& endpoint_id)
+void network_manager::start_server(const std::string& host, const uint16_t port, const std::wstring& endpoint_id)
 {
     _ioc = std::make_shared<asio::io_context>();
-    {
-        ip::tcp::endpoint endpoint { ip::make_address(host), port };
 
-        ip::tcp::acceptor acceptor(*_ioc, endpoint.protocol());
-        acceptor.set_option(ip::tcp::acceptor::reuse_address(true));
-        acceptor.bind(endpoint);
-        acceptor.listen();
+    std::promise<void> promise;
+    auto future = promise.get_future();
+    _net_thread = std::thread([=, promise = std::move(promise)]() mutable {
 
-        _audio_manager->start_loopback_recording(shared_from_this(), endpoint_id);
-        asio::co_spawn(*_ioc, accept_tcp_loop(std::move(acceptor)), asio::detached);
+        try {
 
-        // start tcp success
-        spdlog::info("tcp listen success on {}", endpoint);
+            {
+                ip::tcp::endpoint endpoint{ ip::make_address(host), port };
+
+                ip::tcp::acceptor acceptor(*_ioc, endpoint.protocol());
+                acceptor.bind(endpoint);
+
+                audio_manager = std::make_unique<class audio_manager>(shared_from_this());
+                asio::co_spawn(*_ioc, audio_manager->do_loopback_recording(*_ioc, endpoint_id), asio::detached);
+                _ioc->run_one();
+
+                acceptor.listen();
+
+                asio::co_spawn(*_ioc, accept_tcp_loop(std::move(acceptor)), asio::detached);
+
+                // start tcp success
+                spdlog::info("tcp listen success on {}", endpoint);
+            }
+
+            {
+                ip::udp::endpoint endpoint{ ip::make_address(host), port };
+                _udp_server = std::make_unique<udp_socket>(*_ioc, endpoint.protocol());
+                _udp_server->bind(endpoint);
+                asio::co_spawn(*_ioc, accept_udp_loop(), asio::detached);
+
+                // start udp success
+                spdlog::info("udp listen success on {}", endpoint);
+            }
+
+            promise.set_value();
+        }
+        catch (...) {
+            promise.set_exception(std::current_exception());
+            return;
+        }
+
+        _ioc->run();
+        });
+
+    try {
+        future.get();
     }
-
-    {
-        ip::udp::endpoint endpoint { ip::make_address(host), port };
-        _udp_server = std::make_unique<udp_socket>(*_ioc, endpoint.protocol());
-        _udp_server->bind(endpoint);
-        asio::co_spawn(*_ioc, accept_udp_loop(), asio::detached);
-
-        // start udp success
-        spdlog::info("udp listen success on {}", endpoint);
+    catch (...) {
+        stop_server();
+        throw;
     }
-
-    _net_thread = std::thread([self = shared_from_this()] {
-        self->_ioc->run();
-    });
 }
 
 void network_manager::stop_server()
@@ -117,13 +129,8 @@ void network_manager::stop_server()
     _playing_peer_list.clear();
     _net_thread.join();
     _udp_server = nullptr;
-    _audio_manager = nullptr;
+    audio_manager = nullptr;
     _ioc = nullptr;
-}
-
-void network_manager::wait_server()
-{
-    _net_thread.join();
 }
 
 asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> peer)
@@ -142,7 +149,7 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
         spdlog::info("cmd {}", (uint32_t)cmd);
 
         if (cmd == cmd_t::cmd_get_format) {
-            auto format = _audio_manager->get_format_binary();
+            auto& format = audio_manager->get_format();
             uint32_t size = (uint32_t)format.size();
             std::array<asio::const_buffer, 3> buffers = {
                 asio::buffer(&cmd, sizeof(cmd)),
@@ -150,7 +157,8 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
                 asio::buffer(format),
             };
             co_await asio::async_write(*peer, buffers);
-        } else if (cmd == cmd_t::cmd_start_play) {
+        }
+        else if (cmd == cmd_t::cmd_start_play) {
             int id = add_playing_peer(peer);
             if (id <= 0) {
                 spdlog::error("{} id error", __func__);
@@ -162,7 +170,8 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
                 asio::buffer(&id, sizeof(id)),
             };
             co_await asio::async_write(*peer, buffers);
-        } else {
+        }
+        else {
             spdlog::error("{} error cmd", __func__);
             remove_playing_peer(peer);
             peer->shutdown(ip::tcp::socket::shutdown_both);
@@ -185,23 +194,23 @@ asio::awaitable<void> network_manager::accept_tcp_loop(tcp_acceptor acceptor)
         spdlog::info("{} {}", __func__, peer->remote_endpoint());
 
         // Keep-Alive
-        // peer->set_option(ip::tcp::socket::keep_alive(true), ec);
-        // if (ec) {
+        //peer->set_option(ip::tcp::socket::keep_alive(true), ec);
+        //if (ec) {
         //    spdlog::info("{} {}", __func__, ec);
         //}
-        // using tcp_keepidle = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPIDLE>;
-        // peer->set_option(tcp_keepidle(3), ec);
-        // if (ec) {
+        //using tcp_keepidle = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPIDLE>;
+        //peer->set_option(tcp_keepidle(3), ec);
+        //if (ec) {
         //    spdlog::info("{} {}", __func__, ec);
         //}
-        // using tcp_keepintvl = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPINTVL>;
-        // peer->set_option(tcp_keepintvl(2), ec);
-        // if (ec) {
+        //using tcp_keepintvl = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPINTVL>;
+        //peer->set_option(tcp_keepintvl(2), ec);
+        //if (ec) {
         //    spdlog::info("{} {}", __func__, ec);
         //}
-        // using tcp_keepcnt = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPCNT>;
-        // peer->set_option(tcp_keepcnt(3), ec);
-        // if (ec) {
+        //using tcp_keepcnt = asio::detail::socket_option::integer<IPPROTO_TCP, TCP_KEEPCNT>;
+        //peer->set_option(tcp_keepcnt(3), ec);
+        //if (ec) {
         //    spdlog::info("{} {}", __func__, ec);
         //}
 
@@ -261,7 +270,7 @@ void network_manager::fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer)
 {
     auto it = std::find_if(_playing_peer_list.begin(), _playing_peer_list.end(), [id](const std::pair<std::shared_ptr<tcp_socket>, std::shared_ptr<peer_info_t>>& e) {
         return e.second->id == id;
-    });
+        });
 
     if (it == _playing_peer_list.cend()) {
         spdlog::error("{} no tcp peer id:{} udp://{}", __func__, id, udp_peer);
@@ -278,7 +287,7 @@ void network_manager::broadcast_audio_data(const char* data, int count, int bloc
         return;
     }
 
-    // spdlog::info("size: {}", count);
+    //spdlog::info("size: {}", count);
 
     // divide udp frame
     constexpr int mtu = 1492;
