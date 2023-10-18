@@ -42,9 +42,6 @@ add_executable(server-cmd
 	"src/main.cpp"
 )
 set_target_properties(server-cmd PROPERTIES OUTPUT_NAME ${AUDIO_SHARE_BIN_NAME})
-if(UNIX)
-	target_link_options(server-cmd PRIVATE "-static-libgcc" "-static-libstdc++")
-endif(UNIX)
 
 find_package(asio CONFIG REQUIRED)
 target_link_libraries(server-cmd PRIVATE asio::asio)
