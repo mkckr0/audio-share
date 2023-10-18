@@ -17,7 +17,6 @@
 #include "audio_manager.hpp"
 #include "client.pb.h"
 #include "common.hpp"
-#include "network_manager.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -57,8 +56,7 @@ constexpr inline void exit_on_failed(HRESULT hr);
 void printEndpoints(CComPtr<IMMDeviceCollection> pColletion);
 std::string wchars_to_mbs(const wchar_t* s);
 
-audio_manager::audio_manager(std::shared_ptr<network_manager> network_manager)
-    : _network_manager(network_manager)
+audio_manager::audio_manager()
 {
 }
 
@@ -128,12 +126,12 @@ asio::awaitable<void> audio_manager::do_loopback_recording(asio::io_context& ioc
     int seconds{};
 
     using namespace std::literals;
-    steady_timer timer(ioc);
+    asio::steady_timer timer(ioc);
     timer.expires_at(std::chrono::steady_clock::now());
 
     do {
         timer.expires_at(timer.expiry() + 1ms);
-        auto [ec] = co_await timer.async_wait();
+        auto [ec] = co_await timer.async_wait(co_token);
         if (ec) {
             break;
         }
@@ -156,7 +154,7 @@ asio::awaitable<void> audio_manager::do_loopback_recording(asio::io_context& ioc
         int bytes_per_frame = pCaptureFormat->nBlockAlign;
         int count = numFramesAvailable * bytes_per_frame;
 
-        _network_manager->broadcast_audio_data((const char*)pData, count, pCaptureFormat->nBlockAlign);
+        this->broadcast_audio_data((const char*)pData, count, pCaptureFormat->nBlockAlign);
 
         data_ckSize += count;
         frame_count += numFramesAvailable;
@@ -207,6 +205,53 @@ constexpr inline void exit_on_failed(HRESULT hr) {
     }
 }
 
+int audio_manager::add_playing_peer(std::shared_ptr<asio::ip::tcp::socket> peer)
+{
+    if (_playing_peer_list.contains(peer)) {
+        spdlog::error("{} repeat add tcp://{}", __func__, peer->remote_endpoint());
+        return 0;
+    }
+
+    auto info = _playing_peer_list[peer] = std::make_shared<peer_info_t>();
+    static int g_id = 0;
+    info->id = ++g_id;
+    info->tcp_peer = peer;
+
+    spdlog::info("{} add id:{} tcp://{}", __func__, info->id, peer->remote_endpoint());
+    return info->id;
+}
+
+void audio_manager::remove_playing_peer(std::shared_ptr<asio::ip::tcp::socket> peer)
+{
+    if (!_playing_peer_list.contains(peer)) {
+        spdlog::error("{} repeat remove tcp://{}", __func__, peer->remote_endpoint());
+        return;
+    }
+
+    _playing_peer_list.erase(peer);
+    spdlog::info("{} remove tcp://{}", __func__, peer->remote_endpoint());
+}
+
+void audio_manager::fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer)
+{
+    auto it = std::find_if(_playing_peer_list.begin(), _playing_peer_list.end(), [id](const std::pair<std::shared_ptr<asio::ip::tcp::socket>, std::shared_ptr<peer_info_t>>& e) {
+        return e.second->id == id;
+        });
+
+    if (it == _playing_peer_list.cend()) {
+        spdlog::error("{} no tcp peer id:{} udp://{}", __func__, id, udp_peer);
+        return;
+    }
+
+    it->second->udp_peer = udp_peer;
+    spdlog::info("{} fill udp peer id:{} tcp://{} udp://{}", __func__, id, it->second->tcp_peer->remote_endpoint(), udp_peer);
+}
+
+void audio_manager::init_udp_server(std::shared_ptr<asio::ip::udp::socket> udp_server)
+{
+    _udp_server = udp_server;
+}
+
 const std::vector<uint8_t>& audio_manager::get_format() const
 {
     return _format;
@@ -221,7 +266,7 @@ std::map<std::wstring, std::wstring> audio_manager::get_audio_endpoint_map()
     exit_on_failed(hr);
 
     CComPtr<IMMDeviceCollection> pColletion;
-    hr = pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &pColletion);
+    hr = pEnumerator->EnumAudioEndpoints(eRender, _endpoint_state_mask, &pColletion);
     exit_on_failed(hr);
 
     UINT count{};
@@ -299,4 +344,34 @@ void audio_manager::set_format(WAVEFORMATEX* format)
     f->SerializeToArray(_format.data(), (int)_format.size());
     spdlog::info("WAVEFORMATEX: wFormatTag: {}, nBlockAlign: {}", format->wFormatTag, format->nBlockAlign);
     spdlog::info("AudioFormat:\n{}", f->DebugString());
+}
+
+void audio_manager::broadcast_audio_data(const char* data, int count, int block_align)
+{
+    if (count <= 0) {
+        return;
+    }
+
+    //spdlog::info("size: {}", count);
+
+    // divide udp frame
+    constexpr int mtu = 1492;
+    int max_seg_size = mtu - 20 - 8;
+    max_seg_size -= max_seg_size % block_align; // one single sample can't be divided
+
+    std::list<std::shared_ptr<std::vector<uint8_t>>> seg_list;
+
+    for (int begin_pos = 0; begin_pos < count;) {
+        const int real_seg_size = std::min((int)count - begin_pos, max_seg_size);
+        auto seg = std::make_shared<std::vector<uint8_t>>(real_seg_size);
+        std::copy((const uint8_t*)data + begin_pos, (const uint8_t*)data + begin_pos + real_seg_size, seg->begin());
+        seg_list.push_back(seg);
+        begin_pos += real_seg_size;
+    }
+
+    for (auto seg : seg_list) {
+        for (auto& [peer, info] : _playing_peer_list) {
+            _udp_server->async_send_to(asio::buffer(*seg), info->udp_peer, [seg](const asio::error_code& ec, std::size_t bytes_transferred) {});
+        }
+    }
 }

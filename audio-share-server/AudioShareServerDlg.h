@@ -38,7 +38,7 @@ public:
 
 private:
 	std::map<std::wstring, std::wstring> m_endpoint_map;	// <id, name>
-	std::shared_ptr<network_manager> m_network_manger;
+	std::unique_ptr<network_manager> m_network_manger;
 	void EnableInputControls(bool bEnable = true);
 	COLORREF GetBrushColor(HBRUSH brush);
 	bool ShowNotifyIcon(bool bEnable = true);

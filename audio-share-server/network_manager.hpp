@@ -21,31 +21,13 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <map>
-
 #include <asio.hpp>
-#include <asio/use_awaitable.hpp>
 
 class audio_manager;
 
-class network_manager : public std::enable_shared_from_this<network_manager>
+class network_manager
 {
-    using default_token = asio::as_tuple_t<asio::use_awaitable_t<>>;
-    using tcp_acceptor = default_token::as_default_on_t<asio::ip::tcp::acceptor>;
-    using tcp_socket = default_token::as_default_on_t<asio::ip::tcp::socket>;
-    using udp_socket = default_token::as_default_on_t<asio::ip::udp::socket>;
-
-    struct peer_info_t {
-        int id = 0;
-        std::shared_ptr<tcp_socket> tcp_peer;
-        asio::ip::udp::endpoint udp_peer;
-    };
-
-    enum class cmd_t : uint32_t {
-        cmd_none = 0,
-        cmd_get_format = 1,
-        cmd_start_play = 2,
-    };
+    std::unique_ptr<class audio_manager> audio_manager;
 
 public:
 
@@ -53,25 +35,17 @@ public:
 
     static std::vector<std::wstring> get_local_addresss();
 
+    asio::awaitable<void> read_loop(std::shared_ptr<asio::ip::tcp::socket> peer);
+
+    asio::awaitable<void> accept_tcp_loop(asio::ip::tcp::acceptor acceptor);
+    
+    asio::awaitable<void> accept_udp_loop(std::shared_ptr<asio::ip::udp::socket> acceptor);
+
     void start_server(const std::string& host, const uint16_t port, const std::wstring& endpoint_id);
+
     void stop_server();
 
-    asio::awaitable<void> accept_tcp_loop(tcp_acceptor acceptor);
-    asio::awaitable<void> read_loop(std::shared_ptr<tcp_socket> peer);
-    asio::awaitable<void> accept_udp_loop();
-
-    int add_playing_peer(std::shared_ptr<tcp_socket> peer);
-    void remove_playing_peer(std::shared_ptr<tcp_socket> peer);
-    void fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer);
-
-    void broadcast_audio_data(const char* data, int count, int block_align);
-
 private:
-    std::unique_ptr<class audio_manager> audio_manager;
-
-    std::shared_ptr<asio::io_context> _ioc;
-    std::thread _net_thread;
-
-    std::unique_ptr<udp_socket> _udp_server;
-    std::map<std::shared_ptr<tcp_socket>, std::shared_ptr<peer_info_t>> _playing_peer_list;
+    std::shared_ptr<asio::io_context> ioc;
+    std::thread net_thread;
 };
