@@ -171,8 +171,8 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
             user_data->block_align = user_data->format->bits_per_sample() / 8 * user_data->format->channels();
             spdlog::info("block_align: {}", user_data->block_align);
-            spdlog::info("AudioFormat:\n{}", user_data->format->DebugString()); },
-
+            spdlog::info("AudioFormat:\n{}", user_data->format->DebugString());
+        },
         .process = [](void* data) {
             struct user_data_t* user_data = (struct user_data_t*)data;
             struct pw_buffer *b;
@@ -187,20 +187,23 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
             if (buf->datas[0].data == nullptr) {
                 return;
             }
-    
-            if (buf->datas[0].chunk->size == 0) {
-                return;
-            }
-            
-            if (spdlog::get_level() == spdlog::level::trace) {
-                auto it = std::max_element(
-                    (float*)((char*)buf->datas[0].data + buf->datas[0].chunk->offset),
-                    (float*)((char*)buf->datas[0].data + buf->datas[0].chunk->offset + buf->datas[0].chunk->size)
-                );
-                spdlog::trace("offset: {}, size: {}, stride: {}, max: {}", buf->datas[0].chunk->offset, buf->datas[0].chunk->size, buf->datas[0].chunk->stride, *it);
+
+            auto begin = (const char*)buf->datas[0].data + buf->datas[0].chunk->offset;
+            auto count = buf->datas[0].chunk->size;
+            if (std::all_of(begin, begin + count, [](const char e) { return e == 0; })) {
+                begin = nullptr;
+                count = 0;
             }
 
-            user_data->network_manager->broadcast_audio_data((const char*)buf->datas[0].data + buf->datas[0].chunk->offset, buf->datas[0].chunk->size, user_data->block_align);
+            // if (spdlog::get_level() == spdlog::level::trace) {
+            //     auto it = std::max_element(
+            //         (float*)((char*)begin),
+            //         (float*)((char*)begin + count)
+            //     );
+            //     spdlog::trace("offset: {}, size: {}, stride: {}, max: {}", buf->datas[0].chunk->offset, buf->datas[0].chunk->size, buf->datas[0].chunk->stride, *it);
+            // }
+
+            user_data->network_manager->broadcast_audio_data(begin, count, user_data->block_align);
     
             pw_stream_queue_buffer(user_data->stream, b); },
     };
