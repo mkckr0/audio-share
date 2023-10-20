@@ -4,50 +4,35 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_server_core:
-    name: Build server-core
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-        include:
-          - os: windows-latest
-            vcpkg_triplet: x64-windows-static-md
-            cmake_preset: windows-Release
-            platform: windows
-          - os: ubuntu-latest
-            vcpkg_triplet: x64-linux
-            cmake_preset: linux-Release
-            platform: linux
-    runs-on: ${{ matrix.os }}
+  build_app:
+    name: Build Android App
+    runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: server-core
-    outputs:
-      hash: ${{ steps.get_hash.outputs.hash }}
-    env:
-      VCPKG_DEFAULT_TRIPLET: ${{ matrix.vcpkg_triplet }}
+        working-directory: android-app
     steps:
       - uses: actions/checkout@v3
-      - name: Install Linux Deps
-        run: sudo apt install libpipewire-0.3-dev
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-      - uses: lukka/get-cmake@latest
-      - uses: lukka/run-vcpkg@v11
+      - run: git pull
+      - uses: actions/setup-java@v3
         with:
-          vcpkgGitCommitId: e57b2167e66c847f991bd6bce1355b85acd944e8
-      - run: vcpkg integrate install
-      - run: vcpkg install asio protobuf spdlog cxxopts
-      - uses: lukka/run-cmake@v10
-        with:
-          cmakeListsTxtPath: ${{ github.workspace }}/server-core/CMakeLists.txt
-          configurePreset: ${{ matrix.cmake_preset }}
-          buildPreset: ${{ matrix.cmake_preset }}
-      - name: Pack
-        run: bash pack.sh ${{ matrix.platform }}
-      - uses: actions/upload-artifact@v3
-        with:
-          name: server-core-${{ matrix.platform }}
-          path: |
-            server-core/out/install/*.sha256
-            server-core/out/install/*.tar.gz
-            server-core/out/install/*.zip
+          java-version: "17"
+          distribution: "temurin"
+          cache: gradle
+
+      - name: Create relese.jks
+        run: mkdir ~/.android && echo "$release_jks" | base64 -d > ~/.android/release.jks
+        env:
+          release_jks: ${{ secrets.RELEASE_JKS }}
+      - name: Create keystore.properties
+        run: echo -e "storeFile=$(ls ~/.android/release.jks)\nstorePassword=${store_pass}\nkeyAlias=${key_alias}\nkeyPassword=${key_pass}\n" > keystore.properties
+        env:
+          store_pass: ${{ secrets.STORE_PASS }}
+          key_alias: ${{ secrets.KEY_ALIAS }}
+          key_pass: ${{ secrets.KEY_PASS }}
+
+      - run: chmod +x gradlew
+      - run: ./gradlew :app:assembleRelease
+      - run: ./gradlew :app:signingReport
+
+      - name: Checksum
+        run: cd app/build/outputs/apk/release/ && sha256sum *.apk | tee $(ls *.apk).sha256
