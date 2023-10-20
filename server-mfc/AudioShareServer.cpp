@@ -49,7 +49,11 @@ CAudioShareServerApp::CAudioShareServerApp()
 
 	auto basic_logger = spdlog::basic_logger_mt("server", "server.log");
 	spdlog::set_default_logger(basic_logger);
+#ifdef DEBUG
 	spdlog::flush_every(std::chrono::seconds(1));
+	spdlog::set_level(spdlog::level::trace);
+#endif // DEBUG
+
 }
 
 

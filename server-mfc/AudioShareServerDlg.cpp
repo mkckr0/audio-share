@@ -330,10 +330,10 @@ void CAudioShareServerDlg::OnBnClickedButtonHide()
 
 void CAudioShareServerDlg::OnBnClickedButtonRefresh()
 {
-    m_comboBoxAudioEndpoint.Clear();
+    m_comboBoxAudioEndpoint.Clear();    // clear current selection
     for (int nIndex = m_comboBoxAudioEndpoint.GetCount() - 1; nIndex >= 0; --nIndex) {
-        m_comboBoxAudioEndpoint.DeleteString(nIndex);
         free(m_comboBoxAudioEndpoint.GetItemDataPtr(nIndex));
+        m_comboBoxAudioEndpoint.DeleteString(nIndex);
     }
 
     audio_manager::endpoint_list_t endpoint_list;
