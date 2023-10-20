@@ -116,9 +116,6 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     asio::steady_timer timer(*network_manager->_ioc);
     std::error_code ec;
 
-    _blank_samples.assign(pCaptureFormat->nBlockAlign, 0);
-    _blank_samples_last_tick = std::chrono::steady_clock::now();
-
     do {
         timer.expires_after(1ms);
         timer.wait(ec);
@@ -131,10 +128,6 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
         exit_on_failed(hr, "pCaptureClient->GetNextPacketSize");
 
         if (next_packet_size == 0) {
-            if (auto now = std::chrono::steady_clock::now(); now - _blank_samples_last_tick > 1s) {
-                _blank_samples_last_tick = now;
-                network_manager->broadcast_audio_data(_blank_samples.data(), _blank_samples.size(), pCaptureFormat->nBlockAlign);
-            }
             continue;
         }
 
