@@ -67,8 +67,8 @@ public:
 private:
     asio::awaitable<void> accept_tcp_loop(tcp_acceptor acceptor);
     asio::awaitable<void> read_loop(std::shared_ptr<tcp_socket> peer);
+    asio::awaitable<void> heartbeat_loop(std::shared_ptr<tcp_socket> peer);
     asio::awaitable<void> accept_udp_loop();
-    asio::awaitable<void> check_alive();
     
     playing_peer_list_t::iterator close_session(std::shared_ptr<tcp_socket> peer);
     int add_playing_peer(std::shared_ptr<tcp_socket> peer);
@@ -76,7 +76,7 @@ private:
     void fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer);
 
 public:
-    void broadcast_audio_data(const char* data, int count, int block_align);
+    void broadcast_audio_data(const char* data, size_t count, int block_align);
     
     std::shared_ptr<asio::io_context> _ioc;
 

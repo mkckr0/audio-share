@@ -59,6 +59,8 @@ private:
     std::thread _record_thread;
     std::atomic_bool _stoppped;
     std::shared_ptr<AudioFormat> _format;
+    std::vector<char> _blank_samples;
+    std::chrono::steady_clock::time_point _blank_samples_last_tick;
 };
 
 #endif // !_BASIC_AUDIO_MANAGER_HPP

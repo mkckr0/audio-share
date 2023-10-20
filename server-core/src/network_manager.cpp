@@ -34,6 +34,7 @@
 #include <fmt/ranges.h>
 
 namespace ip = asio::ip;
+using namespace std::chrono_literals;
 
 network_manager::network_manager(std::shared_ptr<audio_manager>& audio_manager)
     : _audio_manager(audio_manager)
@@ -89,7 +90,6 @@ void network_manager::start_server(const std::string& host, const uint16_t port,
 
         _audio_manager->start_loopback_recording(shared_from_this(), endpoint_id);
         asio::co_spawn(*_ioc, accept_tcp_loop(std::move(acceptor)), asio::detached);
-        asio::co_spawn(*_ioc, check_alive(), asio::detached);
 
         // start tcp success
         spdlog::info("tcp listen success on {}", endpoint);
@@ -138,7 +138,7 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
         if (ec) {
             close_session(peer);
             spdlog::trace("{} {}", __func__, ec);
-            co_return;
+            break;
         }
 
         spdlog::trace("cmd {}", (uint32_t)cmd);
@@ -155,7 +155,7 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
             if (ec) {
                 close_session(peer);
                 spdlog::trace("{} {}", __func__, ec);
-                co_return;
+                break;
             }
         } else if (cmd == cmd_t::cmd_start_play) {
             int id = add_playing_peer(peer);
@@ -163,7 +163,7 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
                 spdlog::error("{} id error", __func__);
                 close_session(peer);
                 spdlog::trace("{} {}", __func__, ec);
-                continue;
+                break;
             }
             std::array<asio::const_buffer, 2> buffers = {
                 asio::buffer(&cmd, sizeof(cmd)),
@@ -171,28 +171,63 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
             };
             auto [ec, _] = co_await asio::async_write(*peer, buffers);
             if (ec) {
-                close_session(peer);
                 spdlog::trace("{} {}", __func__, ec);
-                co_return;
+                close_session(peer);
+                break;
             }
+            asio::co_spawn(*_ioc, heartbeat_loop(peer), asio::detached);
         } else if (cmd == cmd_t::cmd_heartbeat) {
             auto it = _playing_peer_list.find(peer);
             if (it != _playing_peer_list.end()) {
                 it->second->last_tick = std::chrono::steady_clock::now();
-                auto [ec, _] = co_await asio::async_write(*peer, asio::buffer(&cmd, sizeof(cmd)));
-                if (ec) {
-                    close_session(peer);
-                    spdlog::trace("{} {}", __func__, ec);
-                    co_return;
-                }
             }
         } else {
             spdlog::error("{} error cmd", __func__);
             close_session(peer);
-            co_return;
+            break;
         }
     }
-    spdlog::info("stop {}", __func__);
+    spdlog::trace("stop {}", __func__);
+}
+
+asio::awaitable<void> network_manager::heartbeat_loop(std::shared_ptr<tcp_socket> peer)
+{
+    std::error_code ec;
+    size_t _;
+
+    steady_timer timer(*_ioc);
+    while (true) {
+        timer.expires_after(3s);
+        std::tie(ec) = co_await timer.async_wait();
+        if (ec) {
+            break;
+        }
+
+        if (!peer->is_open()) {
+            break;
+        }
+
+        auto it = _playing_peer_list.find(peer);
+        if (it == _playing_peer_list.end()) {
+            spdlog::trace("{} it == _playing_peer_list.end()", __func__);
+            close_session(peer);
+            break;
+        }
+        if (std::chrono::steady_clock::now() - it->second->last_tick > _heartbeat_timeout) {
+            spdlog::info("{} timeout", it->first->remote_endpoint());
+            close_session(peer);
+            break;
+        }
+
+        auto cmd = cmd_t::cmd_heartbeat;
+        std::tie(ec, _) = co_await asio::async_write(*peer, asio::buffer(&cmd, sizeof(cmd)));
+        if (ec) {
+            spdlog::trace("{} {}", __func__, ec);
+            close_session(peer);
+            break;
+        }
+    }
+    spdlog::trace("stop {}", __func__);
 }
 
 asio::awaitable<void> network_manager::accept_tcp_loop(tcp_acceptor acceptor)
@@ -230,28 +265,6 @@ asio::awaitable<void> network_manager::accept_udp_loop()
         }
 
         fill_udp_peer(id, udp_peer);
-    }
-}
-
-asio::awaitable<void> network_manager::check_alive()
-{
-    using namespace std::chrono_literals;
-    steady_timer timer(*_ioc);
-    while (true) {
-        timer.expires_after(1s);
-        auto [ec] = co_await timer.async_wait();
-        if (ec) {
-            co_return;
-        }
-        auto now = std::chrono::steady_clock::now();
-        for (auto it = _playing_peer_list.begin(); it != _playing_peer_list.end();) {
-            if (now - it->second->last_tick > _heartbeat_timeout) {
-                spdlog::info("{} timeout", it->first->remote_endpoint());
-                it = close_session(it->first);
-            } else {
-                ++it;
-            }
-        }
     }
 }
 
@@ -308,13 +321,12 @@ void network_manager::fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer)
     spdlog::trace("{} fill udp peer id:{} tcp://{} udp://{}", __func__, id, it->first->remote_endpoint(), udp_peer);
 }
 
-void network_manager::broadcast_audio_data(const char* data, int count, int block_align)
+void network_manager::broadcast_audio_data(const char* data, size_t count, int block_align)
 {
     if (count <= 0) {
         return;
     }
-
-    // spdlog::info("size: {}", count);
+    //spdlog::trace("broadcast_audio_data count: {}", count);
 
     // divide udp frame
     constexpr int mtu = 1492;

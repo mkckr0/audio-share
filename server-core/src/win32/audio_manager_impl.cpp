@@ -20,6 +20,8 @@
 #include "client.pb.h"
 #include "network_manager.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -33,11 +35,9 @@
 #include <Audioclient.h>
 #include <Audiopolicy.h>
 
-#include <spdlog/spdlog.h>
-
 using namespace io::github::mkckr0::audio_share_app::pb;
 
-constexpr inline void exit_on_failed(HRESULT hr);
+void exit_on_failed(HRESULT hr, const char* message = "", const char* func = "");
 void print_endpoints(CComPtr<IMMDeviceCollection> pColletion);
 void set_format(std::shared_ptr<AudioFormat> _format, WAVEFORMATEX* format);
 
@@ -108,7 +108,6 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
     const REFERENCE_TIME hnsActualDuration = (long long)REFTIMES_PER_SEC * bufferFrameCount / pCaptureFormat->nSamplesPerSec;
 
-    UINT32 data_ckSize = 0;
     UINT32 frame_count = 0;
 
     int seconds {};
@@ -116,6 +115,9 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     using namespace std::chrono_literals;
     asio::steady_timer timer(*network_manager->_ioc);
     std::error_code ec;
+
+    _blank_samples.assign(pCaptureFormat->nBlockAlign, 0);
+    _blank_samples_last_tick = std::chrono::steady_clock::now();
 
     do {
         timer.expires_after(1ms);
@@ -126,9 +128,13 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
         UINT32 next_packet_size = 0;
         hr = pCaptureClient->GetNextPacketSize(&next_packet_size);
-        exit_on_failed(hr);
+        exit_on_failed(hr, "pCaptureClient->GetNextPacketSize");
 
         if (next_packet_size == 0) {
+            if (auto now = std::chrono::steady_clock::now(); now - _blank_samples_last_tick > 1s) {
+                _blank_samples_last_tick = now;
+                network_manager->broadcast_audio_data(_blank_samples.data(), _blank_samples.size(), pCaptureFormat->nBlockAlign);
+            }
             continue;
         }
 
@@ -137,20 +143,21 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
         DWORD dwFlags {};
 
         hr = pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &dwFlags, NULL, NULL);
-        exit_on_failed(hr);
+        exit_on_failed(hr, "pCaptureClient->GetBuffer");
 
         int bytes_per_frame = pCaptureFormat->nBlockAlign;
         int count = numFramesAvailable * bytes_per_frame;
 
         network_manager->broadcast_audio_data((const char*)pData, count, pCaptureFormat->nBlockAlign);
 
-        data_ckSize += count;
+#ifdef DEBUG
         frame_count += numFramesAvailable;
         seconds = frame_count / pCaptureFormat->nSamplesPerSec;
-        // std::cout << "numFramesAvailable: " << numFramesAvailable << " seconds: " << seconds << std::endl;
+        //spdlog::trace("numFramesAvailable: {}, seconds: {}", numFramesAvailable, seconds);
+#endif // DEBUG
 
         hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
-        exit_on_failed(hr);
+        exit_on_failed(hr, "pCaptureClient->ReleaseBuffer");
 
     } while (!_stoppped);
 }
@@ -276,9 +283,10 @@ void print_endpoints(CComPtr<IMMDeviceCollection> pColletion)
     }
 }
 
-constexpr inline void exit_on_failed(HRESULT hr)
+void exit_on_failed(HRESULT hr, const char* message, const char* func)
 {
     if (FAILED(hr)) {
+        spdlog::error("exit_on_failed {} {} {}", func, message, str_win_err(HRESULT_CODE(hr)));
         exit(-1);
     }
 }
