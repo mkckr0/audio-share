@@ -50,6 +50,11 @@ import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.Timer
+import kotlin.concurrent.timer
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.TimeSource
 
 @Sharable
 class NetClient(private val handler: Handler, private val application: Application) {
@@ -76,6 +81,9 @@ class NetClient(private val handler: Handler, private val application: Applicati
 
     private var tcpChannel: Channel? = null
     private var udpChannel: Channel? = null
+    private var heartbeatTimer: Timer? = null
+    @OptIn(ExperimentalTime::class)
+    private var heartbeatLastTick = TimeSource.Monotonic.markNow()
     private var _audioTrack: AudioTrack? = null
     private val audioTrack get() = _audioTrack!!
 
@@ -165,6 +173,7 @@ class NetClient(private val handler: Handler, private val application: Applicati
             var id: Int = 0
         }
 
+        @OptIn(ExperimentalTime::class)
         override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
             Log.d(tag, "channelRead tcp")
             try {
@@ -178,10 +187,19 @@ class NetClient(private val handler: Handler, private val application: Applicati
                         val id = msg.id
                         if (id > 0) {
                             parent.udpChannel?.writeAndFlush(id)
+                            parent.heartbeatLastTick = TimeSource.Monotonic.markNow()
+                            parent.heartbeatTimer = timer(null, false, 0, 3000) {
+                                if (TimeSource.Monotonic.markNow() - parent.heartbeatLastTick > 5.seconds) {
+                                    parent.onFailed(IOException("Heartbeat Timeout"))
+                                }
+                                Log.d(tag, "heartbeatTimer")
+                            }
+                            Log.d(tag, "start heartbeat")
                         } else {
                             Log.e(tag, "id <= 0")
                         }
                     } else if (msg.cmd == CMD.CMD_HEARTBEAT) {
+                        parent.heartbeatLastTick = TimeSource.Monotonic.markNow()
                         parent.sendCMD(ctx, CMD.CMD_HEARTBEAT)
                     } else {
                         Log.e(tag, "error cmd")
@@ -329,6 +347,8 @@ class NetClient(private val handler: Handler, private val application: Applicati
     }
 
     private fun destroy() {
+        heartbeatTimer?.cancel()
+        heartbeatTimer = null
         tcpChannel?.close()
         tcpChannel = null
         udpChannel?.close()
