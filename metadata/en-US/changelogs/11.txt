@@ -1,0 +1,3 @@
+- Fix crash when refresh audio endpoint list on Server MFC.
+- Now, Linux `as-cmd` won't send blank audio samples to app if no sound exists.
+- Move heartbeat timer from app to server. Because app's timer will sleep if no audio sample is playing.
