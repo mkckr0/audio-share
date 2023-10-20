@@ -3,7 +3,7 @@ case $1 in
         cat VERSION
         ;;
     '-c')
-        cat VERSION | awk -F '.' '{print 10000 * $1 + 100 * $2 + $3}'
+        cat VERSION | awk -F '.' '{print 1000000 * $1 + 1000 * $2 + $3}'
         ;;
     *)
         echo 'error arg'
