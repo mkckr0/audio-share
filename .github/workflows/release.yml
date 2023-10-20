@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - run: git pull
       - run: |
           bash ./scripts/apply_version.sh
       - run: |
@@ -28,6 +29,7 @@ jobs:
         working-directory: android-app
     steps:
       - uses: actions/checkout@v3
+      - run: git pull
       - uses: actions/setup-java@v3
         with:
           java-version: "17"
@@ -70,6 +72,7 @@ jobs:
       VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
     steps:
       - uses: actions/checkout@v3
+      - run: git pull
       - uses: microsoft/setup-msbuild@v1
       - uses: lukka/run-vcpkg@v11
         with:
@@ -106,12 +109,11 @@ jobs:
     defaults:
       run:
         working-directory: server-core
-    outputs:
-      hash: ${{ steps.get_hash.outputs.hash }}
     env:
       VCPKG_DEFAULT_TRIPLET: ${{ matrix.vcpkg_triplet }}
     steps:
       - uses: actions/checkout@v3
+      - run: git pull
       - name: Install Linux Deps
         run: sudo apt install libpipewire-0.3-dev
         if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -144,6 +146,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v3
+      - run: git pull
       - run: chmod +x ./scripts/get_version.sh
       - uses: actions/download-artifact@v3
         with:
