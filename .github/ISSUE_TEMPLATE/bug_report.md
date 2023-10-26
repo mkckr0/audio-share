@@ -32,5 +32,5 @@ If applicable, add screenshots to help explain your problem.
  - OS: [e.g. Android 13]
  - Version [e.g. v0.0.11]
 
-**Additional context**
-Add any other context about the problem here.
+**Additional information**
+Add any other information about the problem here, such as server.log or stdout.
