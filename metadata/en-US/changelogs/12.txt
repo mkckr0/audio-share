@@ -1,0 +1,1 @@
+- Add support for Android 13 [Themed app icons](https://developer.android.com/about/versions/13/features#themed-app-icons).
