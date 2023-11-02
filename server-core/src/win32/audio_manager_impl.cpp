@@ -88,16 +88,24 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
     set_format(_format, pCaptureFormat);
 
-    constexpr int REFTIMES_PER_SEC = 10000000; // 1 reference_time = 100ns
-    constexpr int REFTIMES_PER_MILLISEC = 10000;
+    constexpr static int REFTIMES_PER_SEC = 10000000; // 1 reference_time = 100ns
+    constexpr static int REFTIMES_PER_MILLISEC = 10000;
 
-    const REFERENCE_TIME hnsRequestedDuration = 1 * REFTIMES_PER_SEC; // 1s
+    REFERENCE_TIME hnsMinimumDevicePeriod = 0;
+    hr = pAudioClient->GetDevicePeriod(NULL, &hnsMinimumDevicePeriod);
+    exit_on_failed(hr);
+
+    spdlog::info("minimum device period: {}", hnsMinimumDevicePeriod);
+
+    REFERENCE_TIME hnsRequestedDuration = 10 * REFTIMES_PER_SEC;
     hr = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, hnsRequestedDuration, 0, pCaptureFormat, nullptr);
     exit_on_failed(hr);
 
     UINT32 bufferFrameCount {};
     hr = pAudioClient->GetBufferSize(&bufferFrameCount);
     exit_on_failed(hr);
+
+    spdlog::info("buffer size: {}", bufferFrameCount);
 
     CComPtr<IAudioCaptureClient> pCaptureClient;
     hr = pAudioClient->GetService(__uuidof(IAudioCaptureClient), (void**)&pCaptureClient);
@@ -106,7 +114,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     hr = pAudioClient->Start();
     exit_on_failed(hr);
 
-    const REFERENCE_TIME hnsActualDuration = (long long)REFTIMES_PER_SEC * bufferFrameCount / pCaptureFormat->nSamplesPerSec;
+    const std::chrono::milliseconds duration { hnsMinimumDevicePeriod / REFTIMES_PER_MILLISEC };
 
     UINT32 frame_count = 0;
 
@@ -120,7 +128,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
         timer.expires_after(1ms);
         timer.wait(ec);
         if (ec) {
-            break;
+        break;
         }
 
         UINT32 next_packet_size = 0;
@@ -146,7 +154,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 #ifdef DEBUG
         frame_count += numFramesAvailable;
         seconds = frame_count / pCaptureFormat->nSamplesPerSec;
-        //spdlog::trace("numFramesAvailable: {}, seconds: {}", numFramesAvailable, seconds);
+        // spdlog::trace("numFramesAvailable: {}, seconds: {}", numFramesAvailable, seconds);
 #endif // DEBUG
 
         hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
