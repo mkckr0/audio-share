@@ -32,8 +32,8 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 
 - You need a computer with Windows 10 x86_64, and a phone with Android 6.0(API 23)+.
 - Download APK file and AudioShareServer.exe from [latest release](https://github.com/mkckr0/audio-share/releases/latest).
-- Open the AudioShareServer.exe on your computer. The default arguments may work well. But you may still have to check the "Host" part. It's normally the LAN address. Make sure your phone can connect your computer over this IP address. Then Click "Start Server" button.
-- Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step. Click "▶" button and enjoy the audio🎶.
+- Open the AudioShareServer.exe on your computer. The default arguments may work well. But you may still have to check the "Host" part. It's normally the LAN address, such as `192.168.3.2`. Make sure your phone can connect your computer over this IP address. Then Click "Start Server" button.
+- Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step, such as `192.168.3.2`. Click "▶" button and enjoy the audio🎶.
 
 > **Caution!!!**: This app doesn't support auto reconnecting feature at present. Once the app is killed  or disconnected by Android power saver, the audio playing will be stop. Adding app to the whitelist of power saver is recommended.
 
@@ -43,7 +43,13 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 - Download the `audio-share-server-cmd-windows.zip` for Windows, the `audio-share-server-cmd-linux.tar.gz` for Linux.
 - Uncompress the archive file.
 - Find the LAN address of your computer, such as `192.168.3.2`. Then run `as-cmd -b 192.168.3.2` to start the server. It will use the default port `65530` and select a default audio endpoint.
-- The operation of app is same as [Usage for Windows GUI](#usage-for-windows-gui).
+- The Windows will ask you to add firewall rules automatically while Linux not. So you need to configure firewall manually if your Linux distribution enables firewall.
+```sh
+sudo firewall-cmd --add-rich-rule='rule family="ipv4" destination address="192.168.3.2" port port="65530" protocol="tcp" accept'
+sudo firewall-cmd --add-rich-rule='rule family="ipv4" destination address="192.168.3.2" port port="65530" protocol="udp" accept'
+sudo firewall-cmd --runtime-to-permanent
+```
+- Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step, such as `192.168.3.2`. Click "▶" button and enjoy the audio🎶.
 
 ## Screenshot
 
