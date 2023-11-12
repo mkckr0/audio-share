@@ -1,5 +1,6 @@
 /**
  *    Copyright 2022-2023 mkckr0 <https://github.com/mkckr0>
+ *    Copyright 2023 CamarataM <https://github.com/CamarataM>
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -78,14 +79,14 @@ class HomeViewModel(private val application: Application) : AndroidViewModel(app
 
     fun onWorkVolumeChange(value: Int) {
         workVolume.value = value
-        if (isPlaying.value!!) {
+        if (sharedPreferences.getBoolean("audio_use_volume_sliders", true) && isPlaying.value!!) {
             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, value, 0)
         }
     }
 
     fun onIdleVolumeChange(value: Int) {
         idleVolume.value = value
-        if (!isPlaying.value!!) {
+        if (sharedPreferences.getBoolean("audio_use_volume_sliders", true) && !isPlaying.value!!) {
             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, value, 0)
         }
     }
@@ -136,12 +137,16 @@ class HomeViewModel(private val application: Application) : AndroidViewModel(app
         override fun onAudioStop() {
             isPlaying.value = false
             info.value = application.getString(R.string.audio_stopped)
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, idleVolume.value!!, 0)
+            if (sharedPreferences.getBoolean("audio_use_volume_sliders", true)) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, idleVolume.value!!, 0)
+            }
         }
 
         override fun onAudioStart() {
             info.value = application.getString(R.string.audio_started)
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, workVolume.value!!, 0)
+            if (sharedPreferences.getBoolean("audio_use_volume_sliders", true)) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, workVolume.value!!, 0)
+            }
         }
     }
 }
