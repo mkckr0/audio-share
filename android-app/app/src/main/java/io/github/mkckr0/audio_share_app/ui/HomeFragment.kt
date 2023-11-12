@@ -1,5 +1,6 @@
 /**
  *    Copyright 2022-2023 mkckr0 <https://github.com/mkckr0>
+*    Copyright 2023 CamarataM <https://github.com/CamarataM>
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -69,14 +70,18 @@ class HomeFragment : Fragment() {
         binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
 
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        
         binding.sliderWorkVolume.addOnSliderTouchListener(VolumeSliderTouchListener())
         binding.sliderWorkVolume.addOnChangeListener { _, value, _ ->
             viewModel.onWorkVolumeChange(value.toInt())
         }
+        binding.sliderWorkVolume.isEnabled = sharedPreferences.getBoolean("audio_use_volume_sliders", true)
         binding.sliderIdleVolume.addOnSliderTouchListener(VolumeSliderTouchListener())
         binding.sliderIdleVolume.addOnChangeListener { _, value, _ ->
             viewModel.onIdleVolumeChange(value.toInt())
         }
+        binding.sliderIdleVolume.isEnabled = sharedPreferences.getBoolean("audio_use_volume_sliders", true)
 
         viewModel.hostError.observe(viewLifecycleOwner) { binding.textFieldHostLayout.error = it }
         viewModel.portError.observe(viewLifecycleOwner) { binding.textFieldPortLayout.error = it }
