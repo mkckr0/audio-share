@@ -1,1 +1,2 @@
 - Add support for Android 13 [Themed app icons](https://developer.android.com/about/versions/13/features#themed-app-icons) #13.
+- The Server MFC has a bug(#14 #16 #18) from v0.0.10. It still exists. To fix to it, I may have to see the source code of asio. I don't have time to do it because I have to concentrate on perparing for my postgraduate entrance exam. It may spend over 1 year. All new features are all postponed, too.
