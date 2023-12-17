@@ -1,0 +1,2 @@
+- Fix typo error #19.
+- Fix crashing when no audio enpoint on Windows #21.
