@@ -8,7 +8,7 @@
 
 int main(int argc, char* argv[])
 {
-    cxxopts::Options options(AUDIO_SHARE_BIN_NAME, "Example:\n  " AUDIO_SHARE_BIN_NAME " -l 192.168.3.2:65530 -e 48\n");
+    cxxopts::Options options(AUDIO_SHARE_BIN_NAME, "Example:\n  " AUDIO_SHARE_BIN_NAME " -b 192.168.3.2\n");
 
     // clang-format off
     options.add_options()
