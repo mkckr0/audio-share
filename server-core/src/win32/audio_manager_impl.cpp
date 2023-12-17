@@ -223,6 +223,9 @@ std::string audio_manager::get_default_endpoint()
 
     CComPtr<IMMDevice> pEndpoint;
     hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pEndpoint);
+    if (hr == HRESULT_FROM_WIN32(ERROR_NOT_FOUND)) {
+        return {};
+    }
     exit_on_failed(hr);
 
     CComHeapPtr<WCHAR> pwszID;

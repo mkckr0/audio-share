@@ -288,6 +288,11 @@ void CAudioShareServerDlg::OnBnClickedStartServer()
     CString text;
     m_buttonServer.GetWindowText(text);
     if (text == L"Start Server") {
+        if (!m_comboBoxAudioEndpoint.GetCount()) {
+            AfxMessageBox(L"No Audio Endpoint", MB_OK | MB_ICONSTOP);
+            return;
+        }
+
         // start
         EnableInputControls(false);
         m_buttonServer.EnableWindow(false);
