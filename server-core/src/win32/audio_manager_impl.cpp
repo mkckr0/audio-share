@@ -113,7 +113,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     exit_on_failed(hr);
 
     const std::chrono::milliseconds duration { hnsMinimumDevicePeriod / REFTIMES_PER_MILLISEC };
-    spdlog::info("deivce period: {}ms", duration.count());
+    spdlog::info("device period: {}ms", duration.count());
 
     UINT32 frame_count = 0;
     int seconds {};
