@@ -24,6 +24,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Server (please complete the following information):**
  - OS: [e.g. Windows 10 22H2 19045.3570]
+ - CPU: [e.g. AMD Ryzen 7 5800X]
  - GUI or CMD: [e.g. GUI]
  - Version [e.g. v0.0.11]
 
