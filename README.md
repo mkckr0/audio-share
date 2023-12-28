@@ -39,7 +39,7 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 
 ## Usage for Windows/Linux CMD
 
-- Your Linux distro must have a PipeWire. Rocky Linux 9 works well.
+- Your Linux distro must have a PipeWire(0.3.xx).
 - Download the `audio-share-server-cmd-windows.zip` for Windows, the `audio-share-server-cmd-linux.tar.gz` for Linux.
 - Uncompress the archive file.
 - Find the LAN address of your computer, such as `192.168.3.2`. Then run `as-cmd -b 192.168.3.2` to start the server. It will use the default port `65530` and select a default audio endpoint.
