@@ -95,8 +95,6 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     hr = pAudioClient->GetDevicePeriod(NULL, &hnsMinimumDevicePeriod);
     exit_on_failed(hr);
 
-    spdlog::info("minimum device period: {}", hnsMinimumDevicePeriod);
-
     REFERENCE_TIME hnsRequestedDuration = 10 * REFTIMES_PER_SEC;
     hr = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, hnsRequestedDuration, 0, pCaptureFormat, nullptr);
     exit_on_failed(hr);
@@ -115,20 +113,23 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     exit_on_failed(hr);
 
     const std::chrono::milliseconds duration { hnsMinimumDevicePeriod / REFTIMES_PER_MILLISEC };
+    spdlog::info("deivce period: {}ms", duration.count());
 
     UINT32 frame_count = 0;
-
     int seconds {};
 
     using namespace std::chrono_literals;
     asio::steady_timer timer(*network_manager->_ioc);
     std::error_code ec;
 
+    auto time_point = std::chrono::steady_clock::now();
+
     do {
-        timer.expires_after(1ms);
+        time_point += duration;
+        timer.expires_at(time_point);
         timer.wait(ec);
         if (ec) {
-        break;
+            break;
         }
 
         UINT32 next_packet_size = 0;
