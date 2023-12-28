@@ -1,0 +1,1 @@
+- Fix the crackle and high latency bug(#14, #16, #18). I reproduced the bug on my laptop and fixed it. It's easier to fix it than I expected.
