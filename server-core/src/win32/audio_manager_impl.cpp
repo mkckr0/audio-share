@@ -122,11 +122,10 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     asio::steady_timer timer(*network_manager->_ioc);
     std::error_code ec;
 
-    auto time_point = std::chrono::steady_clock::now();
+    timer.expires_at(std::chrono::steady_clock::now());
 
     do {
-        time_point += duration;
-        timer.expires_at(time_point);
+        timer.expires_at(timer.expiry() + duration);
         timer.wait(ec);
         if (ec) {
             break;
