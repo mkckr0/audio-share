@@ -35,6 +35,7 @@ public:
 } // namespace detail
 
 std::string wchars_to_mbs(const std::wstring& src);
+std::string wchars_to_utf8(const std::wstring& src);
 std::wstring mbs_to_wchars(const std::string& src);
 std::string str_win_err(int err);
 std::wstring wstr_win_err(int err);

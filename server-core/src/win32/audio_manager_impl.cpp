@@ -76,7 +76,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     PropVariantInit(&varName);
     hr = pProps->GetValue(PKEY_Device_FriendlyName, &varName);
     exit_on_failed(hr);
-    spdlog::info("select audio endpoint: {}", wchars_to_mbs(varName.pwszVal));
+    spdlog::info("select audio endpoint: {}", wchars_to_utf8(varName.pwszVal));
     PropVariantClear(&varName);
 
     CComPtr<IAudioClient> pAudioClient;
@@ -281,7 +281,7 @@ void print_endpoints(CComPtr<IMMDeviceCollection> pColletion)
         hr = pProps->GetValue(PKEY_Device_FriendlyName, &varName);
         exit_on_failed(hr);
 
-        spdlog::info("{}", wchars_to_mbs(varName.pwszVal));
+        spdlog::info("{}", wchars_to_utf8(varName.pwszVal));
 
         PropVariantClear(&varName);
     }
@@ -290,7 +290,7 @@ void print_endpoints(CComPtr<IMMDeviceCollection> pColletion)
 void exit_on_failed(HRESULT hr, const char* message, const char* func)
 {
     if (FAILED(hr)) {
-        spdlog::error("exit_on_failed {} {} {}", func, message, str_win_err(HRESULT_CODE(hr)));
+        spdlog::error("exit_on_failed {} {} {}", func, message, wchars_to_utf8(wstr_win_err(HRESULT_CODE(hr))));
         exit(-1);
     }
 }
@@ -298,6 +298,17 @@ void exit_on_failed(HRESULT hr, const char* message, const char* func)
 std::string wchars_to_mbs(const std::wstring& src)
 {
     UINT cp = GetACP();
+    int n = WideCharToMultiByte(cp, 0, src.data(), (int)src.size(), nullptr, 0, 0, 0);
+
+    std::vector<char> buf(n);
+    WideCharToMultiByte(cp, 0, src.data(), (int)src.size(), buf.data(), (int)buf.size(), 0, 0);
+    std::string dst(buf.data(), buf.size());
+    return dst;
+}
+
+std::string wchars_to_utf8(const std::wstring& src)
+{
+    UINT cp = CP_UTF8;
     int n = WideCharToMultiByte(cp, 0, src.data(), (int)src.size(), nullptr, 0, 0, 0);
 
     std::vector<char> buf(n);
