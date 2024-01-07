@@ -1,0 +1,5 @@
+- This version is all about Server MFC.
+- Set `192.168.x.x` as default when exists multiple host IP #29.
+- Add `config.ini` config file. It will save the host, port and other states.
+- Add a `/hide` option so that the server app can start sliently.
+- Add a "Auto Run" checkbox. If you check this, the server app will run with `/hide` at OS boot #29.
