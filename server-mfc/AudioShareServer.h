@@ -26,6 +26,7 @@
 
 #include "resource.h"		// main symbols
 
+#include <string>
 
 // CAudioShareServerApp:
 // See AudioShareServer.cpp for the implementation of this class
@@ -41,6 +42,8 @@ public:
 	virtual BOOL InitInstance();
 
 // Implementation
+	bool m_bHide;
+	std::wstring m_exePath;
 
 	DECLARE_MESSAGE_MAP()
 };

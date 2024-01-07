@@ -137,6 +137,20 @@ bool CAudioShareServerDlg::ShowNotifyIcon(bool bEnable)
     }
 }
 
+void CAudioShareServerDlg::SetAutoRun(bool bEnable)
+{
+    HKEY key;
+    RegOpenKeyExW(HKEY_CURRENT_USER, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_SET_VALUE, &key);
+    if (bEnable) {
+        auto value = theApp.m_exePath + L" /hide";
+        RegSetValueExW(key, L"AudioShareServer", 0, REG_SZ, (const BYTE*)value.c_str(), (DWORD)(value.length() + 1) * sizeof(wchar_t));
+    }
+    else {
+        RegDeleteValueW(key, L"AudioShareServer");
+    }
+    RegCloseKey(key);
+}
+
 void CAudioShareServerDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialogEx::DoDataExchange(pDX);
@@ -145,6 +159,18 @@ void CAudioShareServerDlg::DoDataExchange(CDataExchange* pDX)
     DDX_Control(pDX, IDC_COMBO_AUDIO_ENDPOINT, m_comboBoxAudioEndpoint);
     DDX_Control(pDX, IDC_BUTTON_SERVER, m_buttonServer);
     DDX_Control(pDX, IDC_BUTTON_REFRESH, m_buttonRefresh);
+    DDX_Control(pDX, IDC_CHECK_AUTORUN, m_buttonAutoRun);
+}
+
+void CAudioShareServerDlg::PostNcDestroy()
+{
+    delete this;
+}
+
+void CAudioShareServerDlg::OnCancel()
+{
+    // https://learn.microsoft.com/en-us/cpp/mfc/destroying-the-dialog-box
+    DestroyWindow();
 }
 
 BEGIN_MESSAGE_MAP(CAudioShareServerDlg, CDialogEx)
@@ -157,6 +183,7 @@ BEGIN_MESSAGE_MAP(CAudioShareServerDlg, CDialogEx)
     ON_WM_DESTROY()
     ON_WM_CTLCOLOR()
     ON_BN_CLICKED(IDC_BUTTON_REFRESH, &CAudioShareServerDlg::OnBnClickedButtonRefresh)
+    ON_BN_CLICKED(IDC_CHECK_AUTORUN, &CAudioShareServerDlg::OnBnClickedCheckAutoRun)
 END_MESSAGE_MAP()
 
 
@@ -197,21 +224,26 @@ BOOL CAudioShareServerDlg::OnInitDialog()
         return FALSE;
     }
 
-    ShowWindow(SW_SHOW);
-
     // TODO: Add extra initialization here
+    ShowWindow(theApp.m_bHide ? SW_HIDE : SW_SHOW);
 
     // set default host and port
     auto address_list = network_manager::get_local_addresss();
     for (auto address : address_list) {
         auto nIndex = m_comboBoxHost.AddString(address.c_str());
     }
-    if (m_comboBoxHost.GetCount()) {
-        m_comboBoxHost.SetCurSel(0);
+    auto configHost = theApp.GetProfileStringW(L"Network", L"host");
+    if (!configHost.IsEmpty()) {
+        m_comboBoxHost.SetWindowTextW(configHost);
+    }
+    else {
+        if (m_comboBoxHost.GetCount()) {
+            m_comboBoxHost.SetCurSel(0);
+        }
     }
 
     m_editPort.SetLimitText(5);
-    m_editPort.SetWindowTextW(L"65530");
+    m_editPort.SetWindowTextW(theApp.GetProfileStringW(L"Network", L"port", L"65530"));
 
     // init endpoint list
     this->OnBnClickedButtonRefresh();
@@ -223,6 +255,14 @@ BOOL CAudioShareServerDlg::OnInitDialog()
     // create network_manager
     m_audio_manager = std::make_shared<audio_manager>();
     m_network_manager = std::make_shared<network_manager>(m_audio_manager);
+
+    bool configAutoRun = theApp.GetProfileIntW(L"App", L"AutoRun", false);
+    SetAutoRun(configAutoRun);
+    m_buttonAutoRun.SetCheck(configAutoRun);
+
+    if (theApp.GetProfileIntW(L"App", L"Running", false)) {
+        m_buttonServer.PostMessageW(BM_CLICK);
+    }
 
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -316,6 +356,12 @@ void CAudioShareServerDlg::OnBnClickedStartServer()
 
         m_buttonServer.EnableWindow(true);
         m_buttonServer.SetWindowText(L"Stop Server");
+        theApp.WriteProfileStringW(L"Network", L"host", host_str);
+        theApp.WriteProfileStringW(L"Network", L"port", port_str);
+        CString endpoint_name;
+        m_comboBoxAudioEndpoint.GetWindowTextW(endpoint_name);
+        theApp.WriteProfileStringW(L"Audio", L"endpoint", endpoint_name);
+        theApp.WriteProfileInt(L"App", L"Running", true);
     }
     else {
         // stop
@@ -325,6 +371,7 @@ void CAudioShareServerDlg::OnBnClickedStartServer()
         EnableInputControls(true);
         m_buttonServer.EnableWindow(true);
         m_buttonServer.SetWindowText(L"Start Server");
+        theApp.WriteProfileInt(L"App", L"Running", false);
     }
 }
 
@@ -347,8 +394,23 @@ void CAudioShareServerDlg::OnBnClickedButtonRefresh()
         auto&& [id, name] = endpoint_list[i];
         int nIndex = m_comboBoxAudioEndpoint.AddString(mbs_to_wchars(name).c_str());
         m_comboBoxAudioEndpoint.SetItemDataPtr(nIndex, _strdup(id.c_str()));
-        if (default_index == i) {
+    }
+
+    auto configEndpoint = theApp.GetProfileStringW(L"Audio", L"endpoint");
+    for (int nIndex = 0; nIndex < m_comboBoxAudioEndpoint.GetCount(); ++nIndex) {
+        CString text;
+        m_comboBoxAudioEndpoint.GetLBText(nIndex, text);
+        if (configEndpoint == text) {
             m_comboBoxAudioEndpoint.SetCurSel(nIndex);
+            return;
+        }
+    }
+    for (int nIndex = 0; nIndex < m_comboBoxAudioEndpoint.GetCount(); ++nIndex) {
+        CString text;
+        m_comboBoxAudioEndpoint.GetLBText(nIndex, text);
+        if (default_index == nIndex) {
+            m_comboBoxAudioEndpoint.SetCurSel(nIndex);
+            return;
         }
     }
 }
@@ -397,4 +459,11 @@ HBRUSH CAudioShareServerDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
     }
 
     return hbr;
+}
+
+
+void CAudioShareServerDlg::OnBnClickedCheckAutoRun()
+{
+    SetAutoRun(m_buttonAutoRun.GetCheck());
+    theApp.WriteProfileInt(L"App", L"AutoRun", m_buttonAutoRun.GetCheck());
 }

@@ -28,6 +28,7 @@
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <filesystem>
 
 // CAudioShareServerApp
 
@@ -47,13 +48,20 @@ CAudioShareServerApp::CAudioShareServerApp()
 	// Place all significant initialization in InitInstance
 	SetProcessDPIAware();
 
-	auto basic_logger = spdlog::basic_logger_mt("server", "server.log");
+	WCHAR lpFileName[1024];
+	GetModuleFileNameW(nullptr, lpFileName, sizeof(lpFileName));
+	m_exePath = lpFileName;
+	auto exe_dir = std::filesystem::path(m_exePath).parent_path();
+
+	auto basic_logger = spdlog::basic_logger_mt("server", (exe_dir / "server.log").string());
 	spdlog::set_default_logger(basic_logger);
 #ifdef DEBUG
 	spdlog::flush_every(std::chrono::seconds(1));
 	spdlog::set_level(spdlog::level::trace);
 #endif // DEBUG
 
+	free((void*)m_pszProfileName);
+	m_pszProfileName = _tcsdup((exe_dir / "config.ini").c_str());
 }
 
 
@@ -94,31 +102,48 @@ BOOL CAudioShareServerApp::InitInstance()
 	// Change the registry key under which our settings are stored
 	// TODO: You should modify this string to be something appropriate
 	// such as the name of your company or organization
-	SetRegistryKey(_T("Local AppWizard-Generated Applications"));
+	//SetRegistryKey(_T("Local AppWizard-Generated Applications"));
+	
+	struct MyCCommandLineInfo : CCommandLineInfo {
+		virtual void ParseParam(const TCHAR* pszParam, BOOL bFlag, BOOL bLast)
+		{
+			if (bFlag) {
+				if (CString(pszParam) == L"hide") {
+					theApp.m_bHide = true;
+				}
+			}
+		}
+	};
+	MyCCommandLineInfo cmdInfo;
+	ParseCommandLine(cmdInfo);
 
 	if (InitContextMenuManager() == FALSE) {
 		TRACE(traceAppMsg, 0, "InitContextMenuManager Error\n");
 		return FALSE;
 	}
 
-	CAudioShareServerDlg dlg;
-	m_pMainWnd = &dlg;
-	INT_PTR nResponse = dlg.DoModal();
-	if (nResponse == IDOK)
-	{
-		// TODO: Place code here to handle when the dialog is
-		//  dismissed with OK
-	}
-	else if (nResponse == IDCANCEL)
-	{
-		// TODO: Place code here to handle when the dialog is
-		//  dismissed with Cancel
-	}
-	else if (nResponse == -1)
-	{
-		TRACE(traceAppMsg, 0, "Warning: dialog creation failed, so application is terminating unexpectedly.\n");
-		TRACE(traceAppMsg, 0, "Warning: if you are using MFC controls on the dialog, you cannot #define _AFX_NO_MFC_CONTROLS_IN_DIALOGS.\n");
-	}
+	auto dlg = new CAudioShareServerDlg;
+	dlg->Create(IDD_AUDIOSHARESERVER_DIALOG, nullptr);
+	m_pMainWnd = dlg;
+
+	//CAudioShareServerDlg dlg;
+	//m_pMainWnd = &dlg;
+	//INT_PTR nResponse = dlg.DoModal();
+	//if (nResponse == IDOK)
+	//{
+	//	// TODO: Place code here to handle when the dialog is
+	//	//  dismissed with OK
+	//}
+	//else if (nResponse == IDCANCEL)
+	//{
+	//	// TODO: Place code here to handle when the dialog is
+	//	//  dismissed with Cancel
+	//}
+	//else if (nResponse == -1)
+	//{
+	//	TRACE(traceAppMsg, 0, "Warning: dialog creation failed, so application is terminating unexpectedly.\n");
+	//	TRACE(traceAppMsg, 0, "Warning: if you are using MFC controls on the dialog, you cannot #define _AFX_NO_MFC_CONTROLS_IN_DIALOGS.\n");
+	//}
 
 	// Delete the shell manager created above.
 	//if (pShellManager != nullptr)
@@ -132,6 +157,7 @@ BOOL CAudioShareServerApp::InitInstance()
 
 	// Since the dialog has been closed, return FALSE so that we exit the
 	//  application, rather than start the application's message pump.
-	return FALSE;
+	//return FALSE;
+	return TRUE;
 }
 

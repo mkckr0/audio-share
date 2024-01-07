@@ -44,6 +44,7 @@ private:
 	void EnableInputControls(bool bEnable = true);
 	COLORREF GetBrushColor(HBRUSH brush);
 	bool ShowNotifyIcon(bool bEnable = true);
+	void SetAutoRun(bool bEnable);
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME
@@ -51,8 +52,9 @@ private:
 #endif
 
 protected:
-	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
-	
+	virtual void DoDataExchange(CDataExchange* pDX) override;	// DDX/DDV support
+	virtual void PostNcDestroy() override;
+	virtual void OnCancel() override;
 
 // Implementation
 protected:
@@ -70,6 +72,7 @@ protected:
 	afx_msg LRESULT OnNotifyIcon(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnDestroy();
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
+	afx_msg void OnBnClickedCheckAutoRun();
 
 	DECLARE_MESSAGE_MAP()
 public:
@@ -78,4 +81,5 @@ public:
 	CComboBox m_comboBoxAudioEndpoint;
 	CButton m_buttonServer;
 	CButton m_buttonRefresh;
+	CButton m_buttonAutoRun;
 };
