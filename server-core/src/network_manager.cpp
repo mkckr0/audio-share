@@ -63,7 +63,7 @@ std::vector<std::wstring> network_manager::get_local_addresss()
             for (auto pUnicast = pCurrentAddress->FirstUnicastAddress; pUnicast; pUnicast = pUnicast->Next) {
                 auto sockaddr = (sockaddr_in*)pUnicast->Address.lpSockaddr;
                 wchar_t buf[20] {};
-                if (InetNtop(AF_INET, &sockaddr->sin_addr, buf, std::size(buf))) {
+                if (InetNtopW(AF_INET, &sockaddr->sin_addr, buf, std::size(buf))) {
                     address_list.push_back(buf);
                 }
             }
@@ -73,7 +73,18 @@ std::vector<std::wstring> network_manager::get_local_addresss()
     free(pAddresses);
 #endif // _WINDOWS
 
-    std::sort(address_list.begin(), address_list.end());
+    std::sort(address_list.begin(), address_list.end(), [](const std::wstring& lhs, const std::wstring& rhs) {
+        auto is_private_addr = [](const std::wstring& addr) {
+            return addr.find(L"192.168.") == 0;
+        };
+        bool lhs_is_private = is_private_addr(lhs);
+        bool rhs_is_private = is_private_addr(rhs);
+        if (lhs_is_private != rhs_is_private) {
+            return lhs_is_private > rhs_is_private;
+        } else {
+            return std::less<std::wstring>()(lhs, rhs);
+        }
+    });
     return address_list;
 }
 
