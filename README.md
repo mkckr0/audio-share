@@ -54,7 +54,7 @@ sudo firewall-cmd --runtime-to-permanent
 
 ## Screenshot
 
-<img src="docs/img/show_01.png" width="40%" alt="docs/img/show_01.png">
+<img src="docs/img/show_01.png" width="60%" alt="docs/img/show_01.png">
 
 <img src="metadata/en-US/images/phoneScreenshots/1.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/1.png">&nbsp;
 <img src="metadata/en-US/images/phoneScreenshots/2.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/2.png">
