@@ -18,7 +18,7 @@
 [![GitHub top language](https://img.shields.io/github/languages/top/mkckr0/audio-share)](https://img.shields.io/github/languages/top/mkckr0/audio-share)
 [![GitHub repo size](https://img.shields.io/github/repo-size/mkckr0/audio-share)](https://img.shields.io/github/repo-size/mkckr0/audio-share)
 [![GitHub all releases](https://img.shields.io/github/downloads/mkckr0/audio-share/total?logo=github)](https://img.shields.io/github/downloads/mkckr0/audio-share/total)
-[![Download Audio Share](https://img.shields.io/sourceforge/dt/audio-share.svg?logo=sourceforge)](https://sourceforge.net/projects/audio-share/files/latest/download)
+[![Download Audio Share](https://img.shields.io/sourceforge/dt/audio-share.svg?logo=sourceforge)](https://sourceforge.net/projects/audio-share/files)
 [![GitHub issues](https://img.shields.io/github/issues/mkckr0/audio-share)](https://img.shields.io/github/issues/mkckr0/audio-share)
 [![GitHub closed issues](https://img.shields.io/github/issues-closed/mkckr0/audio-share)](https://img.shields.io/github/issues-closed/mkckr0/audio-share)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/mkckr0/audio-share)](https://img.shields.io/github/issues-pr/mkckr0/audio-share)
