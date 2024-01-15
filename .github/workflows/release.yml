@@ -159,6 +159,6 @@ jobs:
       - name: Create Github Release
         run: |
           version=$(bash ./scripts/get_version.sh -n)
-          gh release create "v$version" -d -F notes -t "v$version" --discussion-category announcements release_bin/*/*
+          gh release create "v$version" -d -F notes -t "v$version" release_bin/*/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
