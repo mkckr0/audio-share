@@ -87,7 +87,7 @@ sudo firewall-cmd --runtime-to-permanent
 ## License
 This project is licensed under the [Apache-2.0 license](https://opensource.org/license/apache-2-0) .
 ```
-   Copyright 2022-2023 mkckr0 <https://github.com/mkckr0>
+   Copyright 2022-2024 mkckr0 <https://github.com/mkckr0>
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
