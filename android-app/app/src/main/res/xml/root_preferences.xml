@@ -19,6 +19,13 @@
 
     <PreferenceCategory app:title="Audio">
         <EditTextPreference
+            app:key="audio_tcp_connect_timeout"
+            app:title="TCP Connect Timeout"
+            app:icon="@drawable/baseline_timer_3"
+            app:defaultValue="@string/audio_tcp_connect_timeout"
+            tools:summary="3000ms" />
+
+        <EditTextPreference
             app:key="audio_buffer_size_scale"
             app:title="AudioTrack Buffer Size Scale"
             app:icon="@drawable/baseline_1x_mobiledata"
@@ -26,11 +33,11 @@
             tools:summary="4x" />
 
         <EditTextPreference
-            app:key="audio_tcp_connect_timeout"
-            app:title="TCP Connect Timeout"
-            app:icon="@drawable/baseline_timer_3"
-            app:defaultValue="@string/audio_tcp_connect_timeout"
-            tools:summary="3000ms" />
+            app:key="audio_loudness_enhancer"
+            app:title="Loudness Enhancer"
+            app:icon="@drawable/baseline_volume_up"
+            app:defaultValue="@string/audio_loudness_enhancer"
+            tools:summary="100mB" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Battery Optimization">

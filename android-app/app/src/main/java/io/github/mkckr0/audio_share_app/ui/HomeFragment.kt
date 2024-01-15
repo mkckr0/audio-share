@@ -69,14 +69,13 @@ class HomeFragment : Fragment() {
         binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
 
-        binding.sliderWorkVolume.addOnSliderTouchListener(VolumeSliderTouchListener())
-        binding.sliderWorkVolume.addOnChangeListener { _, value, _ ->
-            viewModel.onWorkVolumeChange(value.toInt())
+        binding.sliderAudioVolume.addOnChangeListener { _, value, _ ->
+            viewModel.onAudioVolumeChange(value)
         }
-        binding.sliderIdleVolume.addOnSliderTouchListener(VolumeSliderTouchListener())
-        binding.sliderIdleVolume.addOnChangeListener { _, value, _ ->
-            viewModel.onIdleVolumeChange(value.toInt())
-        }
+        binding.sliderAudioVolume.addOnSliderTouchListener(object : Slider.OnSliderTouchListener{
+            override fun onStartTrackingTouch(slider: Slider) {}
+            override fun onStopTrackingTouch(slider: Slider) { viewModel.saveAudioVolume() }
+        })
 
         viewModel.hostError.observe(viewLifecycleOwner) { binding.textFieldHostLayout.error = it }
         viewModel.portError.observe(viewLifecycleOwner) { binding.textFieldPortLayout.error = it }
@@ -112,10 +111,5 @@ class HomeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    inner class VolumeSliderTouchListener : Slider.OnSliderTouchListener {
-        override fun onStartTrackingTouch(slider: Slider) {}
-        override fun onStopTrackingTouch(slider: Slider) { viewModel.saveVolume() }
     }
 }

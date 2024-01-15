@@ -17,9 +17,11 @@
 package io.github.mkckr0.audio_share_app
 
 import android.app.Application
+import android.health.connect.datatypes.units.Volume
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.media.audiofx.LoudnessEnhancer
 import android.os.Build
 import android.util.Log
 import androidx.preference.PreferenceManager
@@ -82,10 +84,13 @@ class NetClient(private val handler: Handler, private val application: Applicati
     private var tcpChannel: Channel? = null
     private var udpChannel: Channel? = null
     private var heartbeatTimer: Timer? = null
+
     @OptIn(ExperimentalTime::class)
     private var heartbeatLastTick = TimeSource.Monotonic.markNow()
     private var _audioTrack: AudioTrack? = null
     private val audioTrack get() = _audioTrack!!
+    private var _loudnessEnhancer: LoudnessEnhancer? = null
+    private val loudnessEnhancer get() = _loudnessEnhancer!!
 
     fun start(host: String, port: Int) {
         MainScope().launch(Dispatchers.IO) {
@@ -128,7 +133,8 @@ class NetClient(private val handler: Handler, private val application: Applicati
                                 .addLast(UdpChannelAdapter.UdpMessageDecoder())
                                 .addLast(UdpChannelAdapter(this@NetClient))
                         }
-                    }).bind((tcpChannel!!.localAddress() as InetSocketAddress).hostString, 0).sync().channel()
+                    }).bind((tcpChannel!!.localAddress() as InetSocketAddress).hostString, 0).sync()
+                    .channel()
 
                 Log.d(tag, "udpChannel.localAddress: ${udpChannel!!.localAddress()}")
 
@@ -346,6 +352,10 @@ class NetClient(private val handler: Handler, private val application: Applicati
         handler.onAudioStop()
     }
 
+    fun setVolume(gain: Float) {
+        audioTrack.setVolume(gain)
+    }
+
     private fun destroy() {
         heartbeatTimer?.cancel()
         heartbeatTimer = null
@@ -353,6 +363,9 @@ class NetClient(private val handler: Handler, private val application: Applicati
         tcpChannel = null
         udpChannel?.close()
         udpChannel = null
+        _loudnessEnhancer?.release()
+        _loudnessEnhancer = null
+        _audioTrack?.release()
         _audioTrack = null
     }
 
@@ -457,11 +470,28 @@ class NetClient(private val handler: Handler, private val application: Applicati
             ).setBufferSizeInBytes(bufferSize)
             .setTransferMode(AudioTrack.MODE_STREAM)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            builder.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
-        }
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            builder.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
+//        }
 
-        return builder.build()
+        val audioTrack = builder.build()
+
+        _loudnessEnhancer = LoudnessEnhancer(audioTrack.audioSessionId)
+        val targetGain = sharedPreferences.getString(
+            "audio_loudness_enhancer",
+            application.getString(R.string.audio_loudness_enhancer)
+        )!!.toInt()
+        loudnessEnhancer.setTargetGain(targetGain)
+        loudnessEnhancer.enabled = true
+        Log.d(tag, "LoudnessEnhancer targetGain: ${loudnessEnhancer.targetGain}mB")
+
+        val audioVolume = sharedPreferences.getFloat(
+            "audio_volume",
+            AudioTrack.getMaxVolume()
+        )
+        audioTrack.setVolume(audioVolume)
+
+        return audioTrack
     }
 
     private fun onFailed(exc: Throwable?) {

@@ -43,19 +43,35 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         powerManager = requireActivity().getSystemService(Context.POWER_SERVICE) as PowerManager
 
-        findPreference<EditTextPreference>("audio_buffer_size_scale")!!.apply {
-            setOnBindEditTextListener {
-                it.inputType = InputType.TYPE_CLASS_NUMBER
-                it.setSelection(it.length())
-            }
-            setSummaryProvider { "${(it as EditTextPreference).text}x" }
-        }
         findPreference<EditTextPreference>("audio_tcp_connect_timeout")!!.apply {
             setOnBindEditTextListener {
                 it.inputType = InputType.TYPE_CLASS_NUMBER
                 it.setSelection(it.length())
             }
             setSummaryProvider { "${(it as EditTextPreference).text}ms" }
+            setOnPreferenceChangeListener { _, newValue ->
+                return@setOnPreferenceChangeListener (newValue as String).isNotEmpty()
+            }
+        }
+        findPreference<EditTextPreference>("audio_buffer_size_scale")!!.apply {
+            setOnBindEditTextListener {
+                it.inputType = InputType.TYPE_CLASS_NUMBER
+                it.setSelection(it.length())
+            }
+            setSummaryProvider { "${(it as EditTextPreference).text}x" }
+            setOnPreferenceChangeListener { _, newValue ->
+                return@setOnPreferenceChangeListener (newValue as String).isNotEmpty()
+            }
+        }
+        findPreference<EditTextPreference>("audio_loudness_enhancer")!!.apply {
+            setOnBindEditTextListener {
+                it.inputType = InputType.TYPE_CLASS_NUMBER
+                it.setSelection(it.length())
+            }
+            setSummaryProvider { "${(it as EditTextPreference).text}mB" }
+            setOnPreferenceChangeListener { _, newValue ->
+                return@setOnPreferenceChangeListener (newValue as String).isNotEmpty()
+            }
         }
 
         updateRequestIgnoreBatteryOptimizations()

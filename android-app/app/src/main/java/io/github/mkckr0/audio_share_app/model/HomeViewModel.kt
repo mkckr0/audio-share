@@ -17,9 +17,7 @@
 package io.github.mkckr0.audio_share_app.model
 
 import android.app.Application
-import android.content.Context
-import android.media.AudioManager
-import android.os.Build
+import android.media.AudioTrack
 import android.util.Log
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
@@ -31,27 +29,12 @@ import io.github.mkckr0.audio_share_app.R
 class HomeViewModel(private val application: Application) : AndroidViewModel(application) {
 
     private val sharedPreferences by lazy { PreferenceManager.getDefaultSharedPreferences(application) }
-    private val audioManager by lazy { application.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     private val netClient by lazy { NetClient(NetClientHandler(), application) }
 
-    val volumeFrom = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC).toFloat()
-    } else {
-        0f
-    }
-    val volumeTo = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).toFloat()
-
-    val workVolume = MutableLiveData<Int>().apply {
-        value = sharedPreferences.getInt(
-            "work_volume",
-            audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) / 2
-        )
-    }
-
-    val idleVolume = MutableLiveData<Int>().apply {
-        value = sharedPreferences.getInt(
-            "idle_volume",
-            audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+    val audioVolume = MutableLiveData<Float>().apply {
+        value = sharedPreferences.getFloat(
+            "audio_volume",
+            AudioTrack.getMaxVolume()
         )
     }
 
@@ -69,24 +52,16 @@ class HomeViewModel(private val application: Application) : AndroidViewModel(app
 
     val info = MutableLiveData("")
 
-    fun saveVolume() {
+    fun saveAudioVolume() {
         sharedPreferences.edit(true) {
-            putInt("work_volume", workVolume.value!!)
-            putInt("idle_volume", idleVolume.value!!)
+            putFloat("audio_volume", audioVolume.value!!)
         }
     }
 
-    fun onWorkVolumeChange(value: Int) {
-        workVolume.value = value
+    fun onAudioVolumeChange(value: Float) {
+        audioVolume.value = value
         if (isPlaying.value!!) {
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, value, 0)
-        }
-    }
-
-    fun onIdleVolumeChange(value: Int) {
-        idleVolume.value = value
-        if (!isPlaying.value!!) {
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, value, 0)
+            netClient.setVolume(value)
         }
     }
 
@@ -136,12 +111,10 @@ class HomeViewModel(private val application: Application) : AndroidViewModel(app
         override fun onAudioStop() {
             isPlaying.value = false
             info.value = application.getString(R.string.audio_stopped)
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, idleVolume.value!!, 0)
         }
 
         override fun onAudioStart() {
             info.value = application.getString(R.string.audio_started)
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, workVolume.value!!, 0)
         }
     }
 }

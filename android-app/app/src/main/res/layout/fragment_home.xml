@@ -22,6 +22,7 @@
         <variable
             name="viewModel"
             type="io.github.mkckr0.audio_share_app.model.HomeViewModel" />
+        <import type="android.media.AudioTrack" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -43,7 +44,6 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
                 android:orientation="horizontal">
 
                 <TextView
@@ -53,49 +53,19 @@
                     android:minWidth="110dp"
                     android:minHeight="48dp"
                     android:singleLine="true"
-                    android:text="@string/work_volume"
+                    android:text="@string/audio_volume"
                     android:textSize="18sp" />
 
                 <com.google.android.material.slider.Slider
-                    android:id="@+id/slider_work_volume"
+                    android:id="@+id/slider_audio_volume"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:layout_weight="7"
-                    android:stepSize="1.0"
-                    android:value="@{(float)viewModel.workVolume}"
-                    android:valueFrom="@{viewModel.volumeFrom}"
-                    android:valueTo="@{viewModel.volumeTo}"
-                    app:tickVisible="false"
-                    tools:ignore="SpeakableTextPresentCheck" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical|end"
-                    android:minWidth="110dp"
-                    android:minHeight="48dp"
-                    android:singleLine="true"
-                    android:text="@string/idle_volume"
-                    android:textSize="18sp" />
-
-                <com.google.android.material.slider.Slider
-                    android:id="@+id/slider_idle_volume"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:layout_weight="7"
-                    android:stepSize="1.0"
-                    android:value="@{(float)viewModel.idleVolume}"
-                    android:valueFrom="@{viewModel.volumeFrom}"
-                    android:valueTo="@{viewModel.volumeTo}"
+                    android:stepSize="0.05"
+                    android:value="@{viewModel.audioVolume}"
+                    android:valueFrom="@{AudioTrack.getMinVolume()}"
+                    android:valueTo="@{AudioTrack.getMaxVolume()}"
                     app:tickVisible="false"
                     tools:ignore="SpeakableTextPresentCheck" />
             </LinearLayout>
@@ -104,7 +74,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:baselineAligned="false">
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/text_field_host_layout"
@@ -112,7 +83,8 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="7"
                     android:hint="Host"
-                    app:errorEnabled="true">
+                    app:errorEnabled="true"
+                    tools:ignore="HardcodedText">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/text_field_host"
@@ -130,7 +102,8 @@
                     android:layout_marginStart="5dp"
                     android:layout_weight="3"
                     android:hint="Port"
-                    app:errorEnabled="true">
+                    app:errorEnabled="true"
+                    tools:ignore="HardcodedText">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/text_field_port"
