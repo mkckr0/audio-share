@@ -41,7 +41,7 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 - Open the AudioShareServer.exe on your computer. The default arguments may work well. But you may still have to check the "Host" part. It's normally the LAN address, such as `192.168.3.2`. Make sure your phone can connect your computer over this IP address. Then Click "Start Server" button.
 - Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step, such as `192.168.3.2`. Click "▶" button and enjoy the audio🎶.
 
-> **Caution!!!**: This app doesn't support auto reconnecting feature at present. Once the app is killed  or disconnected by Android power saver, the audio playing will be stop. Adding app to the whitelist of power saver is recommended.
+> **Caution!!!**: This app doesn't support auto reconnecting feature at present. Once the app is killed  or disconnected by Android power saver, the audio playing will be stop. Adding app to the whitelist of power saver is recommended. To do this, you can press "Request Ingnore Battery Optimizations" on app's Settings.
 
 ## Usage for Windows/Linux CMD
 - Download the `audio-share-server-cmd-windows.zip` for Windows, the `audio-share-server-cmd-linux.tar.gz` for Linux.
@@ -54,6 +54,17 @@ sudo firewall-cmd --add-rich-rule='rule family="ipv4" destination address="192.1
 sudo firewall-cmd --runtime-to-permanent
 ```
 - Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step, such as `192.168.3.2`. Click "▶" button and enjoy the audio🎶.
+
+## About Volume
+The final volume that you hear is affected by the following volume:
+
+- PC system volume.
+- Audio player volume on PC.
+- Android system media volume.
+- "Audio Volume" on Android app.
+- "Loudness Enhancer" on Android app.
+
+**They are all independent.** If you max the volume of your PC and audio player, and still feel it's not enough, but don't want to change the Android system volume, you can increase "Loudness Enhancer" on app's Settings. It won't affect the system volume. The "Audio Volume" on app can decrease the volume you hear without changing system volume.
 
 ## Screenshot
 

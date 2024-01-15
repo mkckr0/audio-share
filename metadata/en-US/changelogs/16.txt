@@ -1,0 +1,3 @@
+- Add Loudness Enhancer to make the audio louder #34
+- Remove "Idle Volume" and "Work Volume". They were implemented by changing system media volume.
+- Add "Audio Volume", which is independent from system media volume. Changing it won't change system volume.
