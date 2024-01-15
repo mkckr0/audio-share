@@ -62,7 +62,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:layout_weight="7"
-                    android:stepSize="0.05"
+                    android:stepSize="0.01"
                     android:value="@{viewModel.audioVolume}"
                     android:valueFrom="@{AudioTrack.getMinVolume()}"
                     android:valueTo="@{AudioTrack.getMaxVolume()}"

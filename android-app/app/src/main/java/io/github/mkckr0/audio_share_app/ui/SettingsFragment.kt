@@ -50,7 +50,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
             setSummaryProvider { "${(it as EditTextPreference).text}ms" }
             setOnPreferenceChangeListener { _, newValue ->
-                return@setOnPreferenceChangeListener (newValue as String).isNotEmpty()
+                if (newValue is String) {
+                    if (newValue.isEmpty()) {
+                        return@setOnPreferenceChangeListener false
+                    }
+                    return@setOnPreferenceChangeListener newValue.toInt() <= 10000
+                }
+                return@setOnPreferenceChangeListener false
             }
         }
         findPreference<EditTextPreference>("audio_buffer_size_scale")!!.apply {
@@ -60,7 +66,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
             setSummaryProvider { "${(it as EditTextPreference).text}x" }
             setOnPreferenceChangeListener { _, newValue ->
-                return@setOnPreferenceChangeListener (newValue as String).isNotEmpty()
+                if (newValue is String) {
+                    if (newValue.isEmpty()) {
+                        return@setOnPreferenceChangeListener false
+                    }
+                    return@setOnPreferenceChangeListener newValue.toInt() <= 1000
+                }
+                return@setOnPreferenceChangeListener false
             }
         }
         findPreference<EditTextPreference>("audio_loudness_enhancer")!!.apply {
@@ -70,7 +82,24 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
             setSummaryProvider { "${(it as EditTextPreference).text}mB" }
             setOnPreferenceChangeListener { _, newValue ->
-                return@setOnPreferenceChangeListener (newValue as String).isNotEmpty()
+                if (newValue is String) {
+                    if (newValue.isEmpty()) {
+                        return@setOnPreferenceChangeListener false
+                    }
+                    val mB = newValue.toInt()
+                    if (mB > 3000) {
+                        return@setOnPreferenceChangeListener false
+                    }
+                    if (mB > 1000) {
+                        Snackbar.make(
+                            requireView(),
+                            "Too much loudness will hurt your ears!!!",
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                    }
+                    return@setOnPreferenceChangeListener true
+                }
+                return@setOnPreferenceChangeListener false
             }
         }
 
