@@ -66,6 +66,8 @@ The final volume that you hear is affected by the following volume:
 
 **They are all independent.** If you max the volume of your PC and audio player, and still feel it's not enough, but don't want to change the Android system volume, you can increase "Loudness Enhancer" on app's Settings. It won't affect the system volume. The "Audio Volume" on app can decrease the volume you hear without changing system volume.
 
+**Too much loudness will hurt your ear!!!** "Loudness Enhancer" has a limit of `3000mB`. It's enough for most cases. If you still need more loudness, just directly change Android system volume.
+
 ## Screenshot
 
 <img src="docs/img/show_01.png" width="60%" alt="docs/img/show_01.png">
