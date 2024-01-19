@@ -73,6 +73,7 @@ protected:
 	afx_msg void OnDestroy();
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnBnClickedCheckAutoRun();
+	afx_msg void OnBnClickedButtonReppairFirewall();
 
 	DECLARE_MESSAGE_MAP()
 public:
@@ -82,4 +83,5 @@ public:
 	CButton m_buttonServer;
 	CButton m_buttonRefresh;
 	CButton m_buttonAutoRun;
+	CButton m_buttonRepairFirewall;
 };
