@@ -25,6 +25,15 @@
 
 #include <afxdialogex.h>
 
+#include <netfw.h>
+#include <comdef.h>
+
+#include <wil/resource.h>
+#include <wil/com.h>
+#include <wil/win32_result_macros.h>
+#include <spdlog/spdlog.h>
+#include <filesystem>
+
 #include "audio_manager.hpp"
 #include "network_manager.hpp"
 
@@ -160,6 +169,7 @@ void CAudioShareServerDlg::DoDataExchange(CDataExchange* pDX)
     DDX_Control(pDX, IDC_BUTTON_SERVER, m_buttonServer);
     DDX_Control(pDX, IDC_BUTTON_REFRESH, m_buttonRefresh);
     DDX_Control(pDX, IDC_CHECK_AUTORUN, m_buttonAutoRun);
+    DDX_Control(pDX, IDC_BUTTON_REPPAIR_FIREWALL, m_buttonRepairFirewall);
 }
 
 void CAudioShareServerDlg::PostNcDestroy()
@@ -184,6 +194,7 @@ BEGIN_MESSAGE_MAP(CAudioShareServerDlg, CDialogEx)
     ON_WM_CTLCOLOR()
     ON_BN_CLICKED(IDC_BUTTON_REFRESH, &CAudioShareServerDlg::OnBnClickedButtonRefresh)
     ON_BN_CLICKED(IDC_CHECK_AUTORUN, &CAudioShareServerDlg::OnBnClickedCheckAutoRun)
+    ON_BN_CLICKED(IDC_BUTTON_REPPAIR_FIREWALL, &CAudioShareServerDlg::OnBnClickedButtonReppairFirewall)
 END_MESSAGE_MAP()
 
 
@@ -251,6 +262,12 @@ BOOL CAudioShareServerDlg::OnInitDialog()
     CPngImage pngImage;
     pngImage.Load(IDB_PNG_REFRESH);
     m_buttonRefresh.SetBitmap(pngImage);
+
+    SHSTOCKICONINFO sii{};
+    sii.cbSize = sizeof(sii);
+    HRESULT hr = SHGetStockIconInfo(SIID_SHIELD, SHGSI_ICON | SHGSI_SMALLICON, &sii);
+    m_buttonRepairFirewall.SetIcon(sii.hIcon);
+    DestroyIcon(sii.hIcon);
 
     // create network_manager
     m_audio_manager = std::make_shared<audio_manager>();
@@ -466,4 +483,90 @@ void CAudioShareServerDlg::OnBnClickedCheckAutoRun()
 {
     SetAutoRun(m_buttonAutoRun.GetCheck());
     theApp.WriteProfileInt(L"App", L"AutoRun", m_buttonAutoRun.GetCheck());
+}
+
+
+void CAudioShareServerDlg::OnBnClickedButtonReppairFirewall()
+{
+    try {
+        auto pNetFwPolicy2 = wil::CoCreateInstance<INetFwPolicy2>(__uuidof(NetFwPolicy2));
+
+        wil::unique_cotaskmem_string clsid;
+        THROW_IF_FAILED(StringFromCLSID(__uuidof(NetFwPolicy2), &clsid));
+
+        // https://learn.microsoft.com/en-us/windows/win32/com/the-com-elevation-moniker
+        BIND_OPTS3 bo{};
+        bo.cbStruct = sizeof(bo);
+        bo.hwnd = nullptr;
+        bo.dwClassContext = CLSCTX_LOCAL_SERVER;
+        auto moniker = fmt::format(L"Elevation:Administrator!new:{}", clsid.get());
+        spdlog::info(L"moniker: {}", moniker);
+        THROW_IF_FAILED(CoGetObject(moniker.c_str(), &bo, IID_PPV_ARGS(&pNetFwPolicy2)));
+
+        wil::com_ptr<INetFwRules> pNetFwRules;
+        THROW_IF_FAILED(pNetFwPolicy2->get_Rules(&pNetFwRules));
+
+        long count{};
+        THROW_IF_FAILED(pNetFwRules->get_Count(&count));
+
+        spdlog::info("rule count: {}", count);
+
+        wil::com_ptr<IUnknown> pEnumerator;
+        pNetFwRules->get__NewEnum(&pEnumerator);
+
+        auto pVariant = pEnumerator.query<IEnumVARIANT>();
+
+        std::filesystem::path exe_path(theApp.m_exePath);
+
+        // https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ics/c-enumerating-firewall-rules
+        while (true) {
+            wil::unique_variant var;
+            ULONG cFecthed = 0;
+            if (pVariant->Next(1, &var, &cFecthed) != S_OK) {
+                break;
+            }
+
+            wil::com_ptr<INetFwRule> pNetFwRule;
+            var.pdispVal->QueryInterface(__uuidof(INetFwRule), (void**)&pNetFwRule);
+
+            _bstr_t app_name;
+            pNetFwRule->get_ApplicationName(app_name.GetAddress());
+            std::error_code ec{};
+            if (!app_name || !std::filesystem::equivalent(exe_path, (wchar_t*)app_name, ec)) {
+                continue;
+            }
+
+            pNetFwRule->put_Name(app_name);
+            pNetFwRules->Remove(app_name);
+            spdlog::info(L"remove firewall rule: {}", (wchar_t*)app_name);
+        }
+
+        long profileTypesBitmask{};
+        THROW_IF_FAILED(pNetFwPolicy2->get_CurrentProfileTypes(&profileTypesBitmask));
+        if ((profileTypesBitmask & NET_FW_PROFILE2_PUBLIC) && (profileTypesBitmask != NET_FW_PROFILE2_PUBLIC)) {
+            profileTypesBitmask ^= NET_FW_PROFILE2_PUBLIC;
+        }
+
+        auto pNetFwRule = wil::CoCreateInstance<INetFwRule3>(__uuidof(NetFwRule));
+        pNetFwRule->put_Enabled(VARIANT_TRUE);
+        pNetFwRule->put_Action(NET_FW_ACTION_ALLOW);
+        pNetFwRule->put_ApplicationName(_bstr_t(exe_path.c_str()));
+        pNetFwRule->put_Profiles(profileTypesBitmask);
+
+        pNetFwRule->put_Name(_bstr_t(L"Audio Share Server(TCP-In)"));
+        pNetFwRule->put_Description(_bstr_t(L"Audio Share Server(TCP-In)"));
+        pNetFwRule->put_Protocol(NET_FW_IP_PROTOCOL_TCP);
+        THROW_IF_FAILED((pNetFwRules->Add(pNetFwRule.get())));
+
+        pNetFwRule->put_Name(_bstr_t(L"Audio Share Server(UDP-In)"));
+        pNetFwRule->put_Description(_bstr_t(L"Audio Share Server(UDP-In)"));
+        pNetFwRule->put_Protocol(NET_FW_IP_PROTOCOL_UDP);
+        THROW_IF_FAILED((pNetFwRules->Add(pNetFwRule.get())));
+
+        AfxMessageBox(L"Success", MB_OK | MB_ICONINFORMATION);
+    }
+    catch (...) {
+        auto err_msg = wstr_win_err(wil::Win32ErrorFromCaughtException());
+        AfxMessageBox(err_msg.c_str(), MB_OK | MB_ICONSTOP);
+    }
 }

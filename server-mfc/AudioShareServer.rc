@@ -88,7 +88,7 @@ FONT 10, "Microsoft Sans Serif", 400, 0, 0x0
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,14,14,20,20
     LTEXT           "Audio Share Server, Version 0.0.17",IDC_STATIC,38,14,114,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 2022-2023",IDC_STATIC,39,25,79,12,SS_CENTERIMAGE
+    LTEXT           "Copyright (C) 2022-2024",IDC_STATIC,39,25,79,12,SS_CENTERIMAGE
     DEFPUSHBUTTON   "OK",IDOK,66,48,50,14,WS_GROUP
     CONTROL         "mkckr0",IDC_MFCLINK1,"MfcLink",WS_TABSTOP,118,27,21,9
 END
@@ -109,6 +109,7 @@ BEGIN
     COMBOBOX        IDC_COMBO_HOST,61,8,99,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "",IDC_BUTTON_REFRESH,221,29,11,11,BS_LEFTTEXT | BS_BITMAP
     CONTROL         "Auto Run",IDC_CHECK_AUTORUN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,53,53,51,14
+    PUSHBUTTON      "Repair Firewall",IDC_BUTTON_REPPAIR_FIREWALL,105,53,64,14
 END
 
 
@@ -136,7 +137,7 @@ BEGIN
         BEGIN
             VALUE "FileDescription", "Audio Share Server"
             VALUE "FileVersion", "0.0.17.0"
-            VALUE "LegalCopyright", "Copyright (c) 2022-2023 mkckr0.  All rights reserved."
+            VALUE "LegalCopyright", "Copyright (c) 2022-2024 mkckr0.  All rights reserved."
             VALUE "OriginalFilename", "AudioShareServer.exe"
             VALUE "ProductName", "Audio Share Server"
             VALUE "ProductVersion", "0.0.17"
