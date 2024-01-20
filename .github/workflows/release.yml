@@ -4,25 +4,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  apply_version:
-    name: Apply Version
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: git pull
-      - run: |
-          bash ./scripts/apply_version.sh
-      - run: |
-          git config user.name mkckr0
-          git config user.email 26296627+mkckr0@users.noreply.github.com
-          if [ -z "$(git status -s)" ]; then exit 0; fi
-          git add .
-          git commit -m "Apply version $(bash ./scripts/get_version.sh -n)"
-          git push
-
   build_app:
     name: Build Android App
-    needs: [apply_version]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -78,7 +61,7 @@ jobs:
         with:
           vcpkgGitCommitId: e57b2167e66c847f991bd6bce1355b85acd944e8
       - run: vcpkg integrate install
-      - run: vcpkg install asio protobuf spdlog
+      - run: vcpkg install asio protobuf spdlog[wchar]
       - run: msbuild /m /p:Configuration=Release,Platform=x64
       - name: Checksum
         run: cd x64/Release/ && sha256sum *.exe | tee $(ls *.exe).sha256

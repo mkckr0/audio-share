@@ -175,7 +175,7 @@ total: 1
 
 - Server MFC
     - vcpkg is required for install dependencies.
-    - Run `vcpkg install asio protobuf spdlog` to install deps. The vcpkg triplet is `x64-windows-static-md`.
+    - Run `vcpkg install asio protobuf spdlog[wchar]` to install deps. The vcpkg triplet is `x64-windows-static-md`.
     - Visual Studio 2022 with "Desktop development with C++" workload and "C++ MFC for latest v143 build tools (x86 & x64)" option is required for compiling.
 
 - Server CMD
