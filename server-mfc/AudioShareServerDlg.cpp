@@ -228,6 +228,7 @@ BOOL CAudioShareServerDlg::OnInitDialog()
     //  when the application's main window is not a dialog
     SetIcon(m_hIcon, TRUE);			// Set big icon
 
+    // TODO: Add extra initialization here
     ShowNotifyIcon();
 
     if (theApp.GetContextMenuManager()->AddMenu(L"SystemTray", IDR_MENU_SYSTEM_TRAY) == FALSE) {
@@ -235,7 +236,6 @@ BOOL CAudioShareServerDlg::OnInitDialog()
         return FALSE;
     }
 
-    // TODO: Add extra initialization here
     ShowWindow(theApp.m_bHide ? SW_HIDE : SW_SHOW);
 
     // set default host and port
@@ -457,6 +457,9 @@ LRESULT CAudioShareServerDlg::OnNotifyIcon(WPARAM wParam, LPARAM lParam)
 
 void CAudioShareServerDlg::OnDestroy()
 {
+    CDialogEx::OnDestroy();
+
+    // TODO: Add your message handler code here
     ShowNotifyIcon(false);
 }
 
@@ -494,6 +497,7 @@ void CAudioShareServerDlg::OnBnClickedButtonReppairFirewall()
         wil::unique_cotaskmem_string clsid;
         THROW_IF_FAILED(StringFromCLSID(__uuidof(NetFwPolicy2), &clsid));
 
+        // https://learn.microsoft.com/en-us/windows/win32/secauthz/developing-applications-that-require-administrator-privilege
         // https://learn.microsoft.com/en-us/windows/win32/com/the-com-elevation-moniker
         BIND_OPTS3 bo{};
         bo.cbStruct = sizeof(bo);
