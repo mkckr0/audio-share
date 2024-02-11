@@ -55,6 +55,31 @@ sudo firewall-cmd --runtime-to-permanent
 ```
 - Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step, such as `192.168.3.2`. Click "▶" button and enjoy the audio🎶.
 
+## About Audio Format
+There are two kinds of audio format:
+
+- Capture audio format
+- Transfer audio format
+
+The transfer audio format is uncompressed PCM data and keep same with capture audio format.
+
+You can open `server.log` to see the capture audio format.
+```
+[2024-02-11 22:27:33.019] [server] [info] AudioFormat:
+format_tag: 3
+channels: 2
+sample_rate: 192000
+bits_per_sample: 32
+```
+As shown above, the format is `32 bit float`, the channel count is `2`, and sample rate is `192kHz`.
+
+On Windows, the capture audio format is the default value given by Windows Core Audio APIs. It seems like always be `32 bits float`. The sample rate is affected by audio endpoint format. You may change it by setting System Sounds Panel(`mmsys.cpl`). In `Playback` tab, right click one available endpoint, and open Properties Panel, and select `Advanced` tab, and change `Default Format` and click `Apply`. This can be also done in `Realtek Audio Console`, if you use a Realtek Audio Card.
+
+On Linux, the capture audio format is hardcoded. To keep same with Windows, the audio format is also `32 bits float`. The channel count is always `2`. The sample rate is always `48kHz`.
+
+Note that the higher sample rate will consume more network traffic bandwidth. Maybe in future, the capture audio format can be set by user manually.
+
+
 ## About Volume
 The final volume that you hear is affected by the following volume:
 
