@@ -31,9 +31,20 @@
 
 Audio Share can share Windows/Linux computer's audio to Android phone over network, so your phone becomes the speaker of computer. (You needn't buy a new speaker😄.)
 
+
+## Screenshots
+
+<img src="docs/img/show_01.png" width="60%" alt="docs/img/show_01.png">
+
+<img src="metadata/en-US/images/phoneScreenshots/1.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/1.png">&nbsp;
+<img src="metadata/en-US/images/phoneScreenshots/2.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/2.png">
+
+
 ## Requirements
-- Windows 10+ x86_64 with [Microsoft Visual C++ 2015-2022 Redistributable (x64)](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) ([vc_redist.x64.exe](https://aka.ms/vs/17/release/vc_redist.x64.exe)).
-- Linux with PipeWire(0.3.xx).
+- A PC with Windows or Linux as the server.
+    - Windows 10+ x86_64 with [Microsoft Visual C++ 2015-2022 Redistributable (x64)](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) ([vc_redist.x64.exe](https://aka.ms/vs/17/release/vc_redist.x64.exe)).
+    - Linux with PipeWire(0.3.xx).
+- The audio player on PC can work normally. That's to say that you should have a sound card and the audio endpoint is in available state.
 - Android 6.0(API 23)+.
 
 ## Usage for Windows GUI
@@ -47,13 +58,37 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 - Download the `audio-share-server-cmd-windows.zip` for Windows, the `audio-share-server-cmd-linux.tar.gz` for Linux.
 - Uncompress the archive file.
 - Find the LAN address of your computer, such as `192.168.3.2`. Then run `as-cmd -b 192.168.3.2` to start the server. It will use the default port `65530` and select a default audio endpoint.
-- The Windows will ask you to add firewall rules automatically while Linux not. So you need to configure firewall manually if your Linux distribution enables firewall.
+- The Windows will ask you to add firewall rules automatically while Linux won't. So if your Linux distribution enables firewall, you need to configure firewall manually.
+- Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step, such as `192.168.3.2`. Click "▶" button and enjoy the audio🎶.
+
+
+## Configure Firewall Rules on Linux
+### Add rules
 ```sh
-sudo firewall-cmd --add-rich-rule='rule family="ipv4" destination address="192.168.3.2" port port="65530" protocol="tcp" accept'
-sudo firewall-cmd --add-rich-rule='rule family="ipv4" destination address="192.168.3.2" port port="65530" protocol="udp" accept'
+address=192.168.3.2 # change it.
+port=65530 # change it.
+sudo firewall-cmd --add-rich-rule="rule family=ipv4 destination address=$address port port=$port protocol=tcp accept"
+sudo firewall-cmd --add-rich-rule="rule family=ipv4 destination address=$address port port=$port protocol=udp accept"
 sudo firewall-cmd --runtime-to-permanent
 ```
-- Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step, such as `192.168.3.2`. Click "▶" button and enjoy the audio🎶.
+### Check rules
+```sh
+sudo firewall-cmd --list-rich-rules
+```
+Output:
+```sh
+rule family="ipv4" destination address="192.168.3.2" port port="65530" protocol="tcp" accept
+rule family="ipv4" destination address="192.168.3.2" port port="65530" protocol="udp" accept
+```
+### Remove rules
+```sh
+address=192.168.3.2 # change it.
+port=65530 # change it.
+sudo firewall-cmd --remove-rich-rule="rule family=ipv4 destination address=$address port port=$port protocol=tcp accept"
+sudo firewall-cmd --remove-rich-rule="rule family=ipv4 destination address=$address port port=$port protocol=udp accept"
+sudo firewall-cmd --runtime-to-permanent
+```
+
 
 ## About Audio Format
 There are two kinds of audio format:
@@ -93,12 +128,6 @@ The final volume that you hear is affected by the following volume:
 
 **Too much loudness will hurt your ear!!!** "Loudness Enhancer" has a limit of `3000mB`. It's enough for most cases. If you still need more loudness, just directly change Android system volume.
 
-## Screenshot
-
-<img src="docs/img/show_01.png" width="60%" alt="docs/img/show_01.png">
-
-<img src="metadata/en-US/images/phoneScreenshots/1.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/1.png">&nbsp;
-<img src="metadata/en-US/images/phoneScreenshots/2.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/2.png">
 
 ## Compile from source
 
