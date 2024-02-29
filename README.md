@@ -24,7 +24,7 @@
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/mkckr0/audio-share)](https://img.shields.io/github/issues-pr/mkckr0/audio-share)
 [![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/mkckr0/audio-share)](https://img.shields.io/github/issues-pr-closed/mkckr0/audio-share)
 [![Release](https://github.com/mkckr0/audio-share/actions/workflows/release.yml/badge.svg)](https://github.com/mkckr0/audio-share/actions/workflows/release.yml)
-[![GitHub milestone details](https://img.shields.io/github/milestones/progress/mkckr0/audio-share/1)](https://github.com/mkckr0/audio-share/milestone/1)
+[![GitHub milestone details](https://img.shields.io/github/milestones/progress/mkckr0/audio-share/1)](https://github.com/mkckr0/audio-share/milestone)
 
 
 <a href="https://f-droid.org/packages/io.github.mkckr0.audio_share_app"><img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" height="75"></a>
