@@ -22,6 +22,8 @@ plugins {
     id("com.android.application")
     kotlin("android")
     kotlin("kapt")
+    kotlin("plugin.serialization")
+    kotlin("plugin.parcelize")
     id("com.google.protobuf")
 }
 
@@ -91,17 +93,20 @@ val protobufVersion = "3.25.2"
 
 dependencies {
 
-    val navVersion = "2.7.2"
+    val navVersion = "2.7.7"
+    val ktorVersion = "2.3.8"
 
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.11.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("com.google.protobuf:protobuf-kotlin-lite:$protobufVersion")
-    implementation("io.netty:netty-all:4.1.100.Final")
     implementation("androidx.navigation:navigation-fragment-ktx:$navVersion")
     implementation("androidx.navigation:navigation-ui-ktx:$navVersion")
     implementation("androidx.preference:preference:1.2.1")
+    implementation("com.google.android.material:material:1.11.0")
+    implementation("com.google.protobuf:protobuf-kotlin-lite:$protobufVersion")
+    implementation("io.netty:netty-all:4.1.106.Final")
+    implementation("io.ktor:ktor-client-android:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

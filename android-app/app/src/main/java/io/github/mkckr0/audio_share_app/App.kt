@@ -17,10 +17,13 @@
 package io.github.mkckr0.audio_share_app
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.graphics.Color
 import androidx.preference.PreferenceManager
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.DynamicColorsOptions
+import io.github.mkckr0.audio_share_app.model.Channels
 
 class App : Application() {
     override fun onCreate() {
@@ -35,10 +38,15 @@ class App : Application() {
         val themeUseWallpaper = sharedPreferences.getBoolean("theme_use_wallpaper", resources.getBoolean(R.bool.theme_use_wallpaper_default))
         if (themeUseWallpaper) {
             DynamicColors.applyToActivitiesIfAvailable(this)
-            return
+        } else {
+            val themeColor = sharedPreferences.getString("theme_color", resources.getString(R.string.theme_color_default))
+            DynamicColors.applyToActivitiesIfAvailable(this, DynamicColorsOptions.Builder().setContentBasedSource(Color.parseColor(themeColor)).build())
         }
 
-        val themeColor = sharedPreferences.getString("theme_color", resources.getString(R.string.theme_color_default))
-        DynamicColors.applyToActivitiesIfAvailable(this, DynamicColorsOptions.Builder().setContentBasedSource(Color.parseColor(themeColor)).build())
+        // create notification channel
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+
+        val channel = NotificationChannel(Channels.CHANNEL_UPDATE.id, Channels.CHANNEL_UPDATE.name, NotificationManager.IMPORTANCE_DEFAULT)
+        notificationManager.createNotificationChannel(channel)
     }
 }

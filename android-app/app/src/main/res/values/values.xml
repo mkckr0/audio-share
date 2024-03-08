@@ -4,6 +4,7 @@
     <string name="audio_tcp_connect_timeout">3000</string>
     <string name="audio_loudness_enhancer">100</string>
     <bool name="theme_use_wallpaper_default">true</bool>
-    <bool name="debug_enable_copy_exception">false</bool>
+    <bool name="debug_enable_copy_exception_default">false</bool>
+    <bool name="update_auto_check_default">false</bool>
     <string name="theme_color_default">#496727</string>
 </resources>
