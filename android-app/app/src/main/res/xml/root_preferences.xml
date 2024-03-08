@@ -13,92 +13,119 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
     <PreferenceCategory app:title="Audio">
         <EditTextPreference
+            app:defaultValue="@string/audio_tcp_connect_timeout"
+            app:icon="@drawable/baseline_timer_3"
             app:key="audio_tcp_connect_timeout"
             app:title="TCP Connect Timeout"
-            app:icon="@drawable/baseline_timer_3"
-            app:defaultValue="@string/audio_tcp_connect_timeout"
             tools:summary="3000ms" />
 
         <EditTextPreference
+            app:defaultValue="@string/audio_buffer_size_scale"
+            app:icon="@drawable/baseline_1x_mobiledata"
             app:key="audio_buffer_size_scale"
             app:title="AudioTrack Buffer Size Scale"
-            app:icon="@drawable/baseline_1x_mobiledata"
-            app:defaultValue="@string/audio_buffer_size_scale"
             tools:summary="4x" />
 
         <EditTextPreference
+            app:defaultValue="@string/audio_loudness_enhancer"
+            app:icon="@drawable/baseline_volume_up"
             app:key="audio_loudness_enhancer"
             app:title="Loudness Enhancer"
-            app:icon="@drawable/baseline_volume_up"
-            app:defaultValue="@string/audio_loudness_enhancer"
             tools:summary="100mB" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Battery Optimization">
         <Preference
+            app:icon="@drawable/baseline_battery_saver"
             app:key="request_ignore_battery_optimizations"
-            app:title="Request Ignore Battery Optimizations"
             app:summary="Not Ignored"
-            app:icon="@drawable/baseline_battery_saver">
+            app:title="Request Ignore Battery Optimizations">
             <intent
                 android:action="android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
                 android:data="package:io.github.mkckr0.audio_share_app" />
         </Preference>
 
         <Preference
+            app:icon="@drawable/baseline_settings"
             app:key="battery_optimization"
-            app:title="Battery Optimization Settings"
             app:summary="Change Battery Optimization Settings"
-            app:icon="@drawable/baseline_settings">
-            <intent android:action="android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS"/>
+            app:title="Battery Optimization Settings">
+            <intent android:action="android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS" />
         </Preference>
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Theme">
         <SwitchPreference
-            app:key="theme_use_wallpaper"
-            app:title="Dynamic Color from Wallpaper"
+            app:defaultValue="@bool/theme_use_wallpaper_default"
             app:icon="@drawable/baseline_wallpaper"
-            app:summaryOn="On"
+            app:key="theme_use_wallpaper"
             app:summaryOff="Off"
-            app:defaultValue="@bool/theme_use_wallpaper_default"/>
+            app:summaryOn="On"
+            app:title="Dynamic Color from Wallpaper" />
         <EditTextPreference
+            app:defaultValue="@string/theme_color_default"
+            app:icon="@drawable/baseline_color_lens"
             app:key="theme_color"
             app:title="Dynamic Color from Color"
-            app:icon="@drawable/baseline_color_lens"
-            app:defaultValue="@string/theme_color_default"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Debug">
         <SwitchPreference
-            app:key="debug_enable_copy_exception"
-            app:title="Enable Copying Exception Message"
+            app:defaultValue="@bool/debug_enable_copy_exception_default"
             app:icon="@drawable/baseline_content_copy"
-            app:summaryOn="On"
+            app:key="debug_enable_copy_exception"
             app:summaryOff="Off"
-            app:defaultValue="@bool/debug_enable_copy_exception"/>
+            app:summaryOn="On"
+            app:title="Enable Copying Exception Message" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Notification">
+        <Preference
+            app:summary="Change Notification Settings"
+            app:icon="@drawable/baseline_notifications"
+            app:title="Notification Settings">
+            <intent android:action="android.settings.APP_NOTIFICATION_SETTINGS">
+                <extra
+                    android:name="android.provider.extra.APP_PACKAGE"
+                    android:value="io.github.mkckr0.audio_share_app" />
+            </intent>
+        </Preference>
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Update">
+        <SwitchPreference
+            app:defaultValue="@bool/update_auto_check_default"
+            app:icon="@drawable/baseline_autorenew"
+            app:key="update_auto_check"
+            app:summaryOff="Off"
+            app:summaryOn="On"
+            app:title="Auto Check for Update" />
+        <Preference
+            app:icon="@drawable/baseline_update"
+            app:key="update_check"
+            app:title="Check for Update" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="About">
         <Preference
-            app:title="@string/app_name"
+            app:icon="@drawable/github_mark"
             app:summary="@string/project_url"
-            app:icon="@drawable/github_mark">
+            app:title="@string/app_name">
             <intent
                 android:action="android.intent.action.VIEW"
-                android:data="@string/project_url"/>
+                android:data="@string/project_url" />
         </Preference>
         <Preference
+            app:icon="@drawable/baseline_info"
             app:key="version"
-            app:title="Version"
             app:summary="0.0.1"
-            app:icon="@drawable/baseline_info"/>
+            app:title="Version" />
     </PreferenceCategory>
 </PreferenceScreen>

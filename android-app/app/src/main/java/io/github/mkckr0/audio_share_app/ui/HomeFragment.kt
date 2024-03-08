@@ -82,7 +82,7 @@ class HomeFragment : Fragment() {
         binding.buttonStart.setOnClickListener { viewModel.switchPlay() }
         binding.textViewInfo.setOnLongClickListener {
             val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
-            if (!sharedPreferences.getBoolean("debug_enable_copy_exception", resources.getBoolean(R.bool.debug_enable_copy_exception))) {
+            if (!sharedPreferences.getBoolean("debug_enable_copy_exception", resources.getBoolean(R.bool.debug_enable_copy_exception_default))) {
                 return@setOnLongClickListener false
             }
             ValueAnimator.ofInt(0).apply {
