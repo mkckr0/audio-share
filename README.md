@@ -44,8 +44,8 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 ## Requirements
 - A PC with Windows or Linux as the server.
     - Windows 10+ x86_64 with [Microsoft Visual C++ 2015-2022 Redistributable (x64)](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) ([vc_redist.x64.exe](https://aka.ms/vs/17/release/vc_redist.x64.exe)).
-    - Linux with PipeWire(0.3.xx).
-- The audio player on PC can work normally. That's to say that you should have a sound card and the audio endpoint is in available state.
+    - Linux with PipeWire.
+- The audio player on PC can work normally. That's to say that you should have a sound card and the audio endpoint is in available state. Otherwise, you need some [extra setups](#extra-setups-for-no-audio-endpoint).
 - Android 6.0(API 23)+.
 
 ## Usage for Windows GUI
@@ -128,6 +128,44 @@ The final volume that you hear is affected by the following volume:
 **They are all independent.** If you max the volume of your PC and audio player, and still feel it's not enough, but don't want to change the Android system volume, you can increase "Loudness Enhancer" on app's Settings. It won't affect the system volume. The "Audio Volume" on app can decrease the volume you hear without changing system volume.
 
 **Too much loudness will hurt your ear!!!** "Loudness Enhancer" has a limit of `3000mB`. It's enough for most cases. If you still need more loudness, just directly change Android system volume.
+
+
+## Extra Setups for "No Audio Endpoint"
+### For Windows
+#### Method 1: Make audio endpoint available when speaker doesn't plug in.
+Realtek sound card can make audio endpoint available when speaker doesn't plug in. Just open Realtek Audio Console, select "Device advanced settings" tab, and switch on "Disable front panel front popup dialog" option. Then the audio endpoint will show up. Other sound card may have similar options. If you can't find, then turn to Method 2.
+
+#### Method 2: Install a third-party virtual audio device driver
+At present, I haven't find a way to create virtual audio endpoint. The only way to achieve it is to write a virtual audio device driver. But it need a EV Code Signing Certificate to sign it. Otherwise, user can't install it. I don't want to pay for it. And there are many existed third-party virtual audio device drivers. You can find one or post one that you know at [Virtual Audio Device Driver on Windows](https://github.com/mkckr0/audio-share/discussions/59). Generally, a driver has an INF file. Right click it and click "Install" to install it.
+
+### For Linux
+Thanks to PipeWire, it's very easy for Linux to create a virtual audio endpoint, even without a root privilege. Just copy the below config to `~/.config/pipewire/pipewire.conf.d/audio-share-sink.conf`
+```
+context.objects = [
+    {   factory = adapter
+        args = {
+           factory.name     = support.null-audio-sink
+           node.name        = "Audio Share Sink"
+           media.class      = Audio/Sink
+           object.linger    = true
+           audio.position   = [ FL FR ]
+           priority.session = 1009
+           priority.driver  = 1009
+           monitor.channel-volumes = true
+           monitor.passthrough = true
+        }
+    }
+]
+```
+Then run `systemctl --user restart pipewire` to restart the PipeWire service.  
+Finally, you can see the added endpoint "Audio Share Sink".
+```sh
+[abc@localhost ~]$ as-cmd -l
+[2024-03-17 22:46:14.563] [info] pipewire header_version: 0.3.48, library_version: 0.3.67
+endpoint_list:
+        * id: 30   name: Audio Share Sink
+total: 1
+```
 
 
 ## Compile from source
