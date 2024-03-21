@@ -132,7 +132,7 @@ The final volume that you hear is affected by the following volume:
 
 ## Extra Setups for "No Audio Endpoint"
 ### For Windows
-#### Method 1: Make audio endpoint available when speaker doesn't plug in.
+#### Method 1: Make audio endpoint available when speaker doesn't plug in
 Realtek sound card can make audio endpoint available when speaker doesn't plug in. Just open Realtek Audio Console, select "Device advanced settings" tab, and switch on "Disable front panel front popup dialog" option. Then the audio endpoint will show up. Other sound card may have similar options. If you can't find, then turn to Method 2.
 
 #### Method 2: Install a third-party virtual audio device driver
