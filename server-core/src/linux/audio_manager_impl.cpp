@@ -190,10 +190,10 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
             auto begin = (const char*)buf->datas[0].data + buf->datas[0].chunk->offset;
             auto count = buf->datas[0].chunk->size;
-            if (std::all_of(begin, begin + count, [](const char e) { return e == 0; })) {
-                begin = nullptr;
-                count = 0;
-            }
+            // if (std::all_of(begin, begin + count, [](const char e) { return e == 0; })) {
+            //     begin = nullptr;
+            //     count = 0;
+            // }
 
             // if (spdlog::get_level() == spdlog::level::trace) {
             //     auto it = std::max_element(
