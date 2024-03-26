@@ -1,0 +1,48 @@
+name: Build server-core on Linux
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_server_core:
+    name: Build server-core
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        include:
+          - os: ubuntu-latest
+            vcpkg_triplet: x64-linux
+            cmake_preset: linux-Release
+            platform: linux
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: server-core
+    env:
+      VCPKG_DEFAULT_TRIPLET: ${{ matrix.vcpkg_triplet }}
+    steps:
+      - uses: actions/checkout@v3
+      - run: git pull
+      - name: Install Linux Deps
+        run: sudo apt update && sudo apt install libpipewire-0.3-dev
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - uses: lukka/get-cmake@latest
+      - uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: e57b2167e66c847f991bd6bce1355b85acd944e8
+      - run: vcpkg integrate install
+      - run: vcpkg install asio protobuf spdlog cxxopts
+      - uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: ${{ github.workspace }}/server-core/CMakeLists.txt
+          configurePreset: ${{ matrix.cmake_preset }}
+          buildPreset: ${{ matrix.cmake_preset }}
+      - name: Pack
+        run: bash pack.sh ${{ matrix.platform }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: server-core-${{ matrix.platform }}
+          path: |
+            server-core/out/install/*.sha256
+            server-core/out/install/*.tar.gz
+            server-core/out/install/*.zip
