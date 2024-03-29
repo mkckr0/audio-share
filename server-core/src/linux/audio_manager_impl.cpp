@@ -123,12 +123,11 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
                     auto timer = pw_loop_add_timer(loop, [](void *data, uint64_t expirations){
                         auto user_data = (struct user_data_t*)data;
                         struct pw_time time;
-                        pw_stream_get_time_n(user_data->stream, &time, sizeof(time));
-                        spdlog::trace("stream time: now:{} rate:{}/{} ticks:{} delay:{} queued:{} buffered:{} buffers:{} avail:{} ",
+                        pw_stream_get_time(user_data->stream, &time);
+                        spdlog::trace("now:{} rate:{}/{} ticks:{} delay:{} queued:{}",
                             time.now,
                             time.rate.num, time.rate.denom,
-                            time.ticks, time.delay, time.queued, time.buffered,
-                            time.queued_buffers, time.avail_buffers);
+                            time.ticks, time.delay, time.queued);
                     }, data);
                     struct timespec timeout = {0, 1}, interval = {1, 0};
                     pw_loop_update_timer(loop, timer, &timeout, &interval, false);
