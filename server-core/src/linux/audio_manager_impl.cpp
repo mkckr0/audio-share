@@ -100,11 +100,13 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     }
 
     struct user_data_t {
+        struct pw_main_loop* loop;
         struct pw_stream* stream;
         std::shared_ptr<class network_manager> network_manager;
         std::shared_ptr<AudioFormat> format;
         int block_align;
     } user_data = {
+        .loop = _loop,
         .stream = nullptr,
         .network_manager = network_manager,
         .format = _format,
@@ -113,6 +115,26 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
     static const struct pw_stream_events stream_events = {
         .version = PW_VERSION_STREAM_EVENTS,
+        .state_changed = [](void *data, enum pw_stream_state old, enum pw_stream_state state, const char *error) {
+            if (state == PW_STREAM_STATE_STREAMING) {
+                if (spdlog::get_level() == spdlog::level::trace) {
+                    auto user_data = (struct user_data_t*)data;
+                    auto loop = pw_main_loop_get_loop(user_data->loop);
+                    auto timer = pw_loop_add_timer(loop, [](void *data, uint64_t expirations){
+                        auto user_data = (struct user_data_t*)data;
+                        struct pw_time time;
+                        pw_stream_get_time_n(user_data->stream, &time, sizeof(time));
+                        spdlog::trace("stream time: now:{} rate:{}/{} ticks:{} delay:{} queued:{} buffered:{} buffers:{} avail:{} ",
+                            time.now,
+                            time.rate.num, time.rate.denom,
+                            time.ticks, time.delay, time.queued, time.buffered,
+                            time.queued_buffers, time.avail_buffers);
+                    }, data);
+                    struct timespec timeout = {0, 1}, interval = {1, 0};
+                    pw_loop_update_timer(loop, timer, &timeout, &interval, false);
+                }
+            }
+        },
         .param_changed = [](void* data, uint32_t id, const struct spa_pod* param) {
             struct user_data_t* user_data = (struct user_data_t*)data;
 
