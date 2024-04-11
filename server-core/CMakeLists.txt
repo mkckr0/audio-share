@@ -22,7 +22,7 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	set(PLATFORM_NAME "linux")
 endif()
 
-message(STATUS "PLATFORMA_NAME ${PLATFORM_NAME}")
+message(STATUS "PLATFORM_NAME ${PLATFORM_NAME}")
 
 find_package(Protobuf CONFIG REQUIRED)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -47,16 +47,9 @@ if(UNIX)
 endif(UNIX)
 
 find_package(asio CONFIG REQUIRED)
-target_link_libraries(server-cmd PRIVATE asio::asio)
-
 find_package(spdlog CONFIG REQUIRED)
-target_link_libraries(server-cmd PRIVATE spdlog::spdlog)
-
-find_package(Protobuf CONFIG REQUIRED)
-target_link_libraries(server-cmd PRIVATE protobuf::libprotobuf)
-
 find_package(cxxopts CONFIG REQUIRED)
-target_link_libraries(server-cmd PRIVATE cxxopts::cxxopts)
+target_link_libraries(server-cmd PRIVATE asio::asio spdlog::spdlog protobuf::libprotobuf cxxopts::cxxopts)
 
 if(${PLATFORM_NAME} STREQUAL "linux")
 	find_package(PkgConfig REQUIRED)
