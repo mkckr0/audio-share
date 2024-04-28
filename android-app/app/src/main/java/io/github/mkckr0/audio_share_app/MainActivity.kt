@@ -20,18 +20,14 @@ import android.Manifest
 import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import androidx.preference.PreferenceManager
-import com.google.android.material.snackbar.Snackbar
 import io.github.mkckr0.audio_share_app.databinding.ActivityMainBinding
 import io.github.mkckr0.audio_share_app.model.Asset
 
@@ -41,8 +37,8 @@ class MainActivity : AppCompatActivity() {
     private val tag = MainActivity::class.simpleName
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
     private lateinit var downloadManager: DownloadManager
+    private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,16 +51,12 @@ class MainActivity : AppCompatActivity() {
             binding.navHostFragmentContainer.getFragment<NavHostFragment>().navController
         binding.bottomNavigation.setupWithNavController(navController)
 
-        requestPermissionLauncher =
-            registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-
-            }
-
+        // request permissions
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
         }
+
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(application)
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -72,13 +64,21 @@ class MainActivity : AppCompatActivity() {
         if (intent == null) {
             return
         }
+
+        // tap update notification to start downloading
         if (intent.getStringExtra("action") == "update") {
+
             val apkAsset = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent.getParcelableExtra("apkAsset", Asset::class.java)!!
             } else {
                 @Suppress("DEPRECATION") intent.getParcelableExtra("apkAsset")!!
             }
 
+            // download via Browser
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(apkAsset.browserDownloadUrl)))
+
+            /*
+            // download via DownloadManager
             val preferences = PreferenceManager.getDefaultSharedPreferences(application)
             var downloadId = preferences.getLong("update_download_id", -1)
             if (downloadManager.getUriForDownloadedFile(downloadId) != null) {
@@ -116,6 +116,8 @@ class MainActivity : AppCompatActivity() {
                 preferences.edit().putLong("update_download_id", downloadId).apply()
                 Log.d(tag, "download ${apkAsset.name} $downloadId")
             }
+            // */
         }
     }
+
 }

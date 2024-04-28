@@ -17,27 +17,18 @@
 package io.github.mkckr0.audio_share_app.ui
 
 import android.animation.Animator
-import android.animation.Animator.AnimatorListener
 import android.animation.AnimatorListenerAdapter
-import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.graphics.Color
 import android.os.Bundle
-import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AnimationSet
-import android.widget.EditText
 import android.widget.TextView
-import androidx.core.content.ContextCompat.getSystemService
-import androidx.core.content.res.ResourcesCompat.ThemeCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -47,7 +38,6 @@ import com.google.android.material.snackbar.Snackbar
 import io.github.mkckr0.audio_share_app.R
 import io.github.mkckr0.audio_share_app.databinding.FragmentHomeBinding
 import io.github.mkckr0.audio_share_app.model.HomeViewModel
-import kotlinx.coroutines.NonCancellable.start
 
 class HomeFragment : Fragment() {
 

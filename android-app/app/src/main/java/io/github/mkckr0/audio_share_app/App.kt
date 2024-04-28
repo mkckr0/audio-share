@@ -23,7 +23,6 @@ import android.graphics.Color
 import androidx.preference.PreferenceManager
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.DynamicColorsOptions
-import io.github.mkckr0.audio_share_app.model.Channels
 
 class App : Application() {
     override fun onCreate() {
@@ -45,8 +44,7 @@ class App : Application() {
 
         // create notification channel
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-
-        val channel = NotificationChannel(Channels.CHANNEL_UPDATE.id, Channels.CHANNEL_UPDATE.name, NotificationManager.IMPORTANCE_DEFAULT)
+        val channel = NotificationChannel(Channel.UPDATE.id, Channel.UPDATE.title, Channel.UPDATE.importance)
         notificationManager.createNotificationChannel(channel)
     }
 }
