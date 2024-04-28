@@ -95,12 +95,14 @@ dependencies {
 
     val navVersion = "2.7.7"
     val ktorVersion = "2.3.8"
+    val workVersion = "2.9.0"
 
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.navigation:navigation-fragment-ktx:$navVersion")
     implementation("androidx.navigation:navigation-ui-ktx:$navVersion")
     implementation("androidx.preference:preference:1.2.1")
+    implementation("androidx.work:work-runtime-ktx:$workVersion")
     implementation("com.google.android.material:material:1.11.0")
     implementation("com.google.protobuf:protobuf-kotlin-lite:$protobufVersion")
     implementation("io.netty:netty-all:4.1.106.Final")

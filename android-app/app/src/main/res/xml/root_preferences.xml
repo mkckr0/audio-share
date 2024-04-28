@@ -88,8 +88,8 @@
 
     <PreferenceCategory app:title="Notification">
         <Preference
-            app:summary="Change Notification Settings"
             app:icon="@drawable/baseline_notifications"
+            app:summary="Change Notification Settings"
             app:title="Notification Settings">
             <intent android:action="android.settings.APP_NOTIFICATION_SETTINGS">
                 <extra
@@ -110,7 +110,16 @@
         <Preference
             app:icon="@drawable/baseline_update"
             app:key="update_check"
+            app:summary="Manually Check for Update"
             app:title="Check for Update" />
+        <Preference
+            app:icon="@drawable/baseline_new_releases"
+            app:summary="Access Latest Release on Github"
+            app:title="Latest Release">
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:data="@string/latest_release_url" />
+        </Preference>
     </PreferenceCategory>
 
     <PreferenceCategory app:title="About">
@@ -121,6 +130,14 @@
             <intent
                 android:action="android.intent.action.VIEW"
                 android:data="@string/project_url" />
+        </Preference>
+        <Preference
+            app:icon="@drawable/baseline_bug_report"
+            app:summary="Report a Bug or Request a new Feature"
+            app:title="Issues">
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:data="@string/issues_url" />
         </Preference>
         <Preference
             app:icon="@drawable/baseline_info"
