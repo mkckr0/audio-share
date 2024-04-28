@@ -18,6 +18,7 @@ import io.github.mkckr0.audio_share_app.Channel
 import io.github.mkckr0.audio_share_app.MainActivity
 import io.github.mkckr0.audio_share_app.Notification
 import io.github.mkckr0.audio_share_app.R
+import io.github.mkckr0.audio_share_app.Util
 import io.github.mkckr0.audio_share_app.model.LatestRelease
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -56,7 +57,7 @@ class UpdateWorker(appContext: Context, workerParams: WorkerParameters) : Worker
             val latestRelease: LatestRelease = res.body()
 
             withContext(Dispatchers.Main) {
-                if (latestRelease.name <= "v${BuildConfig.VERSION_NAME}") {
+                if (!Util.isNewerVersion(latestRelease.name, "v${BuildConfig.VERSION_NAME}")) {
                     showMessage("No update")
                     return@withContext
                 }
