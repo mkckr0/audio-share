@@ -177,7 +177,7 @@ total: 1
 
 - Server MFC
     - vcpkg is required for install dependencies.
-    - Run `vcpkg install asio protobuf spdlog[wchar]` to install deps. The vcpkg triplet is `x64-windows-static-md`.
+    - Run `vcpkg install asio protobuf spdlog[wchar] wil` to install deps. The vcpkg triplet is `x64-windows-static-md`.
     - Visual Studio 2022 with "Desktop development with C++" workload and "C++ MFC for latest v143 build tools (x86 & x64)" option is required for compiling.
 
 - Server CMD
@@ -185,7 +185,7 @@ total: 1
     - Install vcpkg, and set `VPCKG_ROOT` env. This env is required by `CMakePresets.json`.
     - Run `vcpkg install asio protobuf spdlog cxxopts` to install deps. The vcpkg triplet is `x64-windows-static-md` for Windows, `x64-linux` for Linux.
     - Run `cmake --preset linux-Release` to configure.
-    - Run `cmake --build --preset linux-Release` to build. The `as-cmd` is located in `out/install/linux-Release/bin/as-cmd`.
+    - Run `cmake --build --preset linux-Release` to build. The `as-cmd` is located at `out/install/linux-Release/bin/as-cmd`.
     - For Windows, replace `linux` to `windows` in previous two steps.
 
 ## Star History
