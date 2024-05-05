@@ -21,12 +21,15 @@
     <Filter Include="core\win32">
       <UniqueIdentifier>{ea996a12-e14f-4199-b10f-89b867c96785}</UniqueIdentifier>
     </Filter>
+    <Filter Include="mfc\tab">
+      <UniqueIdentifier>{72a364f6-c99f-471b-94ca-4f2fb1275b87}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AudioShareServer.h">
       <Filter>mfc</Filter>
     </ClInclude>
-    <ClInclude Include="AudioShareServerDlg.h">
+    <ClInclude Include="CMainDialog.h">
       <Filter>mfc</Filter>
     </ClInclude>
     <ClInclude Include="framework.h">
@@ -35,33 +38,51 @@
     <ClInclude Include="pch.h">
       <Filter>mfc</Filter>
     </ClInclude>
-    <ClInclude Include="Resource.h">
-      <Filter>mfc</Filter>
-    </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>mfc</Filter>
     </ClInclude>
     <ClInclude Include="client.pb.h">
       <Filter>pb</Filter>
     </ClInclude>
-    <ClInclude Include="..\server-core\src\audio_manager.hpp">
+    <ClInclude Include="..\..\server-core\src\audio_manager.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\server-core\src\formatter.hpp">
+    <ClInclude Include="..\..\server-core\src\formatter.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\server-core\src\network_manager.hpp">
+    <ClInclude Include="..\..\server-core\src\network_manager.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\server-core\src\win32\audio_manager_impl.hpp">
+    <ClInclude Include="..\..\server-core\src\win32\audio_manager_impl.hpp">
       <Filter>core\win32</Filter>
+    </ClInclude>
+    <ClInclude Include="CAppSettingsTabPanel.h">
+      <Filter>mfc\tab</Filter>
+    </ClInclude>
+    <ClInclude Include="CServerTabPanel.h">
+      <Filter>mfc\tab</Filter>
+    </ClInclude>
+    <ClInclude Include="CTabPanel.h">
+      <Filter>mfc\tab</Filter>
+    </ClInclude>
+    <ClInclude Include="AppMsg.h">
+      <Filter>mfc</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>mfc</Filter>
+    </ClInclude>
+    <ClInclude Include="CAboutDialog.h">
+      <Filter>mfc</Filter>
+    </ClInclude>
+    <ClInclude Include="util.hpp">
+      <Filter>mfc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AudioShareServer.cpp">
       <Filter>mfc</Filter>
     </ClCompile>
-    <ClCompile Include="AudioShareServerDlg.cpp">
+    <ClCompile Include="CMainDialog.cpp">
       <Filter>mfc</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp">
@@ -70,14 +91,29 @@
     <ClCompile Include="client.pb.cc">
       <Filter>pb</Filter>
     </ClCompile>
-    <ClCompile Include="..\server-core\src\audio_manager.cpp">
+    <ClCompile Include="..\..\server-core\src\audio_manager.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="..\server-core\src\network_manager.cpp">
+    <ClCompile Include="..\..\server-core\src\network_manager.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="..\server-core\src\win32\audio_manager_impl.cpp">
+    <ClCompile Include="..\..\server-core\src\win32\audio_manager_impl.cpp">
       <Filter>core\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="CTabPanel.cpp">
+      <Filter>mfc\tab</Filter>
+    </ClCompile>
+    <ClCompile Include="CAppSettingsTabPanel.cpp">
+      <Filter>mfc\tab</Filter>
+    </ClCompile>
+    <ClCompile Include="CServerTabPanel.cpp">
+      <Filter>mfc\tab</Filter>
+    </ClCompile>
+    <ClCompile Include="CAboutDialog.cpp">
+      <Filter>mfc</Filter>
+    </ClCompile>
+    <ClCompile Include="util.cpp">
+      <Filter>mfc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -100,8 +136,6 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\protos\client.proto">
-      <Filter>protos</Filter>
-    </CustomBuild>
+    <CustomBuild Include="..\..\protos\client.proto" />
   </ItemGroup>
 </Project>

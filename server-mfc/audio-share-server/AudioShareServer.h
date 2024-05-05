@@ -28,6 +28,8 @@
 
 #include <string>
 
+class CMainDialog;
+
 // CAudioShareServerApp:
 // See AudioShareServer.cpp for the implementation of this class
 //
@@ -40,6 +42,7 @@ public:
 // Overrides
 public:
 	virtual BOOL InitInstance();
+	CMainDialog* GetMainDialog();
 
 // Implementation
 	bool m_bHide;
