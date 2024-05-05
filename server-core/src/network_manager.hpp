@@ -63,6 +63,7 @@ public:
     void start_server(const std::string& host, const uint16_t port, const std::string& endpoint_id);
     void stop_server();
     void wait_server();
+    bool is_running();
 
 private:
     asio::awaitable<void> accept_tcp_loop(tcp_acceptor acceptor);

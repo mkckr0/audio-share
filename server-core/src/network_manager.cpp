@@ -141,6 +141,11 @@ void network_manager::wait_server()
     _net_thread.join();
 }
 
+bool network_manager::is_running()
+{
+    return _ioc != nullptr;
+}
+
 asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> peer)
 {
     while (true) {
