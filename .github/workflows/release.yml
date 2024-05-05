@@ -61,7 +61,7 @@ jobs:
         with:
           vcpkgGitCommitId: e57b2167e66c847f991bd6bce1355b85acd944e8
       - run: vcpkg integrate install
-      - run: vcpkg install asio protobuf spdlog[wchar]
+      - run: vcpkg install asio protobuf spdlog[wchar] wil nlohmann-json
       - run: msbuild /m /p:Configuration=Release,Platform=x64
       - name: Checksum
         run: cd x64/Release/ && sha256sum *.exe | tee $(ls *.exe).sha256

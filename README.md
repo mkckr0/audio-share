@@ -177,7 +177,7 @@ total: 1
 
 - Server MFC
     - vcpkg is required for install dependencies.
-    - Run `vcpkg install asio protobuf spdlog[wchar] wil` to install deps. The vcpkg triplet is `x64-windows-static-md`.
+    - Run `vcpkg install asio protobuf spdlog[wchar] wil nlohmann-json` to install deps. The vcpkg triplet is `x64-windows-static-md`.
     - Visual Studio 2022 with "Desktop development with C++" workload and "C++ MFC for latest v143 build tools (x86 & x64)" option is required for compiling.
 
 - Server CMD
@@ -214,6 +214,7 @@ This project is licensed under the [Apache-2.0 license](https://opensource.org/l
 
 ## Used third-party libraries
 
+- [nlohmann/json](https://github.com/nlohmann/json) licensed under the [MIT license](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT)
 - [WIL](https://github.com/microsoft/wil) licensed under the [MIT license](https://github.com/microsoft/wil/blob/master/LICENSE)
 - [Asio](https://github.com/chriskohlhoff/asio) licensed under the [BSL-1.0 license](http://www.boost.org/LICENSE_1_0.txt).
 - [Protocol Buffers](https://github.com/protocolbuffers/protobuf) licensed under the [LICENSE](https://github.com/protocolbuffers/protobuf/blob/main/LICENSE).
