@@ -15,10 +15,10 @@ sed -Ebi "s|versionCode\s*=\s*[0-9]*|versionCode = $version_code|g" android-app/
 
 sed -Ebi "s|\tVERSION\s+[0-9.]*|\tVERSION $version_name|g" server-core/CMakeLists.txt
 
-sed -Ebi "s|Audio Share Server, Version [^\"]*|Audio Share Server, Version $version_name|g" server-mfc/AudioShareServer.rc
-sed -Ebi "s|FILEVERSION [0-9,]*|FILEVERSION $file_version1|g" server-mfc/AudioShareServer.rc
-sed -Ebi "s|PRODUCTVERSION [0-9,]*|PRODUCTVERSION $product_version|g" server-mfc/AudioShareServer.rc
-sed -Ebi "s|\"FileVersion\", \"[^\"]*\"|\"FileVersion\", \"$version_name.0\"|g" server-mfc/AudioShareServer.rc
-sed -Ebi "s|\"ProductVersion\", \"[^\"]*\"|\"ProductVersion\", \"$version_name\"|g" server-mfc/AudioShareServer.rc
+# sed -Ebi "s|Audio Share Server, Version [^\"]*|Audio Share Server, Version $version_name|g" server-mfc/AudioShareServer.rc
+sed -Ebi "s|FILEVERSION [0-9,]*|FILEVERSION $file_version1|g" server-mfc/audio-share-server/AudioShareServer.rc
+sed -Ebi "s|PRODUCTVERSION [0-9,]*|PRODUCTVERSION $product_version|g" server-mfc/audio-share-server/AudioShareServer.rc
+sed -Ebi "s|\"FileVersion\", \"[^\"]*\"|\"FileVersion\", \"$version_name.0\"|g" server-mfc/audio-share-server/AudioShareServer.rc
+sed -Ebi "s|\"ProductVersion\", \"[^\"]*\"|\"ProductVersion\", \"$version_name\"|g" server-mfc/audio-share-server/AudioShareServer.rc
 
 popd &>/dev/null
