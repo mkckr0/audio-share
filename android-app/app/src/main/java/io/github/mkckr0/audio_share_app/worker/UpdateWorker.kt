@@ -57,7 +57,7 @@ class UpdateWorker(appContext: Context, workerParams: WorkerParameters) : Worker
             val latestRelease: LatestRelease = res.body()
 
             withContext(Dispatchers.Main) {
-                if (!Util.isNewerVersion(latestRelease.name, "v${BuildConfig.VERSION_NAME}")) {
+                if (!Util.isNewerVersion(latestRelease.tagName, "v${BuildConfig.VERSION_NAME}")) {
                     showMessage("No update")
                     return@withContext
                 }
