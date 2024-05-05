@@ -215,57 +215,70 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\server-core\src\audio_manager.hpp" />
-    <ClInclude Include="..\server-core\src\formatter.hpp" />
-    <ClInclude Include="..\server-core\src\network_manager.hpp" />
-    <ClInclude Include="..\server-core\src\win32\audio_manager_impl.hpp" />
+    <ClInclude Include="..\..\server-core\src\audio_manager.hpp" />
+    <ClInclude Include="..\..\server-core\src\formatter.hpp" />
+    <ClInclude Include="..\..\server-core\src\network_manager.hpp" />
+    <ClInclude Include="..\..\server-core\src\win32\audio_manager_impl.hpp" />
+    <ClInclude Include="AppMsg.h" />
     <ClInclude Include="AudioShareServer.h" />
-    <ClInclude Include="AudioShareServerDlg.h" />
+    <ClInclude Include="CAboutDialog.h" />
+    <ClInclude Include="CAppSettingsTabPanel.h" />
+    <ClInclude Include="CMainDialog.h" />
     <ClInclude Include="client.pb.h" />
+    <ClInclude Include="CServerTabPanel.h" />
+    <ClInclude Include="CTabPanel.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Resource.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="util.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\server-core\src\audio_manager.cpp">
+    <ClCompile Include="..\..\server-core\src\audio_manager.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\server-core\src\network_manager.cpp">
+    <ClCompile Include="..\..\server-core\src\network_manager.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\server-core\src\win32\audio_manager_impl.cpp">
+    <ClCompile Include="..\..\server-core\src\win32\audio_manager_impl.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="AudioShareServer.cpp" />
-    <ClCompile Include="AudioShareServerDlg.cpp" />
+    <ClCompile Include="CAboutDialog.cpp" />
+    <ClCompile Include="CAppSettingsTabPanel.cpp" />
+    <ClCompile Include="CMainDialog.cpp" />
     <ClCompile Include="client.pb.cc">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="CServerTabPanel.cpp" />
+    <ClCompile Include="CTabPanel.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="util.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="AudioShareServer.rc" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\protos\client.proto">
+    <CustomBuild Include="..\..\protos\client.proto">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(vcpkg_tools_dir)\protobuf\protoc.exe -I$(protos_dir) --cpp_out=$(ProjectDir) %(FullPath)</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(Command)</Message>

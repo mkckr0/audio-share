@@ -20,7 +20,8 @@
 #include "pch.h"
 #include "framework.h"
 #include "AudioShareServer.h"
-#include "AudioShareServerDlg.h"
+#include "CMainDialog.h"
+#include "AppMsg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -86,7 +87,7 @@ BOOL CAudioShareServerApp::InitInstance()
 
 	CWinAppEx::InitInstance();
 
-	AfxEnableControlContainer();
+	//AfxEnableControlContainer();
 
 	// Create the shell manager, in case the dialog contains
 	// any shell tree view or shell list view controls.
@@ -122,11 +123,11 @@ BOOL CAudioShareServerApp::InitInstance()
 		return FALSE;
 	}
 
-	auto dlg = new CAudioShareServerDlg;
-	dlg->Create(IDD_AUDIOSHARESERVER_DIALOG, nullptr);
+	auto dlg = new CMainDialog;
+	dlg->Create(IDD_MAIN, nullptr);
 	m_pMainWnd = dlg;
 
-	//CAudioShareServerDlg dlg;
+	//CMainDialog dlg;
 	//m_pMainWnd = &dlg;
 	//INT_PTR nResponse = dlg.DoModal();
 	//if (nResponse == IDOK)
@@ -159,5 +160,10 @@ BOOL CAudioShareServerApp::InitInstance()
 	//  application, rather than start the application's message pump.
 	//return FALSE;
 	return TRUE;
+}
+
+CMainDialog* CAudioShareServerApp::GetMainDialog()
+{
+	return static_cast<CMainDialog*>(GetMainWnd());
 }
 

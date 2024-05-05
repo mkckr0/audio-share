@@ -23,65 +23,64 @@
 #include <map>
 #include <string>
 #include <memory>
-
-#include <mmdeviceapi.h>
+#include <vector>
 
 class audio_manager;
 class network_manager;
+class CTabPanel;
+class CServerTabPanel;
 
-// CAudioShareServerDlg dialog
-class CAudioShareServerDlg : public CDialogEx
+// CMainDialog dialog
+class CMainDialog : public CDialogEx
 {
 // Construction
 public:
-	CAudioShareServerDlg(CWnd* pParent = nullptr);	// standard constructor
-	~CAudioShareServerDlg();
+	CMainDialog(CWnd* pParent = nullptr);	// standard constructor
+	~CMainDialog();
 
 private:
-	std::shared_ptr<audio_manager> m_audio_manager;
-	std::shared_ptr<network_manager> m_network_manager;
-
-	void EnableInputControls(bool bEnable = true);
 	COLORREF GetBrushColor(HBRUSH brush);
-	bool ShowNotifyIcon(bool bEnable = true);
 	void SetAutoRun(bool bEnable);
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME
-	enum { IDD = IDD_AUDIOSHARESERVER_DIALOG };
+	enum { IDD = IDD_MAIN };
 #endif
+
+public:
+	void ShowNotificationIcon(BOOL bShow);
+	void ShowBalloonNotification(LPCWSTR lpszInfoTitle, LPCWSTR lpszInfo);
+	void SetUpdateLink(LPCWSTR lpszUpdateLink);
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX) override;	// DDX/DDV support
-	virtual void PostNcDestroy() override;
-	virtual void OnCancel() override;
 
 // Implementation
 protected:
-	HICON m_hIcon;
-	const static UINT m_uNotifyIconID = 0;
 
 	// Generated message map functions
+	DECLARE_MESSAGE_MAP()
+
 	virtual BOOL OnInitDialog();
+	virtual void PostNcDestroy();
+	virtual void OnOK();
+	virtual void OnCancel();
+	afx_msg void OnClose();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
-	afx_msg void OnPaint();
-	afx_msg HCURSOR OnQueryDragIcon();
-	afx_msg void OnBnClickedStartServer();
-	afx_msg void OnBnClickedButtonHide();
-	afx_msg void OnBnClickedButtonRefresh();
 	afx_msg LRESULT OnNotifyIcon(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnDestroy();
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
-	afx_msg void OnBnClickedCheckAutoRun();
-	afx_msg void OnBnClickedButtonReppairFirewall();
+	afx_msg void OnTcnSelchangeTab(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnAppShow();
+	afx_msg void OnAppAbout();
+	afx_msg void OnStartServer();
+	afx_msg void OnUpdateStartServer(CCmdUI* pCmdUI);
+	afx_msg void OnAppExit();
 
-	DECLARE_MESSAGE_MAP()
 public:
-	CComboBox m_comboBoxHost;
-	CEdit m_editPort;
-	CComboBox m_comboBoxAudioEndpoint;
-	CButton m_buttonServer;
-	CButton m_buttonRefresh;
-	CButton m_buttonAutoRun;
-	CButton m_buttonRepairFirewall;
+	CString m_strUpdateLink;
+	HICON m_hIcon;
+	CTabCtrl m_tabCtrl;
+	std::vector<CTabPanel*> m_vecTabPanel;
+	CServerTabPanel* m_tabPanelServer;
 };
