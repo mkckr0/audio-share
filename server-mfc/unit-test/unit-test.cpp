@@ -64,6 +64,18 @@ namespace unittest
             Assert::IsTrue(util::is_newer_version("v0.1.0", "v0.0.17"));
         }
 
+        TEST_METHOD(is_newer_version_version11) {
+            Assert::IsFalse(util::is_newer_version("v0.0.17", "v0.1.0"));
+        }
+
+        TEST_METHOD(is_newer_version_version12) {
+            Assert::IsFalse(util::is_newer_version("v0.1.0", "v0.1.0"));
+        }
+
+        TEST_METHOD(is_newer_version_version13) {
+            Assert::IsTrue(util::is_newer_version("v0.2.0", "v0.1.0"));
+        }
+
         TEST_METHOD(is_newer_version_version2) {
             Assert::IsTrue(util::is_newer_version("v0.17.0", "v0.9.17"));
         }

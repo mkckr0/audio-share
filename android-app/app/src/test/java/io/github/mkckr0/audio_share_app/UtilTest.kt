@@ -31,6 +31,16 @@ class UtilTest {
     }
 
     @Test
+    fun isNewerVersion_version11() {
+        assertFalse(Util.isNewerVersion("v0.0.17", "v0.1.0"))
+    }
+
+    @Test
+    fun isNewerVersion_version12() {
+        assertFalse(Util.isNewerVersion("v0.1.0", "v0.1.0"))
+    }
+
+    @Test
     fun isNewerVersion_version2() {
         assertTrue(Util.isNewerVersion("v0.17.0", "v0.9.17"))
     }

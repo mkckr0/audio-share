@@ -11,8 +11,10 @@ object Util {
             throw IllegalArgumentException("version format error, a=${a} b=${b}")
         }
         aList.forEachIndexed { index, i ->
-            if (i > bList[index]) {
-                return true
+            if (i == bList[index]) {
+                return@forEachIndexed
+            } else {
+                return i > bList[index]
             }
         }
         return false

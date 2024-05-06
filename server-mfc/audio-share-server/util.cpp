@@ -26,8 +26,11 @@ namespace util {
 
         for (size_t i = 0; i < lhs_vec.size(); i++)
         {
-            if (lhs_vec[i] > rhs_vec[i]) {
-                return true;
+            if (lhs_vec[i] == rhs_vec[i]) {
+                continue;
+            }
+            else {
+                return lhs_vec[i] > rhs_vec[i];
             }
         }
 
