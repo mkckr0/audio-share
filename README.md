@@ -35,8 +35,9 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 
 ## Screenshots
 
-<img src="docs/img/show_01.png" width="60%" alt="docs/img/show_01.png">
-
+<img src="docs/img/win_01.png" width="45%" alt="docs/img/win_01.png">
+<img src="docs/img/win_02.png" width="45%" alt="docs/img/win_02.png">
+<hr>
 <img src="metadata/en-US/images/phoneScreenshots/1.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/1.png">&nbsp;
 <img src="metadata/en-US/images/phoneScreenshots/2.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/2.png">
 
