@@ -54,7 +54,7 @@ void CAppSettingsTabPanel::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(CAppSettingsTabPanel, CDialogEx)
+BEGIN_MESSAGE_MAP(CAppSettingsTabPanel, CTabPanel)
     ON_BN_CLICKED(IDC_CHECK_AUTORUN, &CAppSettingsTabPanel::OnBnClickedCheckAutoRun)
     ON_BN_CLICKED(IDC_BUTTON_REPPAIR_FIREWALL, &CAppSettingsTabPanel::OnBnClickedButtonReppairFirewall)
     ON_BN_CLICKED(IDC_BUTTON_HIDE, &CAppSettingsTabPanel::OnBnClickedButtonHide)
