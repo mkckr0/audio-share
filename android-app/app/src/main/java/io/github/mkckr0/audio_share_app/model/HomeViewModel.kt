@@ -60,7 +60,7 @@ class HomeViewModel(private val application: Application) : AndroidViewModel(app
 
     fun onAudioVolumeChange(value: Float) {
         audioVolume.value = value
-        if (isPlaying.value!!) {
+        if (isPlaying.value!! && netClient.isPlaying()) {
             netClient.setVolume(value)
         }
     }
