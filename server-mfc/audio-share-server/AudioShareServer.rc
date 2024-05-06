@@ -173,7 +173,7 @@ BEGIN
         BEGIN
             VALUE "FileDescription", "Audio Share Server"
             VALUE "FileVersion", "0.1.0.0"
-            VALUE "LegalCopyright", "Copyright © 2022-2024 mkckr0.  All rights reserved."
+            VALUE "LegalCopyright", "Copyright © 2022-2024 mkckr0. All rights reserved."
             VALUE "OriginalFilename", "AudioShareServer.exe"
             VALUE "ProductName", "Audio Share Server"
             VALUE "ProductVersion", "0.1.0"
