@@ -21,7 +21,7 @@ BOOL CTabPanel::Create()
 
 
 BEGIN_MESSAGE_MAP(CTabPanel, CDialogEx)
-	ON_WM_PAINT()
+	ON_WM_CTLCOLOR()
 END_MESSAGE_MAP()
 
 
