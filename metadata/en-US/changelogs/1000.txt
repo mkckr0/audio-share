@@ -1,0 +1,5 @@
+- Fix app crash when set some settings out of range. #46
+- Refactor the UI of Server MFC.
+- Add a "Repair Firewall" button for Server MFC. #51
+- Add "Auto Check for Update" for Server MFC and app. Their default states are disabled. #40
+- Remove the all-zero check for Server Core on Linux.
