@@ -27,6 +27,7 @@ constexpr int check_update_interval = 3 * 60 * 60 * 1000;
 
 // CAppSettingsTabPanel dialog
 
+IMPLEMENT_DYNAMIC(CAppSettingsTabPanel, CTabPanel)
 
 CAppSettingsTabPanel::CAppSettingsTabPanel(CWnd* pParent)
     : CTabPanel(IDD_APP_SETTINGS, L"App Settings", pParent)
@@ -54,7 +55,6 @@ void CAppSettingsTabPanel::DoDataExchange(CDataExchange* pDX)
 
 
 BEGIN_MESSAGE_MAP(CAppSettingsTabPanel, CDialogEx)
-    ON_WM_CTLCOLOR()
     ON_BN_CLICKED(IDC_CHECK_AUTORUN, &CAppSettingsTabPanel::OnBnClickedCheckAutoRun)
     ON_BN_CLICKED(IDC_BUTTON_REPPAIR_FIREWALL, &CAppSettingsTabPanel::OnBnClickedButtonReppairFirewall)
     ON_BN_CLICKED(IDC_BUTTON_HIDE, &CAppSettingsTabPanel::OnBnClickedButtonHide)

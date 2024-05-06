@@ -28,6 +28,5 @@ protected:
     DECLARE_MESSAGE_MAP()
     virtual void PostNcDestroy();
     afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
-
 };
 

@@ -6,6 +6,7 @@
 
 class CAppSettingsTabPanel : public CTabPanel
 {
+	DECLARE_DYNAMIC(CAppSettingsTabPanel)
 public:
 	CAppSettingsTabPanel(CWnd* pParent);   // standard constructor
 	virtual ~CAppSettingsTabPanel();

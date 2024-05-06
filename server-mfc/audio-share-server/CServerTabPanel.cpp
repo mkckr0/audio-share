@@ -10,6 +10,7 @@
 
 // CServerTabPanel dialog
 
+IMPLEMENT_DYNAMIC(CServerTabPanel, CTabPanel)
 
 CServerTabPanel::CServerTabPanel(CWnd* pParent)
 	: CTabPanel(IDD_SERVER, L"Server", pParent)
@@ -42,7 +43,6 @@ void CServerTabPanel::DoDataExchange(CDataExchange* pDX)
 
 
 BEGIN_MESSAGE_MAP(CServerTabPanel, CTabPanel)
-    ON_WM_CTLCOLOR()
     ON_BN_CLICKED(IDC_BUTTON_SERVER, &CServerTabPanel::OnBnClickedStartServer)
     ON_BN_CLICKED(IDC_BUTTON_RESET, &CServerTabPanel::OnBnClickedButtonReset)
 END_MESSAGE_MAP()
@@ -68,6 +68,8 @@ BOOL CServerTabPanel::OnInitDialog()
     if (nWhenAppStart == 1 || theApp.GetProfileIntW(L"App", L"Running", false)) {
         m_buttonServer.PostMessageW(BM_CLICK);
     }
+
+    //auto x = this->GetThisMessageMap();
 
     return TRUE;  // return TRUE unless you set the focus to a control
     // EXCEPTION: OCX Property Pages should return FALSE

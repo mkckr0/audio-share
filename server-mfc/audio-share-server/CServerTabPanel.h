@@ -10,6 +10,7 @@ class network_manager;
 
 class CServerTabPanel : public CTabPanel
 {
+	DECLARE_DYNAMIC(CServerTabPanel)
 public:
 	CServerTabPanel(CWnd* pParent);
 	virtual ~CServerTabPanel();
