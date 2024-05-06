@@ -46,7 +46,6 @@ jobs:
 
   build_server_mfc:
     name: Build server-mfc
-    needs: [apply_version]
     runs-on: windows-latest
     defaults:
       run:
@@ -75,7 +74,6 @@ jobs:
 
   build_server_core:
     name: Build server-core
-    needs: [apply_version]
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest]
@@ -142,6 +140,6 @@ jobs:
       - name: Create Github Release
         run: |
           version=$(bash ./scripts/get_version.sh -n)
-          gh release create "v$version" -d -F notes -t "v$version" release_bin/*/*
+          gh release create "v$version" -d -F notes -t "v$version" --discussion-category announcements release_bin/*/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
