@@ -124,7 +124,7 @@ BOOL CAudioShareServerApp::InitInstance()
 	}
 
 	auto dlg = new CMainDialog;
-	dlg->Create(IDD_MAIN, nullptr);
+	dlg->Create(IDD_MAIN);
 	m_pMainWnd = dlg;
 
 	//CMainDialog dlg;
