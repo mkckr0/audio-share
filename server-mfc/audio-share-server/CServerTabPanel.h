@@ -29,17 +29,16 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 	virtual BOOL OnInitDialog();
-	afx_msg void OnBnClickedButtonRefresh();
+	afx_msg void OnBnClickedButtonReset();
 	afx_msg void OnBnClickedStartServer();
 	void EnableInputControls(bool bEnable = true);
 
-private:
+public:
 	std::shared_ptr<audio_manager> m_audio_manager;
 	std::shared_ptr<network_manager> m_network_manager;
 	CComboBox m_comboBoxHost;
 	CEdit m_editPort;
 	CComboBox m_comboBoxAudioEndpoint;
 	CButton m_buttonServer;
-public:
 	CButton m_buttonReset;
 };

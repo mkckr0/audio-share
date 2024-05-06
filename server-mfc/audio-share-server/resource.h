@@ -15,9 +15,8 @@
 #define IDC_EDIT_PORT                   1100
 #define IDC_COMBO_AUDIO_ENDPOINT        1101
 #define IDC_COMBO_HOST                  1102
-#define IDC_BUTTON_RESET                1103
-#define IDC_BUTTON_SERVER               1104
-#define IDC_BUTTON_SERVER2              1105
+#define IDC_BUTTON_SERVER               1103
+#define IDC_BUTTON_RESET                1104
 #define IDC_CHECK_AUTORUN               1200
 #define IDC_BUTTON_REPPAIR_FIREWALL     1201
 #define IDC_RADIO_NONE                  1202
@@ -38,7 +37,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        133
+#define _APS_NEXT_RESOURCE_VALUE        130
 #define _APS_NEXT_COMMAND_VALUE         32774
 #define _APS_NEXT_CONTROL_VALUE         1216
 #define _APS_NEXT_SYMED_VALUE           107

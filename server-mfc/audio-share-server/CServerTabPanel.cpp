@@ -41,9 +41,10 @@ void CServerTabPanel::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(CServerTabPanel, CDialogEx)
-    ON_BN_CLICKED(IDC_BUTTON_SERVER, &CServerTabPanel::OnBnClickedStartServer)
+BEGIN_MESSAGE_MAP(CServerTabPanel, CTabPanel)
     ON_WM_CTLCOLOR()
+    ON_BN_CLICKED(IDC_BUTTON_SERVER, &CServerTabPanel::OnBnClickedStartServer)
+    ON_BN_CLICKED(IDC_BUTTON_RESET, &CServerTabPanel::OnBnClickedButtonReset)
 END_MESSAGE_MAP()
 
 
@@ -54,26 +55,10 @@ BOOL CServerTabPanel::OnInitDialog()
     CDialogEx::OnInitDialog();
 
     // TODO:  Add extra initialization here
-        // set default host and port
-    auto address_list = network_manager::get_local_addresss();
-    for (auto address : address_list) {
-        auto nIndex = m_comboBoxHost.AddString(address.c_str());
-    }
-    auto configHost = theApp.GetProfileStringW(L"Network", L"host");
-    if (!configHost.IsEmpty()) {
-        m_comboBoxHost.SetWindowTextW(configHost);
-    }
-    else {
-        if (m_comboBoxHost.GetCount()) {
-            m_comboBoxHost.SetCurSel(0);
-        }
-    }
-
     m_editPort.SetLimitText(5);
-    m_editPort.SetWindowTextW(theApp.GetProfileStringW(L"Network", L"port", L"65530"));
 
-    // init endpoint list
-    this->OnBnClickedButtonRefresh();
+    // init controls data
+    this->OnBnClickedButtonReset();
 
     // create network_manager
     m_audio_manager = std::make_shared<audio_manager>();
@@ -89,13 +74,31 @@ BOOL CServerTabPanel::OnInitDialog()
 }
 
 
-void CServerTabPanel::OnBnClickedButtonRefresh()
+void CServerTabPanel::OnBnClickedButtonReset()
 {
-    m_comboBoxAudioEndpoint.Clear();    // clear current selection
+    //m_comboBoxHost.Clear();
+    m_comboBoxHost.ResetContent();
+    auto address_list = network_manager::get_local_addresss();
+    for (auto address : address_list) {
+        auto nIndex = m_comboBoxHost.AddString(address.c_str());
+    }
+    auto configHost = theApp.GetProfileStringW(L"Network", L"host");
+    if (!configHost.IsEmpty()) {
+        m_comboBoxHost.SetWindowTextW(configHost);
+    }
+    else {
+        if (m_comboBoxHost.GetCount()) {
+            m_comboBoxHost.SetCurSel(0);
+        }
+    }
+    m_editPort.SetWindowTextW(theApp.GetProfileStringW(L"Network", L"port", L"65530"));
+
+    //m_comboBoxAudioEndpoint.Clear();    // clear current selection
     for (int nIndex = m_comboBoxAudioEndpoint.GetCount() - 1; nIndex >= 0; --nIndex) {
         free(m_comboBoxAudioEndpoint.GetItemDataPtr(nIndex));
-        m_comboBoxAudioEndpoint.DeleteString(nIndex);
+        //m_comboBoxAudioEndpoint.DeleteString(nIndex);
     }
+    m_comboBoxAudioEndpoint.ResetContent();
 
     audio_manager::endpoint_list_t endpoint_list;
     int default_index = m_audio_manager->get_endpoint_list(endpoint_list);
