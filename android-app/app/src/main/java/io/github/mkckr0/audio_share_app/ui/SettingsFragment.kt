@@ -143,7 +143,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         findPreference<Preference>("version")!!.apply {
             summary =
-                "v${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE})-${BuildConfig.BUILD_TYPE}"
+                "${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE})-${BuildConfig.BUILD_TYPE}"
             val url =
                 "https://github.com/mkckr0/audio-share/releases/tag/v${BuildConfig.VERSION_NAME}"
             intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
