@@ -1,0 +1,11 @@
+name: Update SourceForge
+
+on:
+  workflow_dispatch:
+
+jobs:
+  set_default:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.5
+      - run: bash ./scripts/setup_sourceforge_release.sh ${{ secrets.SOURCEFORGE_RELEASE_API_KEY }} $(bash ./scripts/get_version.sh -n)
