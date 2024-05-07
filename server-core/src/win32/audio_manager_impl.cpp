@@ -27,8 +27,7 @@
 #include <iostream>
 #include <vector>
 
-#include <atlbase.h>
-#include <combaseapi.h>
+#include <wil/com.h>
 #include <mmreg.h>
 #include <mmdeviceapi.h>
 #include <Functiondiscoverykeys_devpkey.h>
@@ -38,7 +37,7 @@
 using namespace io::github::mkckr0::audio_share_app::pb;
 
 void exit_on_failed(HRESULT hr, const char* message = "", const char* func = "");
-void print_endpoints(CComPtr<IMMDeviceCollection> pColletion);
+void print_endpoints(wil::com_ptr<IMMDeviceCollection> pColletion);
 void set_format(std::shared_ptr<AudioFormat> _format, WAVEFORMATEX* format);
 
 namespace detail {
@@ -61,15 +60,13 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
     HRESULT hr {};
 
-    CComPtr<IMMDeviceEnumerator> pEnumerator;
-    hr = pEnumerator.CoCreateInstance(__uuidof(MMDeviceEnumerator));
-    exit_on_failed(hr);
+    auto pEnumerator = wil::CoCreateInstance<MMDeviceEnumerator, IMMDeviceEnumerator>();
 
-    CComPtr<IMMDevice> pEndpoint;
+    wil::com_ptr<IMMDevice> pEndpoint;
     hr = pEnumerator->GetDevice(mbs_to_wchars(endpoint_id).c_str(), &pEndpoint);
     exit_on_failed(hr);
 
-    CComPtr<IPropertyStore> pProps;
+    wil::com_ptr<IPropertyStore> pProps;
     hr = pEndpoint->OpenPropertyStore(STGM_READ, &pProps);
     exit_on_failed(hr);
     PROPVARIANT varName;
@@ -79,14 +76,14 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     spdlog::info("select audio endpoint: {}", wchars_to_utf8(varName.pwszVal));
     PropVariantClear(&varName);
 
-    CComPtr<IAudioClient> pAudioClient;
+    wil::com_ptr<IAudioClient> pAudioClient;
     hr = pEndpoint->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, (void**)&pAudioClient);
     exit_on_failed(hr);
 
-    CComHeapPtr<WAVEFORMATEX> pCaptureFormat;
-    pAudioClient->GetMixFormat(&pCaptureFormat);
+    wil::unique_cotaskmem_ptr<WAVEFORMATEX> pCaptureFormat;
+    pAudioClient->GetMixFormat(wil::out_param(pCaptureFormat));
 
-    set_format(_format, pCaptureFormat);
+    set_format(_format, pCaptureFormat.get());
 
     constexpr static int REFTIMES_PER_SEC = 10000000; // 1 reference_time = 100ns
     constexpr static int REFTIMES_PER_MILLISEC = 10000;
@@ -96,7 +93,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     exit_on_failed(hr);
 
     REFERENCE_TIME hnsRequestedDuration = 10 * REFTIMES_PER_SEC;
-    hr = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, hnsRequestedDuration, 0, pCaptureFormat, nullptr);
+    hr = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, hnsRequestedDuration, 0, pCaptureFormat.get(), nullptr);
     exit_on_failed(hr);
 
     UINT32 bufferFrameCount {};
@@ -105,7 +102,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
     spdlog::info("buffer size: {}", bufferFrameCount);
 
-    CComPtr<IAudioCaptureClient> pCaptureClient;
+    wil::com_ptr<IAudioCaptureClient> pCaptureClient;
     hr = pAudioClient->GetService(__uuidof(IAudioCaptureClient), (void**)&pCaptureClient);
     exit_on_failed(hr);
 
@@ -167,11 +164,9 @@ int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
 {
     HRESULT hr {};
 
-    CComPtr<IMMDeviceEnumerator> pEnumerator;
-    hr = pEnumerator.CoCreateInstance(__uuidof(MMDeviceEnumerator));
-    exit_on_failed(hr);
+    auto pEnumerator = wil::CoCreateInstance<MMDeviceEnumerator, IMMDeviceEnumerator>();
 
-    CComPtr<IMMDeviceCollection> pColletion;
+    wil::com_ptr<IMMDeviceCollection> pColletion;
     hr = pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &pColletion);
     exit_on_failed(hr);
 
@@ -183,15 +178,15 @@ int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
     std::string default_id = get_default_endpoint();
 
     for (UINT i = 0; i < count; ++i) {
-        CComPtr<IMMDevice> pEndpoint;
+        wil::com_ptr<IMMDevice> pEndpoint;
         hr = pColletion->Item(i, &pEndpoint);
         exit_on_failed(hr);
 
-        CComHeapPtr<WCHAR> pwszID;
-        hr = pEndpoint->GetId(&pwszID);
+        wil::unique_cotaskmem_ptr<WCHAR> pwszID;
+        hr = pEndpoint->GetId(wil::out_param(pwszID));
         exit_on_failed(hr);
 
-        CComPtr<IPropertyStore> pProps;
+        wil::com_ptr<IPropertyStore> pProps;
         hr = pEndpoint->OpenPropertyStore(STGM_READ, &pProps);
         exit_on_failed(hr);
 
@@ -200,7 +195,7 @@ int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
         hr = pProps->GetValue(PKEY_Device_FriendlyName, &varName);
         exit_on_failed(hr);
 
-        auto endpoint_id = wchars_to_mbs((LPWSTR)pwszID);
+        auto endpoint_id = wchars_to_mbs((LPWSTR)pwszID.get());
         endpoint_list.push_back(std::make_pair(endpoint_id, wchars_to_mbs(varName.pwszVal)));
 
         if (endpoint_id == default_id) {
@@ -217,22 +212,20 @@ std::string audio_manager::get_default_endpoint()
 {
     HRESULT hr {};
 
-    CComPtr<IMMDeviceEnumerator> pEnumerator;
-    hr = pEnumerator.CoCreateInstance(__uuidof(MMDeviceEnumerator));
-    exit_on_failed(hr);
+    auto pEnumerator = wil::CoCreateInstance<MMDeviceEnumerator, IMMDeviceEnumerator>();
 
-    CComPtr<IMMDevice> pEndpoint;
+    wil::com_ptr<IMMDevice> pEndpoint;
     hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pEndpoint);
     if (hr == HRESULT_FROM_WIN32(ERROR_NOT_FOUND)) {
         return {};
     }
     exit_on_failed(hr);
 
-    CComHeapPtr<WCHAR> pwszID;
-    hr = pEndpoint->GetId(&pwszID);
+    wil::unique_cotaskmem_ptr<WCHAR> pwszID;
+    hr = pEndpoint->GetId(wil::out_param(pwszID));
     exit_on_failed(hr);
 
-    return wchars_to_mbs((LPWSTR)pwszID);
+    return wchars_to_mbs((LPWSTR)pwszID.get());
 }
 
 void set_format(std::shared_ptr<AudioFormat> _format, WAVEFORMATEX* format)
@@ -255,7 +248,7 @@ void set_format(std::shared_ptr<AudioFormat> _format, WAVEFORMATEX* format)
     spdlog::info("AudioFormat:\n{}", _format->DebugString());
 }
 
-void print_endpoints(CComPtr<IMMDeviceCollection> pColletion)
+void print_endpoints(wil::com_ptr<IMMDeviceCollection> pColletion)
 {
     HRESULT hr {};
 
@@ -264,15 +257,15 @@ void print_endpoints(CComPtr<IMMDeviceCollection> pColletion)
     exit_on_failed(hr);
 
     for (UINT i = 0; i < count; ++i) {
-        CComPtr<IMMDevice> pEndpoint;
+        wil::com_ptr<IMMDevice> pEndpoint;
         hr = pColletion->Item(i, &pEndpoint);
         exit_on_failed(hr);
 
-        CComHeapPtr<WCHAR> pwszID;
-        hr = pEndpoint->GetId(&pwszID);
+        wil::unique_cotaskmem_ptr<WCHAR> pwszID;
+        hr = pEndpoint->GetId(wil::out_param(pwszID));
         exit_on_failed(hr);
 
-        CComPtr<IPropertyStore> pProps;
+        wil::com_ptr<IPropertyStore> pProps;
         hr = pEndpoint->OpenPropertyStore(STGM_READ, &pProps);
         exit_on_failed(hr);
 
