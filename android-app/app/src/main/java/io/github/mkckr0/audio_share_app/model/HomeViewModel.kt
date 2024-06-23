@@ -28,13 +28,16 @@ import io.github.mkckr0.audio_share_app.R
 
 class HomeViewModel(private val application: Application) : AndroidViewModel(application) {
 
-    private val sharedPreferences by lazy { PreferenceManager.getDefaultSharedPreferences(application) }
+    private val sharedPreferences by lazy {
+        PreferenceManager.getDefaultSharedPreferences(
+            application
+        )
+    }
     private val netClient by lazy { NetClient(NetClientHandler(), application) }
 
     val audioVolume = MutableLiveData<Float>().apply {
         value = sharedPreferences.getFloat(
-            "audio_volume",
-            AudioTrack.getMaxVolume()
+            "audio_volume", AudioTrack.getMaxVolume()
         )
     }
 
@@ -60,35 +63,29 @@ class HomeViewModel(private val application: Application) : AndroidViewModel(app
 
     fun onAudioVolumeChange(value: Float) {
         audioVolume.value = value
-        if (isPlaying.value!! && netClient.isPlaying()) {
-            netClient.setVolume(value)
-        }
+        if (isPlaying.value!! && netClient.isPlaying()) netClient.setVolume(value)
+
     }
 
     fun switchPlay() {
-        if (netClient.isPlaying()) {
-            stopPlay()
-        } else {
-            startPlay()
-        }
+        if (netClient.isPlaying()) stopPlay()
+        else startPlay()
+
     }
 
     private fun startPlay() {
-        if (host.value.isNullOrBlank()  || port.value.isNullOrBlank()) {
-            if (host.value.isNullOrBlank()) {
+        if (host.value.isNullOrBlank() || port.value.isNullOrBlank()) {
+            if (host.value.isNullOrBlank())
                 hostError.value = "Host is Empty"
-            }
-            if (port.value.isNullOrBlank()) {
+
+            if (port.value.isNullOrBlank())
                 portError.value = "Port is Empty"
-            }
+
             return
         }
 
         // save host and port
-        sharedPreferences.edit()
-            .putString("host", host.value)
-            .putString("port", port.value)
-            .apply()
+        sharedPreferences.edit().putString("host", host.value).putString("port", port.value).apply()
 
         isPlaying.value = true
         info.value = application.getString(R.string.audio_starting)
