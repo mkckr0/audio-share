@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/alexflint/go-arg"
+	"github.com/ebitengine/oto/v3"
 	"google.golang.org/protobuf/proto"
 
 	"tobycm.dev/audio-share-go-client/pb"
@@ -94,9 +96,6 @@ func (message *TcpMessage) Decode(data []byte) error {
 		message.ID = int(binary.LittleEndian.Uint32(data[:4]))
 
 		log.Printf("Decoded playback ID: %d", message.ID)
-		log.Printf("Decoded playback ID: %d", message.ID)
-		log.Printf("Decoded playback ID: %d", message.ID)
-		log.Printf("Decoded playback ID: %d", message.ID)
 	}
 
 	return nil
@@ -145,23 +144,6 @@ func handleIncomingTCPData(conn *net.Conn) {
 	}
 }
 
-func handleIncomingUDPData(conn *net.Conn) {
-	buf := make([]byte, 1024)
-
-	for {
-		n, err := (*conn).Read(buf)
-		if err != nil {
-			log.Printf("Error receiving UDP data: %v", err)
-			continue
-		}
-
-		data := buf[:n]
-		floatData := decodePCM(data)
-		// Process floatData as needed
-		log.Printf("Received audio data: %v", floatData)
-	}
-}
-
 func decodePCM(data []byte) []float32 {
 	buf := bytes.NewReader(data)
 	floatData := make([]float32, len(data)/4)
@@ -171,6 +153,8 @@ func decodePCM(data []byte) []float32 {
 	}
 	return floatData
 }
+
+var otoCtx *oto.Context
 
 func main() {
 	arg.MustParse(&args)
@@ -210,6 +194,20 @@ func main() {
 
 	log.Println("Audio format:", audioFormat)
 
+	op := &oto.NewContextOptions{
+		SampleRate:   int(audioFormat.SampleRate),
+		ChannelCount: int(audioFormat.Channels),
+		Format:       oto.FormatFloat32LE,
+	}
+
+	readyChan := make(chan struct{})
+	otoCtx, readyChan, err = oto.NewContext(op)
+	if err != nil {
+		log.Fatalf("Failed to create new context for audio output: %v", err)
+	}
+
+	<-readyChan
+
 	// Send start play
 	tcpConn.Write((&TcpMessage{Command: CMD_START_PLAY}).Encode())
 
@@ -239,7 +237,10 @@ func main() {
 	binary.LittleEndian.PutUint32(idBuf, uint32(msg.ID))
 	udpConn.Write(idBuf)
 
-	go handleIncomingUDPData(&udpConn)
+	reader := bufio.NewReader(udpConn)
+
+	player := otoCtx.NewPlayer(reader)
+	player.Play()
 
 	go sendHeartbeat(&tcpConn)
 
