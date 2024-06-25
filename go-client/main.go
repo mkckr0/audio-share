@@ -2,10 +2,9 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/binary"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"time"
 
@@ -19,10 +18,10 @@ import (
 var audioFormat = &pb.AudioFormat{}
 
 var args struct {
-	Host string `arg:"-h,required" help:"Host to connect to."`
-	Port int    `arg:"-p" default:"65530" help:"Port to connect to."`
-
-	TcpTimeout int `arg:"-t" default:"3000" help:"TCP timeout in seconds."`
+	Host       string `arg:"-h,required" help:"Host to connect to."`
+	Port       int    `arg:"-p" default:"65530" help:"Port to connect to."`
+	Verbose    bool   `arg:"-v" help:"Verbose output."`
+	TcpTimeout int    `arg:"-t" default:"3000" help:"TCP timeout in seconds."`
 }
 
 // Command represents the command types
@@ -83,8 +82,6 @@ func (message *TcpMessage) Decode(data []byte) error {
 		if err := proto.Unmarshal(data[:bufSize], message.AudioFormat); err != nil {
 			return fmt.Errorf("failed to unmarshal audio format: %v", err)
 		}
-
-		log.Printf("Decoded audio format: %v", message.AudioFormat)
 	}
 
 	// ID if CMD_START_PLAY
@@ -95,24 +92,10 @@ func (message *TcpMessage) Decode(data []byte) error {
 
 		message.ID = int(binary.LittleEndian.Uint32(data[:4]))
 
-		log.Printf("Decoded playback ID: %d", message.ID)
+		slog.Debug(fmt.Sprintf("Decoded ID: %v", message.ID))
 	}
 
 	return nil
-}
-
-func sendHeartbeat(conn *net.Conn) {
-	ticker := time.NewTicker(3 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		<-ticker.C
-		msg := &TcpMessage{
-			Command: CMD_HEARTBEAT,
-		}
-		(*conn).Write(msg.Encode())
-		log.Println("Sent heartbeat")
-	}
 }
 
 func handleIncomingTCPData(conn *net.Conn) {
@@ -122,45 +105,41 @@ func handleIncomingTCPData(conn *net.Conn) {
 		length, err := (*conn).Read(buf)
 		if err != nil {
 			if err.Error() == "EOF" {
-				log.Println("Connection closed by server.")
+				slog.Info("Connection closed by server.")
 				break
 			}
 
-			log.Println("Error reading:", err)
+			slog.Error(fmt.Sprintf("Error reading: %v", err))
 			continue
 		}
 
 		msg := &TcpMessage{}
 		if err := msg.Decode(buf[:length]); err != nil {
-			log.Println("Error decoding:", err)
+			slog.Error(fmt.Sprintf("Error decoding: %v", err))
 			continue
 		}
 
 		if msg.Command == CMD_HEARTBEAT {
-			log.Println("Received heartbeat")
+			slog.Debug("Received heartbeat")
+
+			(*conn).Write((&TcpMessage{Command: CMD_HEARTBEAT}).Encode())
+
+			slog.Debug("Sent heartbeat")
 		} else {
-			log.Printf("Received message: %v", msg)
+			slog.Debug(fmt.Sprintf("Received message: %v", msg))
 		}
 	}
 }
 
-func decodePCM(data []byte) []float32 {
-	buf := bytes.NewReader(data)
-	floatData := make([]float32, len(data)/4)
-	err := binary.Read(buf, binary.LittleEndian, floatData)
-	if err != nil {
-		log.Fatalf("binary.Read failed: %v", err)
-	}
-	return floatData
-}
-
-var otoCtx *oto.Context
-
 func main() {
 	arg.MustParse(&args)
 
-	log.Println("Host:", args.Host)
-	log.Println("Port:", args.Port)
+	if args.Verbose {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	}
+
+	slog.Info(fmt.Sprintf("Host: %v", args.Host))
+	slog.Info(fmt.Sprintf("Port: %v", args.Port))
 
 	tcpConn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", args.Host, args.Port))
 	if err != nil {
@@ -170,7 +149,7 @@ func main() {
 
 	tcpConn.SetReadDeadline(time.Now().Add(time.Duration(args.TcpTimeout) * time.Second))
 
-	log.Println("Connected to server.")
+	slog.Info("Connected to server.")
 
 	// Send get format
 	tcpConn.Write((&TcpMessage{Command: CMD_GET_FORMAT}).Encode())
@@ -192,7 +171,7 @@ func main() {
 
 	audioFormat = msg.AudioFormat
 
-	log.Println("Audio format:", audioFormat)
+	slog.Info(fmt.Sprintf("Audio format: %v", audioFormat))
 
 	op := &oto.NewContextOptions{
 		SampleRate:   int(audioFormat.SampleRate),
@@ -200,10 +179,9 @@ func main() {
 		Format:       oto.FormatFloat32LE,
 	}
 
-	readyChan := make(chan struct{})
-	otoCtx, readyChan, err = oto.NewContext(op)
+	otoCtx, readyChan, err := oto.NewContext(op)
 	if err != nil {
-		log.Fatalf("Failed to create new context for audio output: %v", err)
+		panic(fmt.Sprintf("Failed to create new context for audio output: %v", err))
 	}
 
 	<-readyChan
@@ -225,26 +203,19 @@ func main() {
 		panic("Expected CMD_START_PLAY")
 	}
 
-	log.Println("ID", msg)
-
 	// start UDP listener
 	udpConn, err := net.Dial("udp", fmt.Sprintf("%s:%d", args.Host, args.Port))
 	if err != nil {
 		panic(err)
 	}
+	defer udpConn.Close()
 
-	idBuf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(idBuf, uint32(msg.ID))
-	udpConn.Write(idBuf)
+	buf = make([]byte, 4)
+	binary.LittleEndian.PutUint32(buf, uint32(msg.ID))
+	udpConn.Write(buf)
 
-	reader := bufio.NewReader(udpConn)
-
-	player := otoCtx.NewPlayer(reader)
+	player := otoCtx.NewPlayer(bufio.NewReader(udpConn))
 	player.Play()
 
-	go sendHeartbeat(&tcpConn)
-
-	go handleIncomingTCPData(&tcpConn)
-
-	select {}
+	handleIncomingTCPData(&tcpConn)
 }
