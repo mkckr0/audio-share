@@ -38,6 +38,7 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 ## Requirements
 
 - A PC with Windows or Linux as the server.
+
    - Windows 10+ x86_64 with [Microsoft Visual C++ 2015-2022 Redistributable (x64)](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) ([vc_redist.x64.exe](https://aka.ms/vs/17/release/vc_redist.x64.exe)).
    - Linux with PipeWire.
 
@@ -60,6 +61,17 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 - Find the LAN address of your computer, such as `192.168.3.2`. Then run `as-cmd -b 192.168.3.2` to start the server. It will use the default port `65530` and select a default audio endpoint.
 - The Windows will ask you to add firewall rules automatically while Linux won't. So if your Linux distribution enables firewall, you need to configure firewall manually.
 - Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step, such as `192.168.3.2`. Click "▶" button and enjoy the audio🎶.
+
+## Usage for Go client
+
+- Download the Go binary for your platform
+- Run the binary in your terminal
+
+Parameters:
+```
+audioshare-client <host> [post] [-v]
+```
+`-v` is for verbose logging
 
 ## Configure Firewall Rules on Linux
 
@@ -211,9 +223,10 @@ total: 1
    - For Windows, replace `linux` to `windows` in previous two steps.
 
 - Go Client (for Windows, MacOS, Linux, FreeBSD, OpenBSD, Android, iOS, WebAssembly, Nintendo Switch, Xbox)
-  - Download [Go](https://go.dev/dl/)
-  - Make sure you are in the `go-client` folder, run `go build -o build/audioshare-client.exe`
-  - Your binary is located at `build/audioshare-client.exe`
+
+   - Download [Go](https://go.dev/dl/)
+   - Make sure you are in the `go-client` folder, run `go build -o build/audioshare-client.exe`
+   - Your binary is located at `build/audioshare-client.exe`
 
 ## Star History
 

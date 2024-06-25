@@ -18,8 +18,8 @@ import (
 var audioFormat = &pb.AudioFormat{}
 
 var args struct {
-	Host       string `arg:"-h,required" help:"Host to connect to."`
-	Port       int    `arg:"-p" default:"65530" help:"Port to connect to."`
+	Host       string `arg:"positional,required" help:"Host to connect to."`
+	Port       int    `arg:"positional" default:"65530" help:"Port to connect to."`
 	Verbose    bool   `arg:"-v" help:"Verbose output."`
 	TcpTimeout int    `arg:"-t" default:"3000" help:"TCP timeout in seconds."`
 }
