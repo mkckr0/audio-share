@@ -52,20 +52,18 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNavigation.setupWithNavController(navController)
 
         // request permissions
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requestPermissions(
-            arrayOf(
-                Manifest.permission.POST_NOTIFICATIONS
-            ), 0
-        )
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
+        }
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(application)
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        if (intent == null) return
-
+        if (intent == null) {
+            return
+        }
 
         // tap update notification to start downloading
         if (intent.getStringExtra("action") == "update") {

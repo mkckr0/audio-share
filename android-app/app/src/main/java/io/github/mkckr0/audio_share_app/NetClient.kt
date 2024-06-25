@@ -75,7 +75,10 @@ class NetClient(private val handler: Handler, private val application: Applicati
     }
 
     enum class CMD {
-        CMD_NONE, CMD_GET_FORMAT, CMD_START_PLAY, CMD_HEARTBEAT,
+        CMD_NONE,
+        CMD_GET_FORMAT,
+        CMD_START_PLAY,
+        CMD_HEARTBEAT,
     }
 
     private var tcpChannel: Channel? = null
@@ -98,12 +101,14 @@ class NetClient(private val handler: Handler, private val application: Applicati
                     application.getString(R.string.audio_tcp_connect_timeout)
                 )!!.toInt()
                 val remoteAddress = InetSocketAddress(host, port)
-                val f = Bootstrap().group(workerGroup).channel(NioSocketChannel::class.java)
+                val f = Bootstrap().group(workerGroup)
+                    .channel(NioSocketChannel::class.java)
                     .option(ChannelOption.TCP_NODELAY, true)
                     .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout)
                     .handler(object : ChannelInitializer<SocketChannel>() {
                         override fun initChannel(ch: SocketChannel) {
-                            ch.pipeline().addLast(TcpChannelAdapter.TcpMessageEncoder())
+                            ch.pipeline()
+                                .addLast(TcpChannelAdapter.TcpMessageEncoder())
                                 .addLast(TcpChannelAdapter.TcpMessageDecoder())
                                 .addLast(TcpChannelAdapter(this@NetClient))
                         }
@@ -119,7 +124,8 @@ class NetClient(private val handler: Handler, private val application: Applicati
                 tcpChannel = f.channel()
                 Log.d(tag, "tcpChannel.localAddress: ${tcpChannel!!.localAddress()}")
 
-                udpChannel = Bootstrap().group(workerGroup).channel(NioDatagramChannel::class.java)
+                udpChannel = Bootstrap().group(workerGroup)
+                    .channel(NioDatagramChannel::class.java)
                     .handler(object : ChannelInitializer<DatagramChannel>() {
                         override fun initChannel(ch: DatagramChannel) {
                             ch.pipeline()
@@ -177,34 +183,35 @@ class NetClient(private val handler: Handler, private val application: Applicati
         override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
             Log.d(tag, "channelRead tcp")
             try {
-                if (msg !is TcpMessage) {
-                    Log.e(tag, "msg is not TcpMessage")
-                    return
-                }
-                if (msg.cmd == CMD.CMD_GET_FORMAT) {
-                    val audioFormat = msg.audioFormat
-                    if (audioFormat != null) parent.onGetFormat(ctx, audioFormat)
-                } else if (msg.cmd == CMD.CMD_START_PLAY) {
-                    val id = msg.id
-                    if (id > 0) {
-                        parent.udpChannel?.writeAndFlush(id)
-                        parent.heartbeatLastTick = TimeSource.Monotonic.markNow()
-                        parent.heartbeatTimer = timer(null, false, 0, 3000) {
-                            if (TimeSource.Monotonic.markNow() - parent.heartbeatLastTick > 5.seconds) parent.onFailed(
-                                IOException("Heartbeat Timeout")
-                            )
-
-                            Log.d(tag, "heartbeatTimer")
+                if (msg is TcpMessage) {
+                    if (msg.cmd == CMD.CMD_GET_FORMAT) {
+                        val audioFormat = msg.audioFormat
+                        if (audioFormat != null) {
+                            parent.onGetFormat(ctx, audioFormat)
                         }
-                        Log.d(tag, "start heartbeat")
+                    } else if (msg.cmd == CMD.CMD_START_PLAY) {
+                        val id = msg.id
+                        if (id > 0) {
+                            parent.udpChannel?.writeAndFlush(id)
+                            parent.heartbeatLastTick = TimeSource.Monotonic.markNow()
+                            parent.heartbeatTimer = timer(null, false, 0, 3000) {
+                                if (TimeSource.Monotonic.markNow() - parent.heartbeatLastTick > 5.seconds) {
+                                    parent.onFailed(IOException("Heartbeat Timeout"))
+                                }
+                                Log.d(tag, "heartbeatTimer")
+                            }
+                            Log.d(tag, "start heartbeat")
+                        } else {
+                            Log.e(tag, "id <= 0")
+                        }
+                    } else if (msg.cmd == CMD.CMD_HEARTBEAT) {
+                        parent.heartbeatLastTick = TimeSource.Monotonic.markNow()
+                        parent.sendCMD(ctx, CMD.CMD_HEARTBEAT)
                     } else {
-                        Log.e(tag, "id <= 0")
+                        Log.e(tag, "error cmd")
                     }
-                } else if (msg.cmd == CMD.CMD_HEARTBEAT) {
-                    parent.heartbeatLastTick = TimeSource.Monotonic.markNow()
-                    parent.sendCMD(ctx, CMD.CMD_HEARTBEAT)
                 } else {
-                    Log.e(tag, "error cmd")
+                    Log.e(tag, "msg is not valid type")
                 }
             } catch (e: Exception) {
                 Log.d("channelRead tcp", e.stackTraceToString())
@@ -213,15 +220,19 @@ class NetClient(private val handler: Handler, private val application: Applicati
 
         class TcpMessageDecoder : ByteToMessageDecoder() {
             override fun decode(
-                ctx: ChannelHandlerContext?, `in`: ByteBuf?, out: MutableList<Any>?
+                ctx: ChannelHandlerContext?,
+                `in`: ByteBuf?,
+                out: MutableList<Any>?
             ) {
-                if (`in` == null || out == null) return
-
+                if (`in` == null || out == null) {
+                    return
+                }
 
                 Log.d(tag, "decode")
 
-                if (`in`.readableBytes() < Int.SIZE_BYTES) return
-
+                if (`in`.readableBytes() < Int.SIZE_BYTES) {
+                    return
+                }
 
                 `in`.markReaderIndex()
 
@@ -230,7 +241,7 @@ class NetClient(private val handler: Handler, private val application: Applicati
 
                 Log.d(tag, "decode cmd id=${id}")
 
-                val cmd = CMD.entries[id]
+                val cmd = CMD.values()[id]
 
                 tcpMessage.cmd = cmd
 
@@ -267,8 +278,9 @@ class NetClient(private val handler: Handler, private val application: Applicati
 
         open class TcpMessageEncoder : MessageToByteEncoder<Int>() {
             override fun encode(ctx: ChannelHandlerContext?, msg: Int?, out: ByteBuf?) {
-                if (msg == null || out == null) return
-                out.writeIntLE(msg)
+                if (msg != null && out != null) {
+                    out.writeIntLE(msg)
+                }
             }
         }
     }
@@ -286,8 +298,9 @@ class NetClient(private val handler: Handler, private val application: Applicati
         class UdpMessageEncoder(private val remoteAddress: InetSocketAddress) :
             MessageToMessageEncoder<Int>() {
             override fun encode(ctx: ChannelHandlerContext?, msg: Int?, out: MutableList<Any>?) {
-                if (ctx == null || msg == null || out == null) return
-
+                if (ctx == null || msg == null || out == null) {
+                    return
+                }
                 val buf = ctx.alloc().buffer(Int.SIZE_BYTES)
                 buf.writeIntLE(msg)
                 val data = DatagramPacket(buf, remoteAddress)
@@ -297,10 +310,13 @@ class NetClient(private val handler: Handler, private val application: Applicati
 
         class UdpMessageDecoder : MessageToMessageDecoder<DatagramPacket>() {
             override fun decode(
-                ctx: ChannelHandlerContext?, msg: DatagramPacket?, out: MutableList<Any>?
+                ctx: ChannelHandlerContext?,
+                msg: DatagramPacket?,
+                out: MutableList<Any>?
             ) {
-                if (ctx == null || msg == null || out == null) return
-
+                if (ctx == null || msg == null || out == null) {
+                    return
+                }
 
 //                Log.d("NetClient", "Udp decode")
 
@@ -318,13 +334,13 @@ class NetClient(private val handler: Handler, private val application: Applicati
         override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
 //            Log.d(tag, "channelRead udp")
             try {
-                if (msg !is FloatArray) {
-                    Log.e(tag, "msg is not FloatArray")
-                    return
+                if (msg is FloatArray) {
+                    parent.audioTrack.write(
+                        msg, 0, msg.size, AudioTrack.WRITE_NON_BLOCKING
+                    )
+                } else {
+                    Log.e("NetClient", "msg is not valid type")
                 }
-                parent.audioTrack.write(
-                    msg, 0, msg.size, AudioTrack.WRITE_NON_BLOCKING
-                )
             } catch (e: Exception) {
                 Log.d("channelRead", e.stackTraceToString())
             }
@@ -421,14 +437,16 @@ class NetClient(private val handler: Handler, private val application: Applicati
         }
 
         Log.i(
-            tag, "encoding: $encoding, channelMask: $channelMask, sampleRate: ${format.sampleRate}"
+            tag,
+            "encoding: $encoding, channelMask: $channelMask, sampleRate: ${format.sampleRate}"
         )
 
         Log.i(tag, "native order: ${ByteOrder.nativeOrder()}")
 
         val minBufferSize = AudioTrack.getMinBufferSize(format.sampleRate, channelMask, encoding)
         val bufferSizeScale = sharedPreferences.getString(
-            "audio_buffer_size_scale", application.getString(R.string.audio_buffer_size_scale)
+            "audio_buffer_size_scale",
+            application.getString(R.string.audio_buffer_size_scale)
         )!!.toInt()
         val bufferSize = minBufferSize * bufferSizeScale
         Log.i(
@@ -436,13 +454,21 @@ class NetClient(private val handler: Handler, private val application: Applicati
             "minBufferSize: $minBufferSize, bufferSizeScale: $bufferSizeScale, bufferSize: $bufferSize Bytes"
         )
 
-        val builder = AudioTrack.Builder().setAudioAttributes(
-            AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()
-        ).setAudioFormat(
-            AudioFormat.Builder().setEncoding(encoding).setChannelMask(channelMask)
-                .setSampleRate(format.sampleRate).build()
-        ).setBufferSizeInBytes(bufferSize).setTransferMode(AudioTrack.MODE_STREAM)
+        val builder = AudioTrack.Builder()
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            )
+            .setAudioFormat(
+                AudioFormat.Builder()
+                    .setEncoding(encoding)
+                    .setChannelMask(channelMask)
+                    .setSampleRate(format.sampleRate)
+                    .build()
+            ).setBufferSizeInBytes(bufferSize)
+            .setTransferMode(AudioTrack.MODE_STREAM)
 
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 //            builder.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
@@ -452,14 +478,16 @@ class NetClient(private val handler: Handler, private val application: Applicati
 
         _loudnessEnhancer = LoudnessEnhancer(audioTrack.audioSessionId)
         val targetGain = sharedPreferences.getString(
-            "audio_loudness_enhancer", application.getString(R.string.audio_loudness_enhancer)
+            "audio_loudness_enhancer",
+            application.getString(R.string.audio_loudness_enhancer)
         )!!.toInt()
         loudnessEnhancer.setTargetGain(targetGain)
         loudnessEnhancer.enabled = true
         Log.d(tag, "LoudnessEnhancer targetGain: ${loudnessEnhancer.targetGain}mB")
 
         val audioVolume = sharedPreferences.getFloat(
-            "audio_volume", AudioTrack.getMaxVolume()
+            "audio_volume",
+            AudioTrack.getMaxVolume()
         )
         audioTrack.setVolume(audioVolume)
 
@@ -467,9 +495,9 @@ class NetClient(private val handler: Handler, private val application: Applicati
     }
 
     private fun onFailed(exc: Throwable?) {
-        if (exc == null)
+        if (exc == null) {
             return
-
+        }
 
         MainScope().launch(Dispatchers.Main) {
             if (exc is ConnectTimeoutException || exc is IOException) {

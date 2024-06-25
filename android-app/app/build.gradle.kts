@@ -43,14 +43,14 @@ android {
 
     signingConfigs {
         create("release") {
-//            val keystoreProperties = Properties().apply {
-//                load(rootProject.file("keystore.properties").inputStream())
-//            }
-//            storeFile = file(keystoreProperties.getProperty("storeFile"))
-//            keyAlias = keystoreProperties.getProperty("keyAlias")
-//            storePassword = keystoreProperties.getProperty("storePassword")
-//            keyPassword = keystoreProperties.getProperty("keyPassword")
-//            enableV3Signing = true
+            val keystoreProperties = Properties().apply {
+                load(rootProject.file("keystore.properties").inputStream())
+            }
+            storeFile = file(keystoreProperties.getProperty("storeFile"))
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            storePassword = keystoreProperties.getProperty("storePassword")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+            enableV3Signing = true
         }
     }
 
