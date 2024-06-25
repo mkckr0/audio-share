@@ -18,6 +18,8 @@ syntax = "proto3";
 
 package io.github.mkckr0.audio_share_app.pb;
 
+option go_package = "go-client/pb";
+
 message AudioFormat
 {
 	int32 format_tag = 1;
