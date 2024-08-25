@@ -228,3 +228,8 @@ This project is licensed under the [Apache-2.0 license](https://opensource.org/l
 - [Material Components for Android](https://github.com/material-components/material-components-android) licensed under the [Apache-2.0 license](http://www.apache.org/licenses/LICENSE-2.0).
 - [Protobuf Plugin for Gradle](https://github.com/google/protobuf-gradle-plugin) licensed under the [LICENSE](https://github.com/google/protobuf-gradle-plugin/blob/master/LICENSE).
 - [PipeWire](https://gitlab.freedesktop.org/pipewire/pipewire) licensed under the [LICENSE](https://gitlab.freedesktop.org/pipewire/pipewire/-/blob/master/LICENSE).
+
+## Sponsors
+
+- [Mosklia](https://github.com/Mosklia)
+- [YuHuanTin](https://github.com/yuhuantin)
