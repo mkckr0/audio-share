@@ -14,18 +14,15 @@
    limitations under the License.
 */
 
-#ifndef _NETWORK_MANAGER_HPP
-#define _NETWORK_MANAGER_HPP
-
-#ifdef _WINDOWS
-#include <sdkddkver.h>
-#endif
+#ifndef NETWORK_MANAGER_HPP
+#define NETWORK_MANAGER_HPP
 
 #include <memory>
 #include <vector>
 #include <string>
 #include <map>
 
+#include "pre_asio.hpp"
 #include <asio.hpp>
 #include <asio/use_awaitable.hpp>
 
@@ -56,14 +53,14 @@ class network_manager : public std::enable_shared_from_this<network_manager>
 
 public:
 
-    network_manager(std::shared_ptr<audio_manager>& audio_manager);
+    explicit network_manager(std::shared_ptr<audio_manager>& audio_manager);
 
-    static std::vector<std::wstring> get_local_addresss();
+    static std::vector<std::wstring> get_local_address();
 
-    void start_server(const std::string& host, const uint16_t port, const std::string& endpoint_id);
+    void start_server(const std::string& host, uint16_t port, const std::string& endpoint_id);
     void stop_server();
     void wait_server();
-    bool is_running();
+    bool is_running() const;
 
 private:
     asio::awaitable<void> accept_tcp_loop(tcp_acceptor acceptor);
@@ -71,9 +68,9 @@ private:
     asio::awaitable<void> heartbeat_loop(std::shared_ptr<tcp_socket> peer);
     asio::awaitable<void> accept_udp_loop();
     
-    playing_peer_list_t::iterator close_session(std::shared_ptr<tcp_socket> peer);
-    int add_playing_peer(std::shared_ptr<tcp_socket> peer);
-    playing_peer_list_t::iterator remove_playing_peer(std::shared_ptr<tcp_socket> peer);
+    playing_peer_list_t::iterator close_session(std::shared_ptr<tcp_socket>& peer);
+    int add_playing_peer(std::shared_ptr<tcp_socket>& peer);
+    playing_peer_list_t::iterator remove_playing_peer(std::shared_ptr<tcp_socket>& peer);
     void fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer);
 
 public:
@@ -89,4 +86,4 @@ private:
     constexpr static auto _heartbeat_timeout = std::chrono::seconds(5);
 };
 
-#endif // !_NETWORK_MANAGER_HPP
+#endif // !NETWORK_MANAGER_HPP

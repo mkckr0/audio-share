@@ -14,8 +14,8 @@
    limitations under the License.
 */
 
-#ifndef _BASIC_AUDIO_MANAGER_HPP
-#define _BASIC_AUDIO_MANAGER_HPP
+#ifndef BASIC_AUDIO_MANAGER_HPP
+#define BASIC_AUDIO_MANAGER_HPP
 
 #ifdef linux
 #include "linux/audio_manager_impl.hpp"
@@ -24,9 +24,6 @@
 #ifdef _WINDOWS
 #include "win32/audio_manager_impl.hpp"
 #endif
-
-#include <asio.hpp>
-#include <asio/use_awaitable.hpp>
 
 #include <memory>
 
@@ -38,6 +35,11 @@ class audio_manager : private detail::audio_manager_impl, public std::enable_sha
 public:
     using endpoint_list_t = std::vector<std::pair<std::string, std::string>>;
     using AudioFormat = io::github::mkckr0::audio_share_app::pb::AudioFormat;
+
+    class audio_config {
+        std::string endpoint_id;
+        
+    };
 
     audio_manager();
     ~audio_manager();
@@ -51,14 +53,14 @@ public:
     /// @brief Get audio endpoint list and the default endpoint index.
     /// @param endpoint_list Empty audio endpoint list.
     /// @return Default endpoint index in endpoint_list. Start from 0. If no default, return -1.
-    int get_endpoint_list(endpoint_list_t& endpoint_list);
+    static int get_endpoint_list(endpoint_list_t& endpoint_list);
 
-    std::string get_default_endpoint();
+    static std::string get_default_endpoint();
     
 private:
     std::thread _record_thread;
-    std::atomic_bool _stoppped;
+    std::atomic_bool _stopped;
     std::shared_ptr<AudioFormat> _format;
 };
 
-#endif // !_BASIC_AUDIO_MANAGER_HPP
+#endif // !BASIC_AUDIO_MANAGER_HPP

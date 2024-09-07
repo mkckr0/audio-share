@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
     // clang-format off
     options.add_options()
         ("h,help", "Print usage")
-        ("l,list", "List all enpoints")
+        ("l,list", "List all endpoints")
         ("b,bind", "The server bind address. The default port is 65530", cxxopts::value<std::string>(), "<host>[:<port>]")
         ("e,endpoint", "Specify the endpoint id. If not set, will use default", cxxopts::value<std::string>(), "[endpoint]")
         ("V,verbose", "Set log level to \"trace\"")
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
         if (result.count("list")) {
             class audio_manager audio_manager;
             audio_manager::endpoint_list_t endpoint_list;
-            int default_index = audio_manager.get_endpoint_list(endpoint_list);
+            int default_index = audio_manager::get_endpoint_list(endpoint_list);
             fmt::println("endpoint_list:");
             for (int i = 0; i < endpoint_list.size(); ++i) {
                 fmt::println("\t{} id: {:4} name: {}", (default_index == i ? '*' : ' '), endpoint_list[i].first, endpoint_list[i].second);
@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
             size_t pos = s.find(':');
             std::string host = s.substr(0, pos);
             uint16_t port;
-            if (pos == s.npos) {
+            if (pos == std::string::npos) {
                 port = 65530;
             } else {
                 port = (uint16_t)std::stoi(s.substr(pos + 1));
@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
             if (result.count("endpoint")) {
                 endpoint_id = result["endpoint"].as<std::string>();
             } else {
-                endpoint_id = audio_manager->get_default_endpoint();
+                endpoint_id = audio_manager::get_default_endpoint();
             }
             if (endpoint_id.empty()) {
                 std::cerr << "endpoint_id is empty\n";

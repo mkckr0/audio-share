@@ -14,12 +14,11 @@
    limitations under the License.
 */
 
-#ifndef _AUDIO_MANAGER_HPP
-#define _AUDIO_MANAGER_HPP
+#ifndef AUDIO_MANAGER_HPP
+#define AUDIO_MANAGER_HPP
 
 #ifdef _WINDOWS
 
-#include <sdkddkver.h>
 #include <string>
 
 class network_manager;
@@ -41,4 +40,4 @@ std::string str_win_err(int err);
 std::wstring wstr_win_err(int err);
 
 #endif // _WINDOWS
-#endif // !_AUDIO_MANAGER_HPP
+#endif // !AUDIO_MANAGER_HPP
