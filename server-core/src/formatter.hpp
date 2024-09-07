@@ -14,11 +14,12 @@
    limitations under the License.
 */
 
-#ifndef _FORMATTER
-#define _FORMATTER
+#ifndef FORMATTER_HPP
+#define FORMATTER_HPP
 
 #include <fmt/ostream.h>
 
+#include "pre_asio.hpp"
 #include <asio.hpp>
 
 template<> struct fmt::formatter<asio::ip::tcp::endpoint> : fmt::ostream_formatter {};
@@ -30,4 +31,4 @@ template <> struct fmt::formatter<asio::error_code> : fmt::formatter<std::string
     }
 };
 
-#endif // !_FORMATTER
+#endif // !FORMATTER_HPP

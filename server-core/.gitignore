@@ -2,3 +2,4 @@
 *.pb.cc
 .vscode
 out
+.idea
