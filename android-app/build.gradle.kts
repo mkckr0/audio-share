@@ -3,7 +3,7 @@
 plugins {
     val kotlinVersion = "1.9.23"
 
-    id("com.android.application") version "8.4.0" apply false
+    id("com.android.application") version "8.6.0" apply false
     kotlin("android") version kotlinVersion apply false
     kotlin("kapt") version kotlinVersion apply false
     kotlin("plugin.serialization") version kotlinVersion apply false
