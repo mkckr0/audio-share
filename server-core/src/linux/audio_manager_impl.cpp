@@ -87,13 +87,13 @@ audio_manager_impl::~audio_manager_impl()
 
 } // namespace detail
 
-void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> network_manager, const std::string& endpoint_id)
+void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> network_manager, const capture_config& config)
 {
-    spdlog::info("endpoint_id: {}", endpoint_id);
+    spdlog::info("endpoint_id: {}", config.endpoint_id);
     endpoint_list_t endpoint_list;
     get_endpoint_list(endpoint_list);
     auto it = std::find_if(endpoint_list.begin(), endpoint_list.end(), [&](const endpoint_list_t::value_type& e) {
-        return e.first == endpoint_id;
+        return e.first == config.endpoint_id;
     });
     if (it != endpoint_list.end()) {
         spdlog::info("select audio endpoint: {}", it->second);
@@ -246,7 +246,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
         .channels = 2);
     params[0] = spa_format_audio_raw_build(&pod_builder, SPA_PARAM_EnumFormat, &info);
 
-    int ret = pw_stream_connect(user_data.stream, PW_DIRECTION_INPUT, std::stoi(endpoint_id),
+    int ret = pw_stream_connect(user_data.stream, PW_DIRECTION_INPUT, std::stoi(config.endpoint_id),
         pw_stream_flags(PW_STREAM_FLAG_AUTOCONNECT
             | PW_STREAM_FLAG_MAP_BUFFERS
             | PW_STREAM_FLAG_RT_PROCESS),

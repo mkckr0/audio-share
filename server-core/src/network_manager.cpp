@@ -88,7 +88,7 @@ std::vector<std::wstring> network_manager::get_local_address()
     return address_list;
 }
 
-void network_manager::start_server(const std::string& host, uint16_t port, const std::string& endpoint_id)
+void network_manager::start_server(const std::string& host, uint16_t port, const audio_manager::capture_config& capture_config)
 {
     _ioc = std::make_shared<asio::io_context>();
     {
@@ -99,7 +99,7 @@ void network_manager::start_server(const std::string& host, uint16_t port, const
         acceptor.bind(endpoint);
         acceptor.listen();
 
-        _audio_manager->start_loopback_recording(shared_from_this(), endpoint_id);
+        _audio_manager->start_loopback_recording(shared_from_this(), capture_config);
         asio::co_spawn(*_ioc, accept_tcp_loop(std::move(acceptor)), asio::detached);
 
         // start tcp success

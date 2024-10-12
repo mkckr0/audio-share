@@ -17,7 +17,6 @@
 package io.github.mkckr0.audio_share_app
 
 import android.app.Application
-import android.health.connect.datatypes.units.Volume
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
@@ -25,7 +24,7 @@ import android.media.audiofx.LoudnessEnhancer
 import android.os.Build
 import android.util.Log
 import androidx.preference.PreferenceManager
-import io.github.mkckr0.audio_share_app.pb.*
+import io.github.mkckr0.audio_share_app.pb.Client
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
 import io.netty.channel.Channel
@@ -85,7 +84,6 @@ class NetClient(private val handler: Handler, private val application: Applicati
     private var udpChannel: Channel? = null
     private var heartbeatTimer: Timer? = null
 
-    @OptIn(ExperimentalTime::class)
     private var heartbeatLastTick = TimeSource.Monotonic.markNow()
     private var _audioTrack: AudioTrack? = null
     private val audioTrack get() = _audioTrack!!
@@ -241,7 +239,7 @@ class NetClient(private val handler: Handler, private val application: Applicati
 
                 Log.d(tag, "decode cmd id=${id}")
 
-                val cmd = CMD.values()[id]
+                val cmd = CMD.entries[id]
 
                 tcpMessage.cmd = cmd
 
@@ -324,20 +322,15 @@ class NetClient(private val handler: Handler, private val application: Applicati
                 msg.content().readBytes(buf)
                 buf.flip()
                 // keep PCM sample always be LE.
-                val floatBuffer = buf.order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer()
-                val floatArray = FloatArray(floatBuffer.capacity())
-                floatBuffer.get(floatArray)
-                out.add(floatArray)
+                out.add(buf.order(ByteOrder.LITTLE_ENDIAN))
             }
         }
 
         override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
 //            Log.d(tag, "channelRead udp")
             try {
-                if (msg is FloatArray) {
-                    parent.audioTrack.write(
-                        msg, 0, msg.size, AudioTrack.WRITE_NON_BLOCKING
-                    )
+                if (msg is ByteBuffer) {
+                    parent.audioTrack.write(msg, msg.remaining(), AudioTrack.WRITE_NON_BLOCKING)
                 } else {
                     Log.e("NetClient", "msg is not valid type")
                 }
@@ -394,29 +387,20 @@ class NetClient(private val handler: Handler, private val application: Applicati
     }
 
     private fun createAudioTrack(format: Client.AudioFormat): AudioTrack {
-        val encoding = when (format.formatTag) {
-            0x0003 -> {
-                AudioFormat.ENCODING_PCM_FLOAT
+        val encoding = when (format.encoding) {
+            Client.AudioFormat.Encoding.ENCODING_PCM_F32 -> AudioFormat.ENCODING_PCM_FLOAT
+            Client.AudioFormat.Encoding.ENCODING_PCM_U8 -> AudioFormat.ENCODING_PCM_8BIT
+            Client.AudioFormat.Encoding.ENCODING_PCM_U16 -> AudioFormat.ENCODING_PCM_16BIT
+            Client.AudioFormat.Encoding.ENCODING_PCM_U24 -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                AudioFormat.ENCODING_PCM_24BIT_PACKED
+            } else {
+                AudioFormat.ENCODING_INVALID
             }
 
-            0x0001 -> {
-                when (format.bitsPerSample) {
-                    8 -> AudioFormat.ENCODING_PCM_8BIT
-                    16 -> AudioFormat.ENCODING_PCM_16BIT
-                    24 -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        AudioFormat.ENCODING_PCM_24BIT_PACKED
-                    } else {
-                        AudioFormat.ENCODING_INVALID
-                    }
-
-                    32 -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        AudioFormat.ENCODING_PCM_32BIT
-                    } else {
-                        AudioFormat.ENCODING_INVALID
-                    }
-
-                    else -> AudioFormat.ENCODING_INVALID
-                }
+            Client.AudioFormat.Encoding.ENCODING_PCM_U32 -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                AudioFormat.ENCODING_PCM_32BIT
+            } else {
+                AudioFormat.ENCODING_INVALID
             }
 
             else -> {
