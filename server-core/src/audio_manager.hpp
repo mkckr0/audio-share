@@ -26,6 +26,7 @@
 #endif
 
 #include <memory>
+#include <sstream>
 
 #include "client.pb.h"
 
@@ -36,17 +37,48 @@ public:
     using endpoint_list_t = std::vector<std::pair<std::string, std::string>>;
     using AudioFormat = io::github::mkckr0::audio_share_app::pb::AudioFormat;
 
-    class audio_config {
+    enum class encoding {
+        encoding_default = 0,
+        encoding_invalid = 1,
+        encoding_f32 = 2,
+        encoding_u8 = 3,
+        encoding_u16 = 4,
+        encoding_u24 = 5,
+        encoding_u32 = 6,
+    };
+
+    friend std::istream& operator>>(std::istream& is, encoding& e) {
+        std::string s;
+        is >> s;
+        if (s == "f32") {
+            e = encoding::encoding_f32;
+        } else if (s == "u8") {
+            e = encoding::encoding_u8;
+        } else if (s == "u16") {
+            e = encoding::encoding_u16;
+        } else if (s == "u24") {
+            e = encoding::encoding_u24;
+        } else if (s == "u32") {
+            e = encoding::encoding_u32;
+        } else {
+            e = encoding::encoding_invalid;
+        }
+        return is;
+    }
+
+    struct capture_config {
         std::string endpoint_id;
-        
+        encoding encoding = encoding::encoding_default;
+        int channels = 0;
+        int sample_rate = 0;
     };
 
     audio_manager();
     ~audio_manager();
 
-    void start_loopback_recording(std::shared_ptr<network_manager> network_manager, const std::string& endpoint_id);
+    void start_loopback_recording(std::shared_ptr<network_manager> network_manager, const capture_config& config);
     void stop();
-    void do_loopback_recording(std::shared_ptr<network_manager> network_manager, const std::string& endpoint_id);
+    void do_loopback_recording(std::shared_ptr<network_manager> network_manager, const capture_config& config);
 
     std::string get_format_binary();
 
@@ -60,7 +92,7 @@ public:
 private:
     std::thread _record_thread;
     std::atomic_bool _stopped;
-    std::shared_ptr<AudioFormat> _format;
+    std::unique_ptr<AudioFormat> _format;
 };
 
 #endif // !BASIC_AUDIO_MANAGER_HPP
