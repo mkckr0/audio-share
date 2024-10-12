@@ -18,6 +18,7 @@ package io.github.mkckr0.audio_share_app.model
 
 import android.app.Application
 import android.media.AudioTrack
+import android.net.ConnectivityManager
 import android.util.Log
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
@@ -25,6 +26,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.preference.PreferenceManager
 import io.github.mkckr0.audio_share_app.NetClient
 import io.github.mkckr0.audio_share_app.R
+import java.net.Inet4Address
 
 class HomeViewModel(private val application: Application) : AndroidViewModel(application) {
 
@@ -39,7 +41,15 @@ class HomeViewModel(private val application: Application) : AndroidViewModel(app
     }
 
     val host = MutableLiveData<String>().apply {
+        val connectivityManager = application.getSystemService(ConnectivityManager::class.java)
         value = sharedPreferences.getString("host", application.getString(R.string.default_host))
+        connectivityManager.getLinkProperties(connectivityManager.activeNetwork)?.linkAddresses?.find {
+            it.address is Inet4Address
+        }?.let {
+            value = it.address.hostAddress?.let { address ->
+                address.substring(0, address.lastIndexOf('.') + 1)
+            }
+        }
     }
     val port = MutableLiveData<String>().apply {
         value = sharedPreferences.getString("port", application.getString(R.string.default_port))
