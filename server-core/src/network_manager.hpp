@@ -26,7 +26,7 @@
 #include <asio.hpp>
 #include <asio/use_awaitable.hpp>
 
-class audio_manager;
+#include "audio_manager.hpp"
 
 class network_manager : public std::enable_shared_from_this<network_manager>
 {
@@ -57,7 +57,7 @@ public:
 
     static std::vector<std::wstring> get_local_address();
 
-    void start_server(const std::string& host, uint16_t port, const std::string& endpoint_id);
+    void start_server(const std::string& host, uint16_t port, const audio_manager::capture_config& capture_config);
     void stop_server();
     void wait_server();
     bool is_running() const;

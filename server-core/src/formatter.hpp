@@ -24,9 +24,8 @@
 
 template<> struct fmt::formatter<asio::ip::tcp::endpoint> : fmt::ostream_formatter {};
 template<> struct fmt::formatter<asio::ip::udp::endpoint> : fmt::ostream_formatter {};
-template <> struct fmt::formatter<asio::error_code> : fmt::formatter<std::string> {
-    template <typename FormatContext>
-    auto format(asio::error_code& ec, FormatContext& ctx) const {
+template<> struct fmt::formatter<asio::error_code> : fmt::formatter<std::string_view> {
+    auto format(asio::error_code& ec, format_context& ctx) const {
         return formatter<string_view>::format(ec.message(), ctx);
     }
 };
