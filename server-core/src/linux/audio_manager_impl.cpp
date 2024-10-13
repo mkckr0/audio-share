@@ -253,8 +253,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
             user_data->block_align = bits_per_sample / 8 * user_data->format->channels();
             spdlog::info("block_align: {}", user_data->block_align);
-            spdlog::info("AudioFormat:\n{}", user_data->format->DebugString());
-        },
+            spdlog::info("AudioFormat:\n{}", user_data->format->DebugString()); },
         .process = [](void* data) {
             auto* user_data = (struct user_data_t*)data;
             struct pw_buffer *b;
@@ -286,15 +285,17 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
     user_data.stream = pw_stream_new_simple(pw_main_loop_get_loop(_loop), "audio-share-server", props, &stream_events, &user_data);
 
+    // clang-format off
     uint8_t buffer[1024];
     struct spa_pod_builder pod_builder = SPA_POD_BUILDER_INIT(buffer, sizeof(buffer));
     const struct spa_pod* params[1];
     struct spa_audio_info_raw info = SPA_AUDIO_INFO_RAW_INIT(
-            .format = spa_format,
+        .format = spa_format,
         .rate = spa_sample_rate,
         .channels = spa_channels,
     );
     params[0] = spa_format_audio_raw_build(&pod_builder, SPA_PARAM_EnumFormat, &info);
+    // clang-format on
 
     pw_stream_connect(user_data.stream, PW_DIRECTION_INPUT, std::stoi(selected_endpoint_id),
         pw_stream_flags(PW_STREAM_FLAG_AUTOCONNECT
@@ -332,9 +333,7 @@ int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
                 const char* description = spa_dict_lookup(props, PW_KEY_NODE_DESCRIPTION);
                 const char* priority_session = spa_dict_lookup(props, PW_KEY_PRIORITY_SESSION);
 
-                user_data->endpoint_list_ptr->push_back(std::make_pair<std::string, std::string>(
-                    std::to_string(id),
-                    nick_name ? nick_name : (description ? description : name)));
+                user_data->endpoint_list_ptr->emplace_back(std::to_string(id), nick_name ? nick_name : (description ? description : name));
 
                 int priority = priority_session ? std::stoi(priority_session) : -1;
                 if (priority > user_data->default_priority) {
