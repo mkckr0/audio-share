@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
         ("l,list-endpoint", "List available endpoints")
         ("b,bind", "The server bind address. The default port is 65530", cxxopts::value<string>(), "<host>[:<port>]")
         ("e,endpoint", "Specify the endpoint id. If not set, will use default", cxxopts::value<string>()->default_value("default"), "[endpoint]")
-        ("encoding", "Specify the capture encoding. If not set, will use default", cxxopts::value<audio_manager::encoding>()->default_value("default"), "[encoding]")
+        ("encoding", "Specify the capture encoding. If not set, will use default", cxxopts::value<audio_manager::encoding_t>()->default_value("default"), "[encoding]")
         ("list-encoding", "List available encoding")
         ("channels", "Specify the capture channels. If not set, will use default", cxxopts::value<int>()->default_value("0"), "[channels]")
         ("sample-rate", "Specify the capture sample rate(Hz). If not set, will use default. The common values are 44100, 48000, etc.", cxxopts::value<int>()->default_value("0"), "[sample_rate]")
@@ -44,9 +44,10 @@ int main(int argc, char* argv[])
         }
 
         if (result.count("list-endpoint")) {
-            class audio_manager audio_manager;
+            auto audio_manager = std::make_shared<class audio_manager>();
+//            class audio_manager audio_manager;
             audio_manager::endpoint_list_t endpoint_list;
-            int default_index = audio_manager::get_endpoint_list(endpoint_list);
+            int default_index = audio_manager->get_endpoint_list(endpoint_list);
             fmt::println("endpoint list:");
             for (int i = 0; i < endpoint_list.size(); ++i) {
                 fmt::println("\t{} id: {:4} name: {}", (default_index == i ? '*' : ' '), endpoint_list[i].first, endpoint_list[i].second);
@@ -59,10 +60,10 @@ int main(int argc, char* argv[])
             std::vector<std::pair<string, string>> array = {
                 { "default", "default encoding" },
                 { "f32", "32 bit floating-point PCM" },
-                { "u8", "8 bit integer PCM" },
-                { "u16", "16 bit integer PCM" },
-                { "u24", "24 bit integer PCM" },
-                { "u32", "32 bit integer PCM" },
+                { "s8", "8 bit integer PCM" },
+                { "s16", "16 bit integer PCM" },
+                { "s24", "24 bit integer PCM" },
+                { "s32", "32 bit integer PCM" },
             };
             fmt::println("encoding list:");
             for(auto&& e : array) {
@@ -92,7 +93,7 @@ int main(int argc, char* argv[])
             audio_manager::capture_config capture_config;
 
             capture_config.endpoint_id = result["endpoint"].as<string>();
-            capture_config.encoding = result["encoding"].as<audio_manager::encoding>();
+            capture_config.encoding = result["encoding"].as<audio_manager::encoding_t>();
             capture_config.channels = result["channels"].as<int>();
             capture_config.sample_rate = result["sample-rate"].as<int>();
 
