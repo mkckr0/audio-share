@@ -89,7 +89,7 @@ struct fmt::formatter<WAVEFORMATEX> : fmt::formatter<std::string_view> {
 
 static void exit_on_failed(HRESULT hr, const char* message = "", const char* func = "");
 static void print_endpoints(wil::com_ptr<IMMDeviceCollection>& pCollection);
-static void set_format(std::unique_ptr<AudioFormat>& _format, PWAVEFORMATEX pFormat);
+static void set_format(std::shared_ptr<AudioFormat>& _format, PWAVEFORMATEX pFormat);
 
 namespace detail {
 
@@ -140,7 +140,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     pAudioClient->GetMixFormat(wil::out_param(pMixFormat));
     auto pCaptureFormat = wil::make_unique_cotaskmem<WAVEFORMATEX>();
     switch (config.encoding) {
-    case encoding::encoding_default:
+    case encoding_t::encoding_default:
         if (pMixFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
             auto guidSubFormat = ((PWAVEFORMATEXTENSIBLE)pMixFormat.get())->SubFormat;
             if (guidSubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT) {
@@ -156,23 +156,23 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
         }
         pCaptureFormat->wBitsPerSample = pMixFormat->wBitsPerSample;
         break;
-    case encoding::encoding_f32:
+    case encoding_t::encoding_f32:
         pCaptureFormat->wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
         pCaptureFormat->wBitsPerSample = 32;
         break;
-    case encoding::encoding_u8:
+    case encoding_t::encoding_s8:
         pCaptureFormat->wFormatTag = WAVE_FORMAT_PCM;
         pCaptureFormat->wBitsPerSample = 8;
         break;
-    case encoding::encoding_u16:
+    case encoding_t::encoding_s16:
         pCaptureFormat->wFormatTag = WAVE_FORMAT_PCM;
         pCaptureFormat->wBitsPerSample = 16;
         break;
-    case encoding::encoding_u24:
+    case encoding_t::encoding_s24:
         pCaptureFormat->wFormatTag = WAVE_FORMAT_PCM;
         pCaptureFormat->wBitsPerSample = 24;
         break;
-    case encoding::encoding_u32:
+    case encoding_t::encoding_s32:
         pCaptureFormat->wFormatTag = WAVE_FORMAT_PCM;
         pCaptureFormat->wBitsPerSample = 32;
         break;
@@ -361,28 +361,28 @@ std::string audio_manager::get_default_endpoint()
     return wchars_to_mbs((LPWSTR)pwszID.get());
 }
 
-static void set_format(std::unique_ptr<AudioFormat>& _format, PWAVEFORMATEX pFormat)
+static void set_format(std::shared_ptr<AudioFormat>& _format, PWAVEFORMATEX pFormat)
 {
     auto encoding = AudioFormat_Encoding_ENCODING_INVALID;
     if (pFormat->wFormatTag == WAVE_FORMAT_PCM || pFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE && PWAVEFORMATEXTENSIBLE(pFormat)->SubFormat == KSDATAFORMAT_SUBTYPE_PCM) {
         switch (pFormat->wBitsPerSample) {
         case 8:
-            encoding = AudioFormat_Encoding_ENCODING_PCM_U8;
+            encoding = AudioFormat_Encoding_ENCODING_PCM_8BIT;
             break;
         case 16:
-            encoding = AudioFormat_Encoding_ENCODING_PCM_U16;
+            encoding = AudioFormat_Encoding_ENCODING_PCM_16BIT;
             break;
         case 24:
-            encoding = AudioFormat_Encoding_ENCODING_PCM_U24;
+            encoding = AudioFormat_Encoding_ENCODING_PCM_24BIT;
             break;
         case 32:
-            encoding = AudioFormat_Encoding_ENCODING_PCM_U32;
+            encoding = AudioFormat_Encoding_ENCODING_PCM_32BIT;
             break;
         }
         _format->set_encoding(encoding);
     }
     if (pFormat->wFormatTag == WAVE_FORMAT_IEEE_FLOAT || pFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE && PWAVEFORMATEXTENSIBLE(pFormat)->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT) {
-        encoding = AudioFormat_Encoding_ENCODING_PCM_F32;
+        encoding = AudioFormat_Encoding_ENCODING_PCM_FLOAT;
     }
     _format->set_encoding(encoding);
     _format->set_channels(pFormat->nChannels);
