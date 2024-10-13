@@ -14,8 +14,8 @@
    limitations under the License.
 */
 
-#ifndef _AUDIO_MANAGER_HPP
-#define _AUDIO_MANAGER_HPP
+#ifndef AUDIO_MANAGER_HPP
+#define AUDIO_MANAGER_HPP
 
 #ifdef linux
 
@@ -42,4 +42,4 @@ protected:
 } // namespace detail
 
 #endif // linux
-#endif // !_AUDIO_MANAGER_HPP
+#endif // !AUDIO_MANAGER_HPP

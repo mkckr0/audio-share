@@ -27,6 +27,7 @@
 
 #include <memory>
 #include <sstream>
+#include <thread>
 
 #include "client.pb.h"
 
@@ -37,38 +38,40 @@ public:
     using endpoint_list_t = std::vector<std::pair<std::string, std::string>>;
     using AudioFormat = io::github::mkckr0::audio_share_app::pb::AudioFormat;
 
-    enum class encoding {
+    enum class encoding_t {
         encoding_default = 0,
         encoding_invalid = 1,
         encoding_f32 = 2,
-        encoding_u8 = 3,
-        encoding_u16 = 4,
-        encoding_u24 = 5,
-        encoding_u32 = 6,
+        encoding_s8 = 3,
+        encoding_s16 = 4,
+        encoding_s24 = 5,
+        encoding_s32 = 6,
     };
 
-    friend std::istream& operator>>(std::istream& is, encoding& e) {
+    friend std::istream& operator>>(std::istream& is, encoding_t& e) {
         std::string s;
         is >> s;
-        if (s == "f32") {
-            e = encoding::encoding_f32;
-        } else if (s == "u8") {
-            e = encoding::encoding_u8;
-        } else if (s == "u16") {
-            e = encoding::encoding_u16;
-        } else if (s == "u24") {
-            e = encoding::encoding_u24;
-        } else if (s == "u32") {
-            e = encoding::encoding_u32;
+        if (s == "default") {
+            e = encoding_t::encoding_default;
+        } else if (s == "f32") {
+            e = encoding_t::encoding_f32;
+        } else if (s == "s8") {
+            e = encoding_t::encoding_s8;
+        } else if (s == "s16") {
+            e = encoding_t::encoding_s16;
+        } else if (s == "s24") {
+            e = encoding_t::encoding_s24;
+        } else if (s == "s32") {
+            e = encoding_t::encoding_s32;
         } else {
-            e = encoding::encoding_invalid;
+            e = encoding_t::encoding_invalid;
         }
         return is;
     }
 
     struct capture_config {
         std::string endpoint_id;
-        encoding encoding = encoding::encoding_default;
+        encoding_t encoding = encoding_t::encoding_default;
         int channels = 0;
         int sample_rate = 0;
     };
@@ -85,14 +88,14 @@ public:
     /// @brief Get audio endpoint list and the default endpoint index.
     /// @param endpoint_list Empty audio endpoint list.
     /// @return Default endpoint index in endpoint_list. Start from 0. If no default, return -1.
-    static int get_endpoint_list(endpoint_list_t& endpoint_list);
+    int get_endpoint_list(endpoint_list_t& endpoint_list);
 
-    static std::string get_default_endpoint();
+    std::string get_default_endpoint();
     
 private:
     std::thread _record_thread;
     std::atomic_bool _stopped;
-    std::unique_ptr<AudioFormat> _format;
+    std::shared_ptr<AudioFormat> _format;
 };
 
 #endif // !BASIC_AUDIO_MANAGER_HPP
