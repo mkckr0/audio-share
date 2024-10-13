@@ -22,11 +22,11 @@ message AudioFormat
 {
    enum Encoding {
       ENCODING_INVALID = 0;
-      ENCODING_PCM_F32 = 1;   // PCM encoding are all little endian
-      ENCODING_PCM_U8 = 2;
-      ENCODING_PCM_U16 = 3;
-      ENCODING_PCM_U24 = 4;
-      ENCODING_PCM_U32 = 5;
+      ENCODING_PCM_FLOAT = 1;   // PCM encoding are all little endian
+      ENCODING_PCM_8BIT = 2;
+      ENCODING_PCM_16BIT = 3;
+      ENCODING_PCM_24BIT = 4;
+      ENCODING_PCM_32BIT = 5;
    }
 
 	Encoding encoding = 1;
