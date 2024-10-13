@@ -41,13 +41,13 @@ struct roundtrip {
         static const struct pw_core_events core_events = {
             .version = PW_VERSION_CORE_EVENTS,
             .done = [](void* data, uint32_t id, int seq) {
-                struct roundtrip* d = (struct roundtrip*)data;
+                auto* d = (struct roundtrip*)data;
                 if (id == PW_ID_CORE && seq == d->_sync)
                     pw_main_loop_quit(d->_loop);
             },
         };
 
-        struct spa_hook core_listener;
+        struct spa_hook core_listener {};
 
         pw_core_add_listener(_core, &core_listener, &core_events, this);
         spdlog::trace("sync before: {}", _sync);
@@ -90,13 +90,53 @@ audio_manager_impl::~audio_manager_impl()
 void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> network_manager, const capture_config& config)
 {
     spdlog::info("endpoint_id: {}", config.endpoint_id);
+    std::string selected_endpoint_id = config.endpoint_id;
+    if (selected_endpoint_id.empty() || selected_endpoint_id == "default") {
+        selected_endpoint_id = get_default_endpoint();
+    }
+
     endpoint_list_t endpoint_list;
     get_endpoint_list(endpoint_list);
     auto it = std::find_if(endpoint_list.begin(), endpoint_list.end(), [&](const endpoint_list_t::value_type& e) {
-        return e.first == config.endpoint_id;
+        return e.first == selected_endpoint_id;
     });
     if (it != endpoint_list.end()) {
         spdlog::info("select audio endpoint: {}", it->second);
+    } else {
+        spdlog::error("selected audio endpoint is not in list");
+        return;
+    }
+
+    // set capture format
+    auto spa_format = SPA_AUDIO_FORMAT_UNKNOWN;
+    switch (config.encoding) {
+    case encoding_t::encoding_default:
+    case encoding_t::encoding_f32:
+        spa_format = SPA_AUDIO_FORMAT_F32_LE;
+        break;
+    case encoding_t::encoding_s8:
+        spa_format = SPA_AUDIO_FORMAT_U8;
+        break;
+    case encoding_t::encoding_s16:
+        spa_format = SPA_AUDIO_FORMAT_S16_LE;
+        break;
+    case encoding_t::encoding_s24:
+        spa_format = SPA_AUDIO_FORMAT_S24_LE;
+        break;
+    case encoding_t::encoding_s32:
+        spa_format = SPA_AUDIO_FORMAT_S32_LE;
+        break;
+    default:
+        spa_format = SPA_AUDIO_FORMAT_UNKNOWN;
+        break;
+    }
+    uint32_t spa_channels = 0;
+    if (config.channels) {
+        spa_channels = config.channels;
+    }
+    uint32_t spa_sample_rate = 0;
+    if (config.sample_rate) {
+        spa_sample_rate = config.sample_rate;
     }
 
     struct user_data_t {
@@ -115,15 +155,15 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
     static const struct pw_stream_events stream_events = {
         .version = PW_VERSION_STREAM_EVENTS,
-        .state_changed = [](void *data, enum pw_stream_state old, enum pw_stream_state state, const char *error) {
+        .state_changed = [](void* data, enum pw_stream_state old, enum pw_stream_state state, const char* error) {
             if (state == PW_STREAM_STATE_STREAMING) {
                 if (spdlog::get_level() == spdlog::level::trace) {
                     auto user_data = (struct user_data_t*)data;
                     auto loop = pw_main_loop_get_loop(user_data->loop);
                     auto timer = pw_loop_add_timer(loop, [](void *data, uint64_t expirations){
                         auto user_data = (struct user_data_t*)data;
-                        struct pw_time time;
-                        pw_stream_get_time(user_data->stream, &time);
+                        struct pw_time time{};
+                        pw_stream_get_time_n(user_data->stream, &time, sizeof(time));
                         spdlog::trace("now:{} rate:{}/{} ticks:{} delay:{} queued:{}",
                             time.now,
                             time.rate.num, time.rate.denom,
@@ -132,50 +172,70 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
                     struct timespec timeout = {0, 1}, interval = {1, 0};
                     pw_loop_update_timer(loop, timer, &timeout, &interval, false);
                 }
-            }
-        },
+            } },
         .param_changed = [](void* data, uint32_t id, const struct spa_pod* param) {
-            struct user_data_t* user_data = (struct user_data_t*)data;
+            auto* user_data = (struct user_data_t*)data;
 
             if (param == nullptr || id != SPA_PARAM_Format) {
                 return;
             }
-            
-            struct spa_audio_info audio_info;
-            
+
+            struct spa_audio_info audio_info {};
+
             if (spa_format_parse(param, &audio_info.media_type, &audio_info.media_subtype) < 0) {
                 return;
             }
-            
+
             if (audio_info.media_type != SPA_MEDIA_TYPE_audio || audio_info.media_subtype != SPA_MEDIA_SUBTYPE_raw) {
                 return;
             }
 
             spa_format_audio_raw_parse(param, &audio_info.info.raw);
+            spdlog::info("audio_info.info.raw.format: {}", (int)audio_info.info.raw.format);
 
             switch (audio_info.info.raw.format)
             {
             case SPA_AUDIO_FORMAT_F32_LE:
-            case SPA_AUDIO_FORMAT_F32_BE:
-                user_data->format->set_format_tag(3);
+                user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_FLOAT);
+                break;
+            case SPA_AUDIO_FORMAT_S8:
+                user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_8BIT);
+                break;
+            case SPA_AUDIO_FORMAT_S16_LE:
+                user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_16BIT);
+                break;
+            case SPA_AUDIO_FORMAT_S24_LE:
+                user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_24BIT);
+                break;
+            case SPA_AUDIO_FORMAT_S32_LE:
+                user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_32BIT);
                 break;
             default:
-                user_data->format->set_format_tag(1);
-                break;
+                user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_INVALID);
+                spdlog::info("the capture format is not supported");
+                exit(EXIT_FAILURE);
             }
-            user_data->format->set_channels(audio_info.info.raw.channels);
-            user_data->format->set_sample_rate(audio_info.info.raw.rate);
+            spdlog::info("the capture format is supported");
+            user_data->format->set_channels((int)audio_info.info.raw.channels);
+            user_data->format->set_sample_rate((int)audio_info.info.raw.rate);
+            int bits_per_sample = 0;
             switch (audio_info.info.raw.format)
             {
             case SPA_AUDIO_FORMAT_S8:
             case SPA_AUDIO_FORMAT_U8:
-                user_data->format->set_bits_per_sample(8);
+                bits_per_sample = 8;
                 break;
             case SPA_AUDIO_FORMAT_S16_LE:
             case SPA_AUDIO_FORMAT_S16_BE:
             case SPA_AUDIO_FORMAT_U16_LE:
             case SPA_AUDIO_FORMAT_U16_BE:
-                user_data->format->set_bits_per_sample(16);
+                bits_per_sample = 16;
+                break;
+            case SPA_AUDIO_FORMAT_S24_LE:
+            case SPA_AUDIO_FORMAT_S24_BE:
+            case SPA_AUDIO_FORMAT_U24_LE:
+            case SPA_AUDIO_FORMAT_U24_BE:
+                bits_per_sample = 24;
                 break;
             case SPA_AUDIO_FORMAT_S32_LE:
             case SPA_AUDIO_FORMAT_S32_BE:
@@ -183,19 +243,20 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
             case SPA_AUDIO_FORMAT_U32_BE:
             case SPA_AUDIO_FORMAT_F32_LE:
             case SPA_AUDIO_FORMAT_F32_BE:
-                user_data->format->set_bits_per_sample(32);
+            case SPA_AUDIO_FORMAT_F32P:
+                bits_per_sample = 32;
                 break;
             default:
-                user_data->format->set_bits_per_sample(0);
+                bits_per_sample = 0;
                 break;
             }
 
-            user_data->block_align = user_data->format->bits_per_sample() / 8 * user_data->format->channels();
+            user_data->block_align = bits_per_sample / 8 * user_data->format->channels();
             spdlog::info("block_align: {}", user_data->block_align);
             spdlog::info("AudioFormat:\n{}", user_data->format->DebugString());
         },
         .process = [](void* data) {
-            struct user_data_t* user_data = (struct user_data_t*)data;
+            auto* user_data = (struct user_data_t*)data;
             struct pw_buffer *b;
             struct spa_buffer *buf;
     
@@ -211,18 +272,6 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
             auto begin = (const char*)buf->datas[0].data + buf->datas[0].chunk->offset;
             auto count = buf->datas[0].chunk->size;
-            // if (std::all_of(begin, begin + count, [](const char e) { return e == 0; })) {
-            //     begin = nullptr;
-            //     count = 0;
-            // }
-
-            // if (spdlog::get_level() == spdlog::level::trace) {
-            //     auto it = std::max_element(
-            //         (float*)((char*)begin),
-            //         (float*)((char*)begin + count)
-            //     );
-            //     spdlog::trace("offset: {}, size: {}, stride: {}, max: {}", buf->datas[0].chunk->offset, buf->datas[0].chunk->size, buf->datas[0].chunk->stride, *it);
-            // }
 
             user_data->network_manager->broadcast_audio_data(begin, count, user_data->block_align);
     
@@ -241,12 +290,13 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     struct spa_pod_builder pod_builder = SPA_POD_BUILDER_INIT(buffer, sizeof(buffer));
     const struct spa_pod* params[1];
     struct spa_audio_info_raw info = SPA_AUDIO_INFO_RAW_INIT(
-            .format = SPA_AUDIO_FORMAT_F32_LE,
-        .rate = 48000,
-        .channels = 2);
+            .format = spa_format,
+        .rate = spa_sample_rate,
+        .channels = spa_channels,
+    );
     params[0] = spa_format_audio_raw_build(&pod_builder, SPA_PARAM_EnumFormat, &info);
 
-    int ret = pw_stream_connect(user_data.stream, PW_DIRECTION_INPUT, std::stoi(config.endpoint_id),
+    pw_stream_connect(user_data.stream, PW_DIRECTION_INPUT, std::stoi(selected_endpoint_id),
         pw_stream_flags(PW_STREAM_FLAG_AUTOCONNECT
             | PW_STREAM_FLAG_MAP_BUFFERS
             | PW_STREAM_FLAG_RT_PROCESS),
@@ -262,7 +312,7 @@ int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
     struct user_data_t {
         endpoint_list_t* endpoint_list_ptr;
         int default_index;
-        int default_prio;
+        int default_priority;
     };
 
     static const struct pw_registry_events registry_events = {
@@ -276,7 +326,7 @@ int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
                 }
 
                 auto user_data = (user_data_t*)object;
-                const char* object_serial = spa_dict_lookup(props, PW_KEY_OBJECT_SERIAL);
+                // const char* object_serial = spa_dict_lookup(props, PW_KEY_OBJECT_SERIAL);
                 const char* nick_name = spa_dict_lookup(props, PW_KEY_NODE_NICK);
                 const char* name = spa_dict_lookup(props, PW_KEY_NODE_NAME);
                 const char* description = spa_dict_lookup(props, PW_KEY_NODE_DESCRIPTION);
@@ -286,10 +336,10 @@ int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
                     std::to_string(id),
                     nick_name ? nick_name : (description ? description : name)));
 
-                int prio = priority_session ? std::atoi(priority_session) : -1;
-                if (prio > user_data->default_prio) {
-                    user_data->default_prio = prio;
-                    user_data->default_index = user_data->endpoint_list_ptr->size() - 1;
+                int priority = priority_session ? std::stoi(priority_session) : -1;
+                if (priority > user_data->default_priority) {
+                    user_data->default_priority = priority;
+                    user_data->default_index = (int)user_data->endpoint_list_ptr->size() - 1;
                 }
 
                 spdlog::trace("object id: {}", id);
@@ -303,11 +353,11 @@ int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
     };
 
     struct pw_registry* registry = pw_core_get_registry(_core, PW_VERSION_REGISTRY, 0);
-    struct spa_hook registry_listener;
+    struct spa_hook registry_listener {};
     struct user_data_t user_data = {
         .endpoint_list_ptr = &endpoint_list,
         .default_index = -1,
-        .default_prio = -1,
+        .default_priority = -1,
     };
     pw_registry_add_listener(registry, &registry_listener, &registry_events, &user_data);
     (*_roundtrip)();
