@@ -41,15 +41,18 @@ class HomeViewModel(private val application: Application) : AndroidViewModel(app
     }
 
     val host = MutableLiveData<String>().apply {
+
+        var defaultHost = application.getString(R.string.default_host)
         val connectivityManager = application.getSystemService(ConnectivityManager::class.java)
-        value = sharedPreferences.getString("host", application.getString(R.string.default_host))
         connectivityManager.getLinkProperties(connectivityManager.activeNetwork)?.linkAddresses?.find {
             it.address is Inet4Address
         }?.let {
-            value = it.address.hostAddress?.let { address ->
-                address.substring(0, address.lastIndexOf('.') + 1)
+            it.address.hostAddress?.let { address ->
+                defaultHost = address.substring(0, address.lastIndexOf('.') + 1)
             }
         }
+        value = sharedPreferences.getString("host", defaultHost)
+
     }
     val port = MutableLiveData<String>().apply {
         value = sharedPreferences.getString("port", application.getString(R.string.default_port))
