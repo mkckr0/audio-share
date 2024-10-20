@@ -114,8 +114,7 @@ void CServerTabPanel::OnBnClickedButtonReset()
         auto nIndex = m_comboBoxAudioEndpoint.AddString(L"Default");
         m_comboBoxAudioEndpoint.SetItemDataPtr(nIndex, _wcsdup(L"default"));
         
-        audio_manager::endpoint_list_t endpoint_list;
-        m_audio_manager->get_endpoint_list(endpoint_list);
+        audio_manager::endpoint_list_t endpoint_list = m_audio_manager->get_endpoint_list();
         for (auto&& [id, name] : endpoint_list) {
             int nIndex = m_comboBoxAudioEndpoint.AddString(mbs_to_wchars(name).c_str());
             m_comboBoxAudioEndpoint.SetItemDataPtr(nIndex, _wcsdup(mbs_to_wchars(id).c_str()));
