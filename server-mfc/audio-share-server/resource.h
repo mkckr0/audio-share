@@ -17,6 +17,8 @@
 #define IDC_COMBO_HOST                  1102
 #define IDC_BUTTON_SERVER               1103
 #define IDC_BUTTON_RESET                1104
+#define IDC_COMBO_ENCODING              1105
+#define IDC_BUTTON_SOUND_PANEL          1106
 #define IDC_CHECK_AUTORUN               1200
 #define IDC_BUTTON_REPPAIR_FIREWALL     1201
 #define IDC_RADIO_NONE                  1202

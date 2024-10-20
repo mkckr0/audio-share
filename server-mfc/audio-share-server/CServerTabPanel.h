@@ -32,6 +32,7 @@ protected:
 	virtual BOOL OnInitDialog();
 	afx_msg void OnBnClickedButtonReset();
 	afx_msg void OnBnClickedStartServer();
+	afx_msg void OnBnClickedButtonSoundPanel();
 	void EnableInputControls(bool bEnable = true);
 
 public:
@@ -42,4 +43,6 @@ public:
 	CComboBox m_comboBoxAudioEndpoint;
 	CButton m_buttonServer;
 	CButton m_buttonReset;
+	CComboBox m_comboEncoding;
+	CButton m_buttonSoundPanel;
 };

@@ -45,12 +45,11 @@ int main(int argc, char* argv[])
 
         if (result.count("list-endpoint")) {
             auto audio_manager = std::make_shared<class audio_manager>();
-//            class audio_manager audio_manager;
-            audio_manager::endpoint_list_t endpoint_list;
-            int default_index = audio_manager->get_endpoint_list(endpoint_list);
+            auto endpoint_list = audio_manager->get_endpoint_list();
+            auto default_endpoint = audio_manager->get_default_endpoint();
             fmt::println("endpoint list:");
-            for (int i = 0; i < endpoint_list.size(); ++i) {
-                fmt::println("\t{} id: {:4} name: {}", (default_index == i ? '*' : ' '), endpoint_list[i].first, endpoint_list[i].second);
+            for (auto&& [id, name] : endpoint_list) {
+                fmt::println("\t{} id: {:4} name: {}", (id == default_endpoint ? '*' : ' '), id, name);
             }
             fmt::println("total: {}", endpoint_list.size());
             return EXIT_SUCCESS;
@@ -58,7 +57,7 @@ int main(int argc, char* argv[])
 
         if (result.count("list-encoding")) {
             std::vector<std::pair<string, string>> array = {
-                { "default", "default encoding" },
+                { "default", "Default encoding" },
                 { "f32", "32 bit floating-point PCM" },
                 { "s8", "8 bit integer PCM" },
                 { "s16", "16 bit integer PCM" },

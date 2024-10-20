@@ -291,7 +291,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     } while (!_stopped);
 }
 
-int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
+audio_manager::endpoint_list_t audio_manager::get_endpoint_list()
 {
     HRESULT hr {};
 
@@ -301,14 +301,13 @@ int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
     hr = pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &pCollection);
     exit_on_failed(hr);
 
-    print_endpoints(pCollection);
+//    print_endpoints(pCollection);
 
     UINT count {};
     hr = pCollection->GetCount(&count);
     exit_on_failed(hr);
 
-    int default_index = -1;
-    std::string default_id = get_default_endpoint();
+    endpoint_list_t endpoint_list;
 
     for (UINT i = 0; i < count; ++i) {
         wil::com_ptr<IMMDevice> pEndpoint;
@@ -323,22 +322,15 @@ int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
         hr = pEndpoint->OpenPropertyStore(STGM_READ, &pProps);
         exit_on_failed(hr);
 
-        PROPVARIANT varName;
-        PropVariantInit(&varName);
+        wil::unique_prop_variant varName;
         hr = pProps->GetValue(PKEY_Device_FriendlyName, &varName);
         exit_on_failed(hr);
 
         auto endpoint_id = wchars_to_mbs((LPWSTR)pwszID.get());
         endpoint_list.emplace_back(endpoint_id, wchars_to_mbs(varName.pwszVal));
-
-        if (endpoint_id == default_id) {
-            default_index = (int)i;
-        }
-
-        PropVariantClear(&varName);
     }
 
-    return default_index;
+    return endpoint_list;
 }
 
 std::string audio_manager::get_default_endpoint()

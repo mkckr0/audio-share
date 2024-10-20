@@ -62,7 +62,7 @@ CAudioShareServerApp::CAudioShareServerApp()
 #endif // DEBUG
 
 	free((void*)m_pszProfileName);
-	m_pszProfileName = _tcsdup((exe_dir / "config.ini").c_str());
+	m_pszProfileName = _wcsdup((exe_dir / "config.ini").c_str());
 }
 
 
@@ -105,6 +105,12 @@ BOOL CAudioShareServerApp::InitInstance()
 	// such as the name of your company or organization
 	//SetRegistryKey(_T("Local AppWizard-Generated Applications"));
 	
+	int nConfigVersion = 1;
+	if (nConfigVersion != this->GetProfileIntW(L"App", L"configVersion", 0)) {
+		CFile::Remove(m_pszProfileName);
+		this->WriteProfileInt(L"App", L"configVersion", nConfigVersion);
+	}
+
 	struct MyCCommandLineInfo : CCommandLineInfo {
 		virtual void ParseParam(const TCHAR* pszParam, BOOL bFlag, BOOL bLast)
 		{
