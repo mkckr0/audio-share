@@ -85,10 +85,7 @@ public:
 
     std::string get_format_binary();
 
-    /// @brief Get audio endpoint list and the default endpoint index.
-    /// @param endpoint_list Empty audio endpoint list.
-    /// @return Default endpoint index in endpoint_list. Start from 0. If no default, return -1.
-    int get_endpoint_list(endpoint_list_t& endpoint_list);
+    endpoint_list_t get_endpoint_list();
 
     std::string get_default_endpoint();
     

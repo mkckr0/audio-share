@@ -186,8 +186,8 @@ BOOL CMainDialog::OnInitDialog()
         new CAppSettingsTabPanel(this),
     };
 
-    m_tabCtrl.SetItemSize(CSize(0, 50));
-    m_tabCtrl.SetPadding(CSize(50, 0));
+    m_tabCtrl.SetItemSize(CSize(0, 45));
+    m_tabCtrl.SetPadding(CSize(30, 0));
 
     CRect childRect, tabRect, itemRect;
     m_tabCtrl.GetClientRect(&childRect);
