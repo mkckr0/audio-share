@@ -10,13 +10,22 @@ using string = std::string;
 
 int main(int argc, char* argv[])
 {
-    cxxopts::Options options(AUDIO_SHARE_BIN_NAME, "Example:\n  " AUDIO_SHARE_BIN_NAME " -b 192.168.3.2\n");
+    auto address_list = network_manager::get_address_list();
+    auto default_address = network_manager::select_default_address(address_list);
+
+    std::string help_string = "Example:\n";
+    help_string += fmt::format("  {} -b\n", AUDIO_SHARE_BIN_NAME);
+    help_string += fmt::format("  {} --bind={}\n", AUDIO_SHARE_BIN_NAME, default_address.empty() ? "192.168.3.2": default_address);
+    help_string += fmt::format("  {} --bind={} --encoding=f32 --channels=2 --sample-rate=48000\n", AUDIO_SHARE_BIN_NAME, default_address.empty() ? "192.168.3.2": default_address);
+    help_string += fmt::format("  {} -l\n", AUDIO_SHARE_BIN_NAME);
+    help_string += fmt::format("  {} --list-encoding\n", AUDIO_SHARE_BIN_NAME);
+    cxxopts::Options options(AUDIO_SHARE_BIN_NAME, help_string);
 
     // clang-format off
     options.add_options()
         ("h,help", "Print usage")
         ("l,list-endpoint", "List available endpoints")
-        ("b,bind", "The server bind address. The default port is 65530", cxxopts::value<string>(), "<host>[:<port>]")
+        ("b,bind", "The server bind address. If not set, will use default", cxxopts::value<string>()->implicit_value(default_address), "[host][:<port>]")
         ("e,endpoint", "Specify the endpoint id. If not set, will use default", cxxopts::value<string>()->default_value("default"), "[endpoint]")
         ("encoding", "Specify the capture encoding. If not set, will use default", cxxopts::value<audio_manager::encoding_t>()->default_value("default"), "[encoding]")
         ("list-encoding", "List available encoding")
@@ -73,11 +82,6 @@ int main(int argc, char* argv[])
 
         if (result.count("bind")) {
             auto s = result["bind"].as<string>();
-            if (s.empty()) {
-                std::cerr << options.help();
-                return EXIT_FAILURE;
-            }
-
             size_t pos = s.find(':');
             string host = s.substr(0, pos);
             uint16_t port;

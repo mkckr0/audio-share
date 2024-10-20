@@ -30,6 +30,11 @@
 #pragma comment(lib, "Iphlpapi.lib")
 #endif // _WINDOWS
 
+#ifdef linux
+#include <sys/types.h>
+#include <ifaddrs.h>
+#endif
+
 #include <spdlog/spdlog.h>
 #include <fmt/ranges.h>
 
@@ -41,9 +46,9 @@ network_manager::network_manager(std::shared_ptr<audio_manager>& audio_manager)
 {
 }
 
-std::vector<std::wstring> network_manager::get_local_address()
+std::vector<std::string> network_manager::get_address_list()
 {
-    std::vector<std::wstring> address_list;
+    std::vector<std::string> address_list;
 
 #ifdef _WINDOWS
     ULONG family = AF_INET;
@@ -62,7 +67,7 @@ std::vector<std::wstring> network_manager::get_local_address()
 
             for (auto pUnicast = pCurrentAddress->FirstUnicastAddress; pUnicast; pUnicast = pUnicast->Next) {
                 auto sockaddr = (sockaddr_in*)pUnicast->Address.lpSockaddr;
-                wchar_t buf[20] {};
+                wchar_t buf[50];
                 if (InetNtopW(AF_INET, &sockaddr->sin_addr, buf, std::size(buf))) {
                     address_list.emplace_back(buf);
                 }
@@ -71,21 +76,65 @@ std::vector<std::wstring> network_manager::get_local_address()
     }
 
     free(pAddresses);
-#endif // _WINDOWS
+#endif
 
-    std::sort(address_list.begin(), address_list.end(), [](const std::wstring& lhs, const std::wstring& rhs) {
-        auto is_private_addr = [](const std::wstring& addr) {
-            return addr.find(L"192.168.") == 0;
-        };
-        bool lhs_is_private = is_private_addr(lhs);
-        bool rhs_is_private = is_private_addr(rhs);
-        if (lhs_is_private != rhs_is_private) {
-            return lhs_is_private > rhs_is_private;
-        } else {
-            return std::less<>()(lhs, rhs);
+#ifdef linux
+    struct ifaddrs* ifaddrs;
+    if (getifaddrs(&ifaddrs) == -1) {
+        return address_list;
+    }
+
+    for (auto ifa = ifaddrs; ifa; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr->sa_family != AF_INET) {
+            continue;
         }
-    });
+        if (ifa->ifa_flags & IFF_LOOPBACK) {
+            continue;
+        }
+        auto sockaddr = (sockaddr_in*)ifa->ifa_addr;
+        char buf[50];
+        if (inet_ntop(AF_INET, &sockaddr->sin_addr, buf, sizeof(buf))) {
+            address_list.emplace_back(buf);
+        }
+    }
+
+    freeifaddrs(ifaddrs);
+#endif
+
     return address_list;
+}
+
+std::string network_manager::select_default_address(const std::vector<std::string>& address_list)
+{
+    if (address_list.empty()) {
+        return {};
+    }
+
+    auto is_private_address = [](const std::string& address) {
+        constexpr uint32_t private_addr_list[] = {
+            0x0a000000,
+            0xac100000,
+            0xc0a80000,
+        };
+
+        uint32_t addr;
+        inet_pton(AF_INET, address.c_str(), &addr);
+        addr = ntohl(addr);
+        for (auto&& private_addr : private_addr_list) {
+            if ((addr & private_addr) == private_addr) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    for (auto&& address : address_list) {
+        if (is_private_address(address)) {
+            return address;
+        }
+    }
+    return address_list.front();
 }
 
 void network_manager::start_server(const std::string& host, uint16_t port, const audio_manager::capture_config& capture_config)
@@ -341,7 +390,7 @@ void network_manager::broadcast_audio_data(const char* data, size_t count, int b
     if (count <= 0) {
         return;
     }
-    //spdlog::trace("broadcast_audio_data count: {}", count);
+    // spdlog::trace("broadcast_audio_data count: {}", count);
 
     // divide udp frame
     constexpr int mtu = 1492;
@@ -361,7 +410,7 @@ void network_manager::broadcast_audio_data(const char* data, size_t count, int b
     _ioc->post([seg_list = std::move(seg_list), self = shared_from_this()] {
         for (const auto& seg : seg_list) {
             for (auto& [peer, info] : self->_playing_peer_list) {
-                self->_udp_server->async_send_to(asio::buffer(*seg), info->udp_peer, [seg](const asio::error_code& ec, std::size_t bytes_transferred) {});
+                self->_udp_server->async_send_to(asio::buffer(*seg), info->udp_peer, [seg](const asio::error_code& ec, std::size_t bytes_transferred) { });
             }
         }
     });
