@@ -95,8 +95,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
         selected_endpoint_id = get_default_endpoint();
     }
 
-    endpoint_list_t endpoint_list;
-    get_endpoint_list(endpoint_list);
+    endpoint_list_t endpoint_list = get_endpoint_list();
     auto it = std::find_if(endpoint_list.begin(), endpoint_list.end(), [&](const endpoint_list_t::value_type& e) {
         return e.first == selected_endpoint_id;
     });
@@ -308,7 +307,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     pw_stream_destroy(user_data.stream);
 }
 
-int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
+audio_manager::endpoint_list_t audio_manager::get_endpoint_list()
 {
     struct user_data_t {
         endpoint_list_t* endpoint_list_ptr;
@@ -353,6 +352,7 @@ int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
 
     struct pw_registry* registry = pw_core_get_registry(_core, PW_VERSION_REGISTRY, 0);
     struct spa_hook registry_listener {};
+    endpoint_list_t endpoint_list;
     struct user_data_t user_data = {
         .endpoint_list_ptr = &endpoint_list,
         .default_index = -1,
@@ -362,14 +362,55 @@ int audio_manager::get_endpoint_list(endpoint_list_t& endpoint_list)
     (*_roundtrip)();
 
     pw_proxy_destroy((struct pw_proxy*)registry);
-    return user_data.default_index;
+    return endpoint_list;
 }
 
 std::string audio_manager::get_default_endpoint()
 {
-    endpoint_list_t endpoint_list;
-    int index = get_endpoint_list(endpoint_list);
-    return index >= 0 ? endpoint_list[index].first : "";
+    struct user_data_t {
+        int default_priority;
+        std::string default_id;
+    };
+
+    static const struct pw_registry_events registry_events = {
+        .version = PW_VERSION_REGISTRY_EVENTS,
+        .global = [](void* object, uint32_t id, uint32_t permissions, const char* type, uint32_t version, const struct spa_dict* props) {
+            if (spa_streq(type, PW_TYPE_INTERFACE_Node)) {
+                const char* media_class = spa_dict_lookup(props, PW_KEY_MEDIA_CLASS);
+
+                if (!spa_streq(media_class, "Audio/Sink")) {
+                    return;
+                }
+
+                auto user_data = (user_data_t*)object;
+                const char* priority_session = spa_dict_lookup(props, PW_KEY_PRIORITY_SESSION);
+
+                int priority = priority_session ? std::stoi(priority_session) : -1;
+                if (priority > user_data->default_priority) {
+                    user_data->default_priority = priority;
+                    user_data->default_id = std::to_string(id);
+                }
+
+                spdlog::trace("object id: {}", id);
+                const struct spa_dict_item* item;
+                spa_dict_for_each(item, props)
+                {
+                    spdlog::trace("\t{}: \"{}\"", item->key, item->value);
+                }
+            }
+        },
+    };
+
+    struct pw_registry* registry = pw_core_get_registry(_core, PW_VERSION_REGISTRY, 0);
+    struct spa_hook registry_listener {};
+    struct user_data_t user_data = {
+        .default_priority = -1,
+    };
+    pw_registry_add_listener(registry, &registry_listener, &registry_events, &user_data);
+    (*_roundtrip)();
+
+    pw_proxy_destroy((struct pw_proxy*)registry);
+    return user_data.default_id;
 }
 
 #endif // linux
