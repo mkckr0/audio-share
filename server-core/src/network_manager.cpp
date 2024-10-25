@@ -67,8 +67,8 @@ std::vector<std::string> network_manager::get_address_list()
 
             for (auto pUnicast = pCurrentAddress->FirstUnicastAddress; pUnicast; pUnicast = pUnicast->Next) {
                 auto sockaddr = (sockaddr_in*)pUnicast->Address.lpSockaddr;
-                wchar_t buf[50];
-                if (InetNtopW(AF_INET, &sockaddr->sin_addr, buf, std::size(buf))) {
+                char buf[50];
+                if (inet_ntop(AF_INET, &sockaddr->sin_addr, buf, sizeof(buf))) {
                     address_list.emplace_back(buf);
                 }
             }
