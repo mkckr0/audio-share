@@ -107,7 +107,10 @@ BOOL CAudioShareServerApp::InitInstance()
 	
 	int nConfigVersion = 1;
 	if (nConfigVersion != this->GetProfileIntW(L"App", L"configVersion", 0)) {
-		CFile::Remove(m_pszProfileName);
+		CFileStatus fileStatus;
+		if (CFile::GetStatus(m_pszProfileName, fileStatus)) {
+			CFile::Remove(m_pszProfileName);
+		}
 		this->WriteProfileInt(L"App", L"configVersion", nConfigVersion);
 	}
 
