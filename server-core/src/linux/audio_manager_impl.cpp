@@ -96,6 +96,10 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     }
 
     endpoint_list_t endpoint_list = get_endpoint_list();
+    if (endpoint_list.empty()) {
+        spdlog::error("audio endpoint list is empty");
+        return;
+    }
     auto it = std::find_if(endpoint_list.begin(), endpoint_list.end(), [&](const endpoint_list_t::value_type& e) {
         return e.first == selected_endpoint_id;
     });
