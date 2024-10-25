@@ -84,19 +84,13 @@ void CServerTabPanel::OnBnClickedButtonReset()
     // host list
     {
         m_comboBoxHost.ResetContent();
-        auto address_list = network_manager::get_local_address();
+        auto address_list = network_manager::get_address_list();
         for (auto address : address_list) {
-            auto nIndex = m_comboBoxHost.AddString(address.c_str());
+            auto nIndex = m_comboBoxHost.AddString(mbs_to_wchars(address).c_str());
         }
-        auto configHost = theApp.GetProfileStringW(L"Network", L"host");
-        if (!configHost.IsEmpty()) {
-            m_comboBoxHost.SetWindowTextW(configHost);
-        }
-        else {
-            if (m_comboBoxHost.GetCount()) {
-                m_comboBoxHost.SetCurSel(0);
-            }
-        }
+        auto default_address = network_manager::select_default_address(address_list);
+        auto configHost = theApp.GetProfileStringW(L"Network", L"host", default_address.empty() ? nullptr : mbs_to_wchars(default_address).c_str());
+        m_comboBoxHost.SetWindowTextW(configHost);
     }
 
     // port
@@ -168,7 +162,7 @@ void CServerTabPanel::OnBnClickedStartServer()
     CString text;
     m_buttonServer.GetWindowText(text);
     if (text == L"Start Server") {
-        if (!m_comboBoxAudioEndpoint.GetCount()) {
+        if (m_comboBoxAudioEndpoint.GetCount() == 1) {
             AfxMessageBox(L"No Audio Endpoint", MB_OK | MB_ICONSTOP);
             return;
         }
