@@ -10,8 +10,7 @@ using string = std::string;
 
 int main(int argc, char* argv[])
 {
-    auto address_list = network_manager::get_address_list();
-    auto default_address = network_manager::select_default_address(address_list);
+    auto default_address = network_manager::get_default_address();
 
     std::string help_string = "Example:\n";
     help_string += fmt::format("  {} -b\n", AUDIO_SHARE_BIN_NAME);
