@@ -116,7 +116,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     wil::com_ptr<IMMDevice> pEndpoint;
     if (config.endpoint_id.empty() || config.endpoint_id == "default") {
         hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pEndpoint);
-        exit_on_failed(hr);
+        exit_on_failed(hr, "can't find default audio endpoint");
     } else {
         hr = pEnumerator->GetDevice(mbs_to_wchars(config.endpoint_id).c_str(), &pEndpoint);
         exit_on_failed(hr);
@@ -470,7 +470,7 @@ static void print_endpoints(wil::com_ptr<IMMDeviceCollection>& pCollection)
 static void exit_on_failed(HRESULT hr, const char* message, const char* func)
 {
     if (FAILED(hr)) {
-        spdlog::error("exit_on_failed {} {} {}", func, message, wchars_to_mbs(wstr_win_err(HRESULT_CODE(hr))));
+        spdlog::error("exit_on_failed {} {}, {}", func, message, wchars_to_mbs(wstr_win_err(HRESULT_CODE(hr))));
         exit(-1);
     }
 }
