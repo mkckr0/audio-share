@@ -104,6 +104,11 @@ std::vector<std::string> network_manager::get_address_list()
     return address_list;
 }
 
+std::string network_manager::get_default_address()
+{
+    return select_default_address(get_address_list());
+}
+
 std::string network_manager::select_default_address(const std::vector<std::string>& address_list)
 {
     if (address_list.empty()) {

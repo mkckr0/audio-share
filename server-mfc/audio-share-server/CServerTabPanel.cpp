@@ -88,7 +88,7 @@ void CServerTabPanel::OnBnClickedButtonReset()
         for (auto address : address_list) {
             auto nIndex = m_comboBoxHost.AddString(mbs_to_wchars(address).c_str());
         }
-        auto default_address = network_manager::select_default_address(address_list);
+        auto default_address = network_manager::get_default_address();
         auto configHost = theApp.GetProfileStringW(L"Network", L"host", default_address.empty() ? nullptr : mbs_to_wchars(default_address).c_str());
         m_comboBoxHost.SetWindowTextW(configHost);
     }
