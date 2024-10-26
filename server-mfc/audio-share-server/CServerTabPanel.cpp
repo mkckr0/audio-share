@@ -72,8 +72,6 @@ BOOL CServerTabPanel::OnInitDialog()
         m_buttonServer.PostMessageW(BM_CLICK);
     }
 
-    //auto x = this->GetThisMessageMap();
-
     return TRUE;  // return TRUE unless you set the focus to a control
     // EXCEPTION: OCX Property Pages should return FALSE
 }
