@@ -145,3 +145,5 @@ jobs:
         run: |
           version=$(bash ./scripts/get_version.sh -n)
           gh release create "v$version" -d --discussion-category announcements -F notes -t "v$version" release_bin/*
+        env:
+          GH_TOKEN: ${{ github.token }}
