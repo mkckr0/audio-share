@@ -199,7 +199,7 @@ total: 1
 - Server CMD
     - CMake and a compiler support C++20 is required. Linux also need `libpipewire-dev` or `pipewire-devel`.
     - Install vcpkg, and set `VPCKG_ROOT` env. This env is required by `CMakePresets.json`.
-    - Run `vcpkg install asio protobuf spdlog cxxopts` to install deps. The vcpkg triplet is `x64-windows-static-md` for Windows, `x64-linux` for Linux.
+    - Run `vcpkg install asio protobuf cxxopts` to install deps. The vcpkg triplet is `x64-windows-static-md` for Windows, `x64-linux` for Linux. In addition, Windows need run `vcpkg install spdlog[wchar] wil`, and Linux need run `vcpkg install spdlog`.
     - Run `cmake --preset linux-Release` to configure.
     - Run `cmake --build --preset linux-Release` to build. The `as-cmd` is located at `out/install/linux-Release/bin/as-cmd`.
     - For Windows, replace `linux` to `windows` in previous two steps.
