@@ -4,70 +4,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  test_7z:
-    runs-on: windows-latest
+  upload:
+    name: Upload file
+    runs-on: ubuntu-latest
     steps:
-      - run: 7z
-    
-  # build_server_mfc:
-  #   name: Build server-mfc
-  #   runs-on: windows-latest
-  #   defaults:
-  #     run:
-  #       working-directory: server-mfc
-  #   env:
-  #     VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - run: git pull
-  #     - uses: microsoft/setup-msbuild@v1
-  #     - uses: lukka/run-vcpkg@v11
-  #       with:
-  #         vcpkgGitCommitId: e57b2167e66c847f991bd6bce1355b85acd944e8
-  #     - run: vcpkg integrate install
-  #     - run: vcpkg install asio protobuf spdlog
-  #     - run: msbuild /m /p:Configuration=Release,Platform=x64
-  #     - name: Checksum
-  #       run: cd x64/Release/ && sha256sum *.exe | tee $(ls *.exe).sha256
-  #       shell: bash
+      - uses: actions/checkout@v4
+      - run: git pull
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app
+          path: |
+            android-app/build.gradle.kts
 
-  # build_server_core:
-  #   name: Build server-core
-  #   strategy:
-  #     matrix:
-  #       os: [windows-latest, ubuntu-latest]
-  #       include:
-  #         - os: windows-latest
-  #           vcpkg_triplet: x64-windows-static-md
-  #           cmake_preset: windows-Release
-  #           platform: windows
-  #         - os: ubuntu-latest
-  #           vcpkg_triplet: x64-linux
-  #           cmake_preset: linux-Release
-  #           platform: linux
-  #   runs-on: ${{ matrix.os }}
-  #   defaults:
-  #     run:
-  #       working-directory: server-core
-  #   env:
-  #     VCPKG_DEFAULT_TRIPLET: ${{ matrix.vcpkg_triplet }}
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - run: git pull
-  #     - name: Install Linux Deps
-  #       run: sudo apt install libpipewire-0.3-dev
-  #       if: ${{ matrix.os == 'ubuntu-latest' }}
-  #     - uses: lukka/get-cmake@latest
-  #     - uses: lukka/run-vcpkg@v11
-  #       with:
-  #         vcpkgGitCommitId: e57b2167e66c847f991bd6bce1355b85acd944e8
-  #     - run: vcpkg integrate install
-  #     - run: vcpkg install asio protobuf spdlog cxxopts
-  #     - uses: lukka/run-cmake@v10
-  #       with:
-  #         cmakeListsTxtPath: ${{ github.workspace }}/server-core/CMakeLists.txt
-  #         configurePreset: ${{ matrix.cmake_preset }}
-  #         buildPreset: ${{ matrix.cmake_preset }}
-  #     - name: Pack
-  #       run: bash pack.sh ${{ matrix.platform }}
-
+  download:
+    name: download file
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: git pull
+      - uses: actions/download-artifact@v4
+        with:
+          path: release_bin
