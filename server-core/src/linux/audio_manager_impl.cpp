@@ -166,7 +166,11 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
                     auto timer = pw_loop_add_timer(loop, [](void *data, uint64_t expirations){
                         auto user_data = (struct user_data_t*)data;
                         struct pw_time time{};
+#if PW_CHECK_VERSION(0, 3, 50)
                         pw_stream_get_time_n(user_data->stream, &time, sizeof(time));
+#else
+                        pw_stream_get_time(user_data->stream, &time);
+#endif
                         spdlog::trace("now:{} rate:{}/{} ticks:{} delay:{} queued:{}",
                             time.now,
                             time.rate.num, time.rate.denom,
