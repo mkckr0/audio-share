@@ -135,7 +135,6 @@ jobs:
       - run: chmod +x ./scripts/get_version.sh
       - uses: actions/download-artifact@v4
         with:
-          name: app
           path: release_bin
       - name: Generate release notes
         run: 'echo -e "$(cat ./metadata/en-US/changelogs/$(bash ./scripts/get_version.sh -c).txt)" > notes'
