@@ -58,7 +58,7 @@ jobs:
       - uses: microsoft/setup-msbuild@v1
       - uses: lukka/run-vcpkg@v11
         with:
-          vcpkgGitCommitId: e57b2167e66c847f991bd6bce1355b85acd944e8
+          vcpkgGitCommitId: 10b7a178346f3f0abef60cecd5130e295afd8da4
       - run: vcpkg integrate install
       - run: vcpkg install asio protobuf spdlog[wchar] wil nlohmann-json
       - run: msbuild /m /p:Configuration=Release,Platform=x64
@@ -101,7 +101,7 @@ jobs:
       - uses: lukka/get-cmake@latest
       - uses: lukka/run-vcpkg@v11
         with:
-          vcpkgGitCommitId: e57b2167e66c847f991bd6bce1355b85acd944e8
+          vcpkgGitCommitId: 10b7a178346f3f0abef60cecd5130e295afd8da4
       - run: vcpkg integrate install
       - run: vcpkg install asio protobuf spdlog cxxopts
       - uses: lukka/run-cmake@v10
