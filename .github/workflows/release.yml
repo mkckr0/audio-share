@@ -11,7 +11,7 @@ jobs:
       run:
         working-directory: android-app
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: git pull
       - uses: actions/setup-java@v3
         with:
@@ -37,7 +37,7 @@ jobs:
       - name: Checksum
         run: cd app/build/outputs/apk/release/ && sha256sum *.apk | tee $(ls *.apk).sha256
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: app
           path: |
@@ -53,7 +53,7 @@ jobs:
     env:
       VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: git pull
       - uses: microsoft/setup-msbuild@v1
       - uses: lukka/run-vcpkg@v11
@@ -65,7 +65,7 @@ jobs:
       - name: Checksum
         run: cd x64/Release/ && sha256sum *.exe | tee $(ls *.exe).sha256
         shell: bash
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: server-mfc
           path: |
@@ -93,7 +93,7 @@ jobs:
     env:
       VCPKG_DEFAULT_TRIPLET: ${{ matrix.vcpkg_triplet }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: git pull
       - name: Install Linux Deps
         run: sudo apt install libpipewire-0.3-dev
@@ -115,7 +115,7 @@ jobs:
           buildPreset: ${{ matrix.cmake_preset }}
       - name: Pack
         run: bash pack.sh ${{ matrix.platform }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: server-core-${{ matrix.platform }}
           path: |
@@ -130,7 +130,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: git pull
       - run: chmod +x ./scripts/get_version.sh
       - uses: actions/download-artifact@v4
@@ -144,6 +144,6 @@ jobs:
       - name: Create Github Release
         run: |
           version=$(bash ./scripts/get_version.sh -n)
-          gh release create "v$version" -d -F notes -t "v$version" $(ls release_bin/*/*)
+          gh release create "v$version" -d -F notes -t "v$version" release_bin/*/*
         env:
           GH_TOKEN: ${{ github.token }}
