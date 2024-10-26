@@ -388,16 +388,16 @@ class NetClient(private val handler: Handler, private val application: Applicati
 
     private fun createAudioTrack(format: Client.AudioFormat): AudioTrack {
         val encoding = when (format.encoding) {
-            Client.AudioFormat.Encoding.ENCODING_PCM_F32 -> AudioFormat.ENCODING_PCM_FLOAT
-            Client.AudioFormat.Encoding.ENCODING_PCM_U8 -> AudioFormat.ENCODING_PCM_8BIT
-            Client.AudioFormat.Encoding.ENCODING_PCM_U16 -> AudioFormat.ENCODING_PCM_16BIT
-            Client.AudioFormat.Encoding.ENCODING_PCM_U24 -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Client.AudioFormat.Encoding.ENCODING_PCM_FLOAT -> AudioFormat.ENCODING_PCM_FLOAT
+            Client.AudioFormat.Encoding.ENCODING_PCM_8BIT -> AudioFormat.ENCODING_PCM_8BIT
+            Client.AudioFormat.Encoding.ENCODING_PCM_16BIT -> AudioFormat.ENCODING_PCM_16BIT
+            Client.AudioFormat.Encoding.ENCODING_PCM_24BIT -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 AudioFormat.ENCODING_PCM_24BIT_PACKED
             } else {
                 AudioFormat.ENCODING_INVALID
             }
 
-            Client.AudioFormat.Encoding.ENCODING_PCM_U32 -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Client.AudioFormat.Encoding.ENCODING_PCM_32BIT -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 AudioFormat.ENCODING_PCM_32BIT
             } else {
                 AudioFormat.ENCODING_INVALID
