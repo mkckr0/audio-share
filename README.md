@@ -53,8 +53,8 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 
 ## Usage for Windows GUI
 - Download APK file and AudioShareServer.exe from [latest release](https://github.com/mkckr0/audio-share/releases/latest).
-- Open the AudioShareServer.exe on your computer. The default arguments may work well. But you may still have to check the "Host" part. It's normally the LAN address, such as `192.168.3.2`. Make sure your phone can connect your computer over this IP address. Then Click "Start Server" button.
-- Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step, such as `192.168.3.2`. Click "▶" button and enjoy the audio🎶.
+- Open the AudioShareServer.exe on your computer. The default arguments may work well. But you may still have to check the "Host" part. It's normally the LAN address, such as `192.168.xxx.xxx`. Make sure your phone can connect your computer over this IP address. Then Click "Start Server" button.
+- Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step, such as `192.168.xxx.xxx`. Click "▶" button and enjoy the audio🎶.
 
 > [!CAUTION]
 > This app doesn't support auto reconnecting feature at present. Once the app is killed  or disconnected by Android power saver, the audio playing will be stop. Adding app to the whitelist of power saver is recommended. To do this, you can press "Request Ignore Battery Optimizations" on app's Settings.
@@ -63,9 +63,9 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 ## Usage for Windows/Linux CMD
 - Download the `audio-share-server-cmd-windows.zip` for Windows, the `audio-share-server-cmd-linux.tar.gz` for Linux.
 - Uncompress the archive file.
-- Find the LAN address of your computer, such as `192.168.3.2`. Then run `as-cmd -b 192.168.3.2` to start the server. It will use the default port `65530` and select a default audio endpoint.
+- Just run `as-cmd -b` to start the server. It will use the first LAN address as the host with the port `65530` and select a default audio endpoint. Most of the time, it works fine. If not, then use `as-cmd -h` to see the help, and set the proper arguments.
 - The Windows will ask you to add firewall rules automatically while Linux won't. So if your Linux distribution enables firewall, you need to configure firewall manually.
-- Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step, such as `192.168.3.2`. Click "▶" button and enjoy the audio🎶.
+- Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step, such as `192.168.xxx.xxx`. Click "▶" button and enjoy the audio🎶.
 
 
 ## Configure Firewall Rules on Linux
@@ -104,21 +104,34 @@ There are two kinds of audio format:
 
 The transfer audio format is uncompressed PCM data and keep same with capture audio format.
 
-You can open `server.log` to see the capture audio format.
+You can open `server.log` to see the transfer audio format.
 ```
-[2024-02-11 22:27:33.019] [server] [info] AudioFormat:
-format_tag: 3
+[2024-10-26 14:52:48.967] [info] AudioFormat:
+encoding: ENCODING_PCM_16BIT
 channels: 2
-sample_rate: 192000
-bits_per_sample: 32
+sample_rate: 44100
 ```
-As shown above, the format is `32 bit float`, the channel count is `2`, and sample rate is `192kHz`.
+As shown above, the encoding is `16 bit integer PCM`, the channel count is `2`, and sample rate is `44.1kHz`.
 
-On Windows, the capture audio format is the default value given by Windows Core Audio APIs. It seems like always be `32 bit float`. The sample rate is affected by audio endpoint format. You may change it by setting System Sounds Panel(`mmsys.cpl`). In `Playback` tab, right click one available endpoint, and open Properties Panel, and select `Advanced` tab, and change `Default Format` and click `Apply`. This can be also done in `Realtek Audio Console`, if you use a Realtek Audio Card.
+On Android, AudioTrack API only support the PCM audio formats listed below:
+```
+ENCODING_PCM_FLOAT
+ENCODING_PCM_8BIT
+ENCODING_PCM_16BIT
+ENCODING_PCM_24BIT_PACKED
+ENCODING_PCM_32BIT
+```
+https://developer.android.com/reference/android/media/AudioFormat#encoding
 
-On Linux, the capture audio format is hardcoded. To keep same with Windows, the audio format is also `32 bit float`. The channel count is always `2`. The sample rate is always `48kHz`.
+Audio Share support these 5 kinds of PCM format, but whether specific format is available depends on the audio endpoint.
 
-Note that the higher sample rate will consume more network traffic bandwidth. Maybe in future, the capture audio format can be set by user manually.
+On Windows, the default capture audio format depends on the audio endpoint's default format. You may change it by setting Sound Panel(`mmsys.cpl`). In Sound Panel's `Playback` tab, right click one available endpoint, and open Properties Panel, and select `Advanced` tab, and change `Default Format` and click `Apply`. This can be also done in `Realtek Audio Console`, if you use a Realtek audio card. The capture audio format must has the same channels and sample rate with the audio endpoint. So if you want to change them, you can only open Sound Panel and set default format. To be compatible with Linux, the `as-cmd` can still set the `--channels` or `--sample-rate` on Windows. However, it will fallback to the proper audio format, because it doesn't support the expected in most cases.
+
+https://learn.microsoft.com/en-us/windows/win32/coreaudio/device-formats
+
+On Linux, the default capture audio format could have been given by PipeWire completely. However, the default audio encoding may be planar, such as `SPA_AUDIO_FORMAT_F32P`. Android's AudioTrack can't play it. So the default audio encoding is forced to `SPA_AUDIO_FORMAT_F32_LE`(32 bit float PCM with little endian). The default channels and sample rate are untouched and given by PipeWire.
+
+Note that decrease the encoding bitwise or sample rate can decrease network bandwidth, but can also increase the blank noise, also known as audio loss.
 
 
 ## About Volume
