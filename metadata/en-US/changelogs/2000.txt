@@ -1,0 +1,3 @@
+- `as-cmd` can now specify the encoding, channels and sample rate. But on Windows it has some limitations. For more details, see the `About Audio Format` in README.
+- Add "Encoding" option and `Sound Panel` button for server MFC.
+- Add the default LAN address selection for `as-cmd`.
