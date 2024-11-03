@@ -85,6 +85,9 @@ std::vector<std::string> network_manager::get_address_list()
     }
 
     for (auto ifa = ifaddrs; ifa; ifa = ifa->ifa_next) {
+        if (!ifa->ifa_addr) {
+            continue;
+        }
         if (ifa->ifa_addr->sa_family != AF_INET) {
             continue;
         }
