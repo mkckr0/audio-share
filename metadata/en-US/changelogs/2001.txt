@@ -1,0 +1,1 @@
+- Fix the segmentation fault of `as-cmd` on Linux. #93
