@@ -86,6 +86,11 @@ android {
             merges += "META-INF/io.netty.versions.properties"
         }
     }
+
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
 dependencies {
