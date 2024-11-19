@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-option(AUDIO_SHARE_STATIC_LIBCPP "Link statically with standard c++ library" ON)
+option(AUDIO_SHARE_STATIC_LIBCPP "Link statically with standard C++ library (Only for Linux)" ON)
 
 set(AUDIO_SHARE_BIN_NAME "as-cmd")
 configure_file(src/config.h.in config.h)
@@ -46,7 +46,7 @@ add_executable(server-cmd
 set_target_properties(server-cmd PROPERTIES OUTPUT_NAME ${AUDIO_SHARE_BIN_NAME})
 if(AUDIO_SHARE_STATIC_LIBCPP AND UNIX)
 	target_link_options(server-cmd PRIVATE "-static-libstdc++")
-endif(AUDIO_SHARE_STATIC_LIBCPP AND UNIX)
+endif()
 
 find_package(asio CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
