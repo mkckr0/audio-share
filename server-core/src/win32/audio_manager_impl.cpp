@@ -24,6 +24,7 @@
 #include <wil/com.h>
 #include <iostream>
 #include <vector>
+#include <cstdlib>
 
 #include <initguid.h>
 #include <Mmdeviceapi.h>
@@ -43,6 +44,9 @@ std::string to_string(PWAVEFORMATEX pFormat)
         break;
     case WAVE_FORMAT_IEEE_FLOAT:
         ss << "WAVE_FORMAT_IEEE_FLOAT";
+        break;
+    case WAVE_FORMAT_EXTENSIBLE:
+        ss << "WAVE_FORMAT_EXTENSIBLE";
         break;
     default:
         ss << pFormat->wFormatTag;
@@ -138,61 +142,58 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
     wil::unique_cotaskmem_ptr<WAVEFORMATEX> pMixFormat;
     pAudioClient->GetMixFormat(wil::out_param(pMixFormat));
-    auto pCaptureFormat = wil::make_unique_cotaskmem<WAVEFORMATEX>();
-    switch (config.encoding) {
-    case encoding_t::encoding_default:
-        if (pMixFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
-            auto guidSubFormat = ((PWAVEFORMATEXTENSIBLE)pMixFormat.get())->SubFormat;
-            if (guidSubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT) {
-                pCaptureFormat->wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
-            } else if (guidSubFormat == KSDATAFORMAT_SUBTYPE_PCM) {
-                pCaptureFormat->wFormatTag = WAVE_FORMAT_PCM;
-            } else {
-                spdlog::error("invalid mix format");
-                return;
-            }
-        } else {
-            pCaptureFormat->wFormatTag = pMixFormat->wFormatTag;
-        }
-        pCaptureFormat->wBitsPerSample = pMixFormat->wBitsPerSample;
-        break;
-    case encoding_t::encoding_f32:
-        pCaptureFormat->wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
-        pCaptureFormat->wBitsPerSample = 32;
-        break;
-    case encoding_t::encoding_s8:
-        pCaptureFormat->wFormatTag = WAVE_FORMAT_PCM;
-        pCaptureFormat->wBitsPerSample = 8;
-        break;
-    case encoding_t::encoding_s16:
-        pCaptureFormat->wFormatTag = WAVE_FORMAT_PCM;
-        pCaptureFormat->wBitsPerSample = 16;
-        break;
-    case encoding_t::encoding_s24:
-        pCaptureFormat->wFormatTag = WAVE_FORMAT_PCM;
-        pCaptureFormat->wBitsPerSample = 24;
-        break;
-    case encoding_t::encoding_s32:
-        pCaptureFormat->wFormatTag = WAVE_FORMAT_PCM;
-        pCaptureFormat->wBitsPerSample = 32;
-        break;
-    default:
+    spdlog::info("default mix format:\n{}", *pMixFormat);
+
+    wil::unique_cotaskmem_ptr<WAVEFORMATEX> pCaptureFormat;
+    if (pMixFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
+        pCaptureFormat.reset((PWAVEFORMATEX)CoTaskMemAlloc(sizeof(WAVEFORMATEXTENSIBLE)));
+        std::memcpy(pCaptureFormat.get(), pMixFormat.get(), sizeof(WAVEFORMATEXTENSIBLE));
+    } else {
+        pCaptureFormat = wil::make_unique_cotaskmem<WAVEFORMATEX>(*pMixFormat);
+    }
+    
+    if (config.encoding == encoding_t::encoding_invalid) {
         spdlog::error("invalid encoding");
         return;
-        break;
+    } else if (config.encoding != encoding_t::encoding_default) {
+        if (pCaptureFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
+            ((PWAVEFORMATEXTENSIBLE)pCaptureFormat.get())->SubFormat = config.encoding == encoding_t::encoding_f32 ? KSDATAFORMAT_SUBTYPE_IEEE_FLOAT : KSDATAFORMAT_SUBTYPE_PCM;
+        } else {
+            pCaptureFormat->wFormatTag = config.encoding == encoding_t::encoding_f32 ? WAVE_FORMAT_IEEE_FLOAT : WAVE_FORMAT_PCM;
+        }
+        switch (config.encoding) {
+        case encoding_t::encoding_f32:
+            pCaptureFormat->wBitsPerSample = 32;
+            break;
+        case encoding_t::encoding_s8:
+            pCaptureFormat->wBitsPerSample = 8;
+            break;
+        case encoding_t::encoding_s16:
+            pCaptureFormat->wBitsPerSample = 16;
+            break;
+        case encoding_t::encoding_s24:
+            pCaptureFormat->wBitsPerSample = 24;
+            break;
+        case encoding_t::encoding_s32:
+            pCaptureFormat->wBitsPerSample = 32;
+            break;
+        default:
+            break;
+        }
+        if (pCaptureFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
+            ((PWAVEFORMATEXTENSIBLE)pCaptureFormat.get())->Samples.wValidBitsPerSample = pCaptureFormat->wBitsPerSample;
+        }
     }
     if (config.channels) {
         pCaptureFormat->nChannels = config.channels;
-    } else {
-        pCaptureFormat->nChannels = pMixFormat->nChannels;
     }
     pCaptureFormat->nBlockAlign = pCaptureFormat->wBitsPerSample * pCaptureFormat->nChannels / 8;
     if (config.sample_rate) {
         pCaptureFormat->nSamplesPerSec = config.sample_rate;
-    } else {
-        pCaptureFormat->nSamplesPerSec = pMixFormat->nSamplesPerSec;
     }
     pCaptureFormat->nAvgBytesPerSec = pCaptureFormat->nSamplesPerSec * pCaptureFormat->nBlockAlign;
+
+    spdlog::info("capture format:\n{}", *pCaptureFormat);
 
     // check format is valid
     wil::unique_cotaskmem_ptr<WAVEFORMATEX> pClosestMatchFormat;
