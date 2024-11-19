@@ -67,8 +67,8 @@ BOOL CServerTabPanel::OnInitDialog()
     m_audio_manager = std::make_shared<audio_manager>();
     m_network_manager = std::make_shared<network_manager>(m_audio_manager);
 
-    auto nWhenAppStart = theApp.GetProfileIntW(L"App Settings", L"WhenAppStart", false);
-    if (nWhenAppStart == 1 || theApp.GetProfileIntW(L"App", L"Running", false)) {
+    auto nWhenAppStart = theApp.GetProfileIntW(L"App Settings", L"WhenAppStart", 0);
+    if (nWhenAppStart == 1 || nWhenAppStart == 2 && theApp.GetProfileIntW(L"App", L"Running", false)) {
         m_buttonServer.PostMessageW(BM_CLICK);
     }
 
