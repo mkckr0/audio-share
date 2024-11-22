@@ -55,11 +55,12 @@ int main(int argc, char* argv[])
             auto audio_manager = std::make_shared<class audio_manager>();
             auto endpoint_list = audio_manager->get_endpoint_list();
             auto default_endpoint = audio_manager->get_default_endpoint();
-            fmt::println("endpoint list:");
+            auto s = fmt::format("endpoint list:\n");
             for (auto&& [id, name] : endpoint_list) {
-                fmt::println("\t{} id: {:4} name: {}", (id == default_endpoint ? '*' : ' '), id, name);
+                s += fmt::format("\t{} id: {:4} name: {}\n", (id == default_endpoint ? '*' : ' '), id, name);
             }
-            fmt::println("total: {}", endpoint_list.size());
+            s += fmt::format("total: {}\n", endpoint_list.size());
+            std::cout << s;
             return EXIT_SUCCESS;
         }
 
