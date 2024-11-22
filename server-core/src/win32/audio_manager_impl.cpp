@@ -94,6 +94,7 @@ struct fmt::formatter<WAVEFORMATEX> : fmt::formatter<std::string_view> {
 static void exit_on_failed(HRESULT hr, const char* message = "", const char* func = "");
 static void print_endpoints(wil::com_ptr<IMMDeviceCollection>& pCollection);
 static void set_format(std::shared_ptr<AudioFormat>& _format, PWAVEFORMATEX pFormat);
+static std::string get_device_name(IPropertyStore* pProp);
 
 namespace detail {
 
@@ -129,12 +130,8 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     wil::com_ptr<IPropertyStore> pProps;
     hr = pEndpoint->OpenPropertyStore(STGM_READ, &pProps);
     exit_on_failed(hr);
-    PROPVARIANT varName;
-    PropVariantInit(&varName);
-    hr = pProps->GetValue(PKEY_Device_FriendlyName, &varName);
-    exit_on_failed(hr);
-    spdlog::info("select audio endpoint: {}", wchars_to_mbs(varName.pwszVal));
-    PropVariantClear(&varName);
+    auto device_name = get_device_name(pProps.get());
+    spdlog::info("select audio endpoint: {}", device_name);
 
     wil::com_ptr<IAudioClient> pAudioClient;
     hr = pEndpoint->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, (void**)&pAudioClient);
@@ -318,17 +315,15 @@ audio_manager::endpoint_list_t audio_manager::get_endpoint_list()
         wil::unique_cotaskmem_ptr<WCHAR> pwszID;
         hr = pEndpoint->GetId(wil::out_param(pwszID));
         exit_on_failed(hr, "GetId", __func__);
+        auto endpoint_id = wchars_to_mbs((LPWSTR)pwszID.get());
 
         wil::com_ptr<IPropertyStore> pProps;
         hr = pEndpoint->OpenPropertyStore(STGM_READ, &pProps);
         exit_on_failed(hr, "OpenPropertyStore", __func__);
 
-        wil::unique_prop_variant varName;
-        hr = pProps->GetValue(PKEY_Device_FriendlyName, &varName);
-        exit_on_failed(hr, "GetValue", __func__);
+        auto name = get_device_name(pProps.get());
 
-        auto endpoint_id = wchars_to_mbs((LPWSTR)pwszID.get());
-        endpoint_list.emplace_back(endpoint_id, wchars_to_mbs(varName.pwszVal));
+        endpoint_list.emplace_back(endpoint_id, name);
     }
 
     return endpoint_list;
@@ -385,6 +380,17 @@ static void set_format(std::shared_ptr<AudioFormat>& _format, PWAVEFORMATEX pFor
     spdlog::info("AudioFormat:\n{}", _format->DebugString());
 }
 
+static std::string get_device_name(IPropertyStore* pProp)
+{
+    wil::unique_prop_variant varName;
+    pProp->GetValue(PKEY_Device_FriendlyName, &varName);
+    std::string name = "[Speakers]";
+    if (varName.vt == VT_LPWSTR) {
+        name = wchars_to_mbs(varName.pwszVal);
+    }
+    return name;
+}
+
 static void print_endpoints(wil::com_ptr<IMMDeviceCollection>& pCollection)
 {
     HRESULT hr;
@@ -413,7 +419,7 @@ static void print_endpoints(wil::com_ptr<IMMDeviceCollection>& pCollection)
         wil::unique_prop_variant varFriendlyName;
         hr = pProps->GetValue(PKEY_Device_FriendlyName, &varFriendlyName);
         exit_on_failed(hr);
-        ss << "PKEY_Device_FriendlyName: " << varFriendlyName.pwszVal << "\n";
+        ss << "PKEY_Device_FriendlyName: " << (varFriendlyName.vt == VT_LPWSTR ? varFriendlyName.pwszVal : L"") << "\n";
 
         wil::unique_prop_variant varInstanceId;
         hr = pProps->GetValue(PKEY_Device_InstanceId, &varInstanceId);
