@@ -193,7 +193,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     }
     pCaptureFormat->nAvgBytesPerSec = pCaptureFormat->nSamplesPerSec * pCaptureFormat->nBlockAlign;
 
-    spdlog::info("capture format:\n{}", *pCaptureFormat);
+    spdlog::info("request capture format:\n{}", *pCaptureFormat);
 
     // check format is valid
     wil::unique_cotaskmem_ptr<WAVEFORMATEX> pClosestMatchFormat;
@@ -300,32 +300,32 @@ audio_manager::endpoint_list_t audio_manager::get_endpoint_list()
 
     wil::com_ptr<IMMDeviceCollection> pCollection;
     hr = pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &pCollection);
-    exit_on_failed(hr);
+    exit_on_failed(hr, "EnumAudioEndpoints", __func__);
 
 //    print_endpoints(pCollection);
 
     UINT count {};
     hr = pCollection->GetCount(&count);
-    exit_on_failed(hr);
+    exit_on_failed(hr, "GetCount", __func__);
 
     endpoint_list_t endpoint_list;
 
     for (UINT i = 0; i < count; ++i) {
         wil::com_ptr<IMMDevice> pEndpoint;
         hr = pCollection->Item(i, &pEndpoint);
-        exit_on_failed(hr);
+        exit_on_failed(hr, "Item", __func__);
 
         wil::unique_cotaskmem_ptr<WCHAR> pwszID;
         hr = pEndpoint->GetId(wil::out_param(pwszID));
-        exit_on_failed(hr);
+        exit_on_failed(hr, "GetId", __func__);
 
         wil::com_ptr<IPropertyStore> pProps;
         hr = pEndpoint->OpenPropertyStore(STGM_READ, &pProps);
-        exit_on_failed(hr);
+        exit_on_failed(hr, "OpenPropertyStore", __func__);
 
         wil::unique_prop_variant varName;
         hr = pProps->GetValue(PKEY_Device_FriendlyName, &varName);
-        exit_on_failed(hr);
+        exit_on_failed(hr, "GetValue", __func__);
 
         auto endpoint_id = wchars_to_mbs((LPWSTR)pwszID.get());
         endpoint_list.emplace_back(endpoint_id, wchars_to_mbs(varName.pwszVal));
@@ -345,11 +345,11 @@ std::string audio_manager::get_default_endpoint()
     if (hr == HRESULT_FROM_WIN32(ERROR_NOT_FOUND)) {
         return {};
     }
-    exit_on_failed(hr);
+    exit_on_failed(hr, "GetDefaultAudioEndpoint", __func__);
 
     wil::unique_cotaskmem_ptr<WCHAR> pwszID;
     hr = pEndpoint->GetId(wil::out_param(pwszID));
-    exit_on_failed(hr);
+    exit_on_failed(hr, "GetId", __func__);
 
     return wchars_to_mbs((LPWSTR)pwszID.get());
 }
@@ -381,7 +381,7 @@ static void set_format(std::shared_ptr<AudioFormat>& _format, PWAVEFORMATEX pFor
     _format->set_channels(pFormat->nChannels);
     _format->set_sample_rate((int32_t)pFormat->nSamplesPerSec);
 
-    spdlog::info("WAVEFORMATEX:\n{}", *pFormat);
+    spdlog::info("result capture format:\n{}", *pFormat);
     spdlog::info("AudioFormat:\n{}", _format->DebugString());
 }
 
@@ -471,7 +471,7 @@ static void print_endpoints(wil::com_ptr<IMMDeviceCollection>& pCollection)
 static void exit_on_failed(HRESULT hr, const char* message, const char* func)
 {
     if (FAILED(hr)) {
-        spdlog::error("exit_on_failed {} {}, {}", func, message, wchars_to_mbs(wstr_win_err(HRESULT_CODE(hr))));
+        spdlog::error("exit_on_failed hr={}, func={}, message={}, error={}", hr, func, message, str_win_err(HRESULT_CODE(hr)));
         exit(-1);
     }
 }
