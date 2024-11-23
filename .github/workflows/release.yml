@@ -12,7 +12,7 @@ jobs:
         working-directory: android-app
     steps:
       - uses: actions/checkout@v4
-      - run: git pull
+
       - uses: actions/setup-java@v4
         with:
           java-version: "17"
@@ -54,16 +54,23 @@ jobs:
       VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
     steps:
       - uses: actions/checkout@v4
+
       - uses: microsoft/setup-msbuild@v2
+      
       - uses: lukka/run-vcpkg@v11
         with:
           vcpkgGitCommitId: 10b7a178346f3f0abef60cecd5130e295afd8da4
+      
       - run: vcpkg integrate install
+      
       - run: vcpkg install asio protobuf spdlog[wchar] wil nlohmann-json
+      
       - run: msbuild /m /p:Configuration=Release,Platform=x64
+      
       - name: Checksum
         run: cd x64/Release/ && sha256sum *.exe | tee $(ls *.exe).sha256
         shell: bash
+      
       - uses: actions/upload-artifact@v4
         with:
           name: server-mfc
@@ -93,26 +100,36 @@ jobs:
       VCPKG_DEFAULT_TRIPLET: ${{ matrix.vcpkg_triplet }}
     steps:
       - uses: actions/checkout@v4
+      
       - name: Install Linux Deps
         run: sudo apt install libpipewire-0.3-dev
         if: ${{ matrix.os == 'ubuntu-latest' }}
+      
       - uses: lukka/get-cmake@latest
+      
       - uses: lukka/run-vcpkg@v11
         with:
           vcpkgGitCommitId: 10b7a178346f3f0abef60cecd5130e295afd8da4
+      
       - run: vcpkg integrate install
+      
       - run: vcpkg install asio protobuf cxxopts
+      
       - run: vcpkg install spdlog[wchar] wil
         if: ${{ matrix.os == 'windows-latest' }}
+      
       - run: vcpkg install spdlog
         if: ${{ matrix.os == 'ubuntu-latest' }}
+      
       - uses: lukka/run-cmake@v10
         with:
           cmakeListsTxtPath: ${{ github.workspace }}/server-core/CMakeLists.txt
           configurePreset: ${{ matrix.cmake_preset }}
           buildPreset: ${{ matrix.cmake_preset }}
+      
       - name: Pack
         run: bash pack.sh ${{ matrix.platform }}
+      
       - uses: actions/upload-artifact@v4
         with:
           name: server-core-${{ matrix.platform }}
@@ -129,12 +146,16 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      
       - run: chmod +x ./scripts/get_version.sh
+      
       - uses: actions/download-artifact@v4
         with:
           path: release_bin
+      
       - name: Generate release notes
         run: 'echo -e "$(cat ./metadata/en-US/changelogs/$(bash ./scripts/get_version.sh -c).txt)" > notes'
+      
       - name: Create Github Release
         run: |
           version=$(bash ./scripts/get_version.sh -n)
