@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: git pull
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v4
         with:
           java-version: "17"
           distribution: "temurin"
@@ -54,8 +54,7 @@ jobs:
       VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
     steps:
       - uses: actions/checkout@v4
-      - run: git pull
-      - uses: microsoft/setup-msbuild@v1
+      - uses: microsoft/setup-msbuild@v2
       - uses: lukka/run-vcpkg@v11
         with:
           vcpkgGitCommitId: 10b7a178346f3f0abef60cecd5130e295afd8da4
@@ -94,7 +93,6 @@ jobs:
       VCPKG_DEFAULT_TRIPLET: ${{ matrix.vcpkg_triplet }}
     steps:
       - uses: actions/checkout@v4
-      - run: git pull
       - name: Install Linux Deps
         run: sudo apt install libpipewire-0.3-dev
         if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -131,19 +129,15 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - run: git pull
       - run: chmod +x ./scripts/get_version.sh
       - uses: actions/download-artifact@v4
         with:
           path: release_bin
       - name: Generate release notes
         run: 'echo -e "$(cat ./metadata/en-US/changelogs/$(bash ./scripts/get_version.sh -c).txt)" > notes'
-        env:
-          app_hash: ${{ needs.build_app.outputs.hash }}
-          server_hash: ${{ needs.build_server.outputs.hash }}
       - name: Create Github Release
         run: |
           version=$(bash ./scripts/get_version.sh -n)
           gh release create "v$version" -d -F notes -t "v$version" release_bin/*/*
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
