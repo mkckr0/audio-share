@@ -1,4 +1,4 @@
 - Fix stuck when there are more than 2 channels #102 #99
 - Fix the state doesn't work when AudioShareServer.exe starts
 - Fix encoding error for server log on Windows #104
-- Fix crash when some device doesn't have PKEY_Device_FriendlyName #103. Now they will have the default name "[Speakers]"
+- Fix crash when some device doesn't have `PKEY_Device_FriendlyName` #103. Now they will have the default name "[Speakers]"
