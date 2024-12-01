@@ -1,4 +1,4 @@
-/**
+/*
  *    Copyright 2022-2024 mkckr0 <https://github.com/mkckr0>
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,13 +14,13 @@
  *    limitations under the License.
  */
 
-import com.google.protobuf.gradle.proto
 import java.util.Properties
+import com.google.protobuf.gradle.proto
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.plugin.serialization)
     alias(libs.plugins.kotlin.plugin.parcelize)
     alias(libs.plugins.protobuf)
@@ -34,8 +34,8 @@ android {
         applicationId = "io.github.mkckr0.audio_share_app"
         minSdk = 23
         targetSdk = 35
-        versionCode = 2002
-        versionName = "0.2.2"
+        versionCode = 2000
+        versionName = "0.2.0"
         base.archivesName = "${rootProject.name}-$versionName"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -57,6 +57,8 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            isDebuggable = false
+            isProfileable = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs["release"]
         }
@@ -67,8 +69,7 @@ android {
     }
 
     buildFeatures {
-        viewBinding = true
-        dataBinding = true
+        compose = true
         buildConfig = true
     }
 
@@ -80,13 +81,6 @@ android {
         }
     }
 
-    packaging {
-        resources {
-            merges += "META-INF/INDEX.LIST"
-            merges += "META-INF/io.netty.versions.properties"
-        }
-    }
-
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
@@ -94,27 +88,43 @@ android {
 }
 
 dependencies {
+
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.navigation.fragment.ktx)
-    implementation(libs.androidx.navigation.ui.ktx)
-    implementation(libs.androidx.preference)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.material3)
     implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.material)
-    implementation(libs.google.protobuf.kotlin.lite)
-    implementation(libs.netty.all)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.media3.session)
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.network)
+    implementation(libs.google.protobuf.kotlin.lite)
+    implementation(libs.material.kolor)
+    implementation(libs.kotlinx.coroutines.guava)
 
     testImplementation(libs.junit)
+    testImplementation(platform(libs.androidx.compose.bom))
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
 }
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:${libs.versions.protobufVersion.get()}"
+        artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}"
     }
     generateProtoTasks {
         all().forEach { task ->

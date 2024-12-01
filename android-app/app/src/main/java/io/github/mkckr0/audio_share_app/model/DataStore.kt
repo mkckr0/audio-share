@@ -14,22 +14,15 @@
  *    limitations under the License.
  */
 
-package io.github.mkckr0.audio_share_app
+package io.github.mkckr0.audio_share_app.model
 
-import android.annotation.SuppressLint
-import android.app.NotificationManager
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 
-enum class WorkName(val value: String)
-{
-    AUTO_CHECK_UPDATE("auto_check_update"),
-    CHECK_UPDATE("check_update"),
-}
+val Context.networkConfigDataStore: DataStore<Preferences> by preferencesDataStore(name = "network_config")
 
-enum class Channel(val id: String, val title: String, val importance: Int) {
-    @SuppressLint("InlinedApi")
-    UPDATE("CHANNEL_ID_UPDATE", "Update", NotificationManager.IMPORTANCE_DEFAULT),
-}
+val Context.audioConfigDataStore: DataStore<Preferences> by preferencesDataStore(name = "audio_config")
 
-enum class Notification(val id: Int) {
-    UPDATE(1)
-}
+val Context.appSettingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "app_settings")

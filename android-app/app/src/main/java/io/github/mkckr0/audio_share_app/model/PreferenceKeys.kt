@@ -14,22 +14,20 @@
  *    limitations under the License.
  */
 
-package io.github.mkckr0.audio_share_app
+package io.github.mkckr0.audio_share_app.model
 
-import android.annotation.SuppressLint
-import android.app.NotificationManager
-
-enum class WorkName(val value: String)
-{
-    AUTO_CHECK_UPDATE("auto_check_update"),
-    CHECK_UPDATE("check_update"),
+object NetworkConfigKeys {
+    const val HOST = "host"
+    const val PORT = "port"
 }
 
-enum class Channel(val id: String, val title: String, val importance: Int) {
-    @SuppressLint("InlinedApi")
-    UPDATE("CHANNEL_ID_UPDATE", "Update", NotificationManager.IMPORTANCE_DEFAULT),
+object AudioConfigKeys {
+    const val VOLUME = "volume"
+    const val BUFFER_SCALE = "buffer_scale"
+    const val LOUDNESS_ENHANCER = "loudness_enhancer"
 }
 
-enum class Notification(val id: Int) {
-    UPDATE(1)
+object AppSettingsKeys {
+    const val DYNAMIC_COLOR_FROM_WALLPAPER = "dynamic_color_from_wallpaper"
+    const val DYNAMIC_COLOR_FROM_SEED_COLOR = "dynamic_color_from_seed_color"
 }
