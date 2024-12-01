@@ -16,8 +16,6 @@
 
 package io.github.mkckr0.audio_share_app.ui.screen
 
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -53,7 +51,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import io.github.mkckr0.audio_share_app.MainActivity
 import io.github.mkckr0.audio_share_app.R
@@ -137,7 +134,7 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
                             }
                         }
                     },
-                    modifier = Modifier.size(64.dp),
+                    modifier = Modifier.size(80.dp),
                 ) {
                     Icon(
                         imageVector = if (started) Icons.Default.PauseCircle else Icons.Default.PlayCircle,
