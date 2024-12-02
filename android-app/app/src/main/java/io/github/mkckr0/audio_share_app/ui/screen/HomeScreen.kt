@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,19 +50,17 @@ import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
-import io.github.mkckr0.audio_share_app.MainActivity
-import io.github.mkckr0.audio_share_app.R
-import io.github.mkckr0.audio_share_app.getResourceUri
+import io.github.mkckr0.audio_share_app.AudioShareApp
 import io.github.mkckr0.audio_share_app.service.AudioPlayer
 import io.github.mkckr0.audio_share_app.ui.screen.HomeScreenViewModel.UiState
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
     val context = LocalContext.current
-    val activity = context as MainActivity
+    val app = context.applicationContext as AudioShareApp
+    val scope = rememberCoroutineScope()
 
     when (val uiState = viewModel.uiState.collectAsStateWithLifecycle().value) {
         UiState.Loading -> {}
@@ -69,7 +68,6 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
             var host by remember(uiState.host) { mutableStateOf(uiState.host) }
             var port by remember(uiState.port) { mutableStateOf(uiState.port.toString()) }
             var started by remember { mutableStateOf(false) }
-//            var message by remember { mutableStateOf("") }
             Column(
                 modifier = Modifier
                     .padding(16.dp)
@@ -108,29 +106,16 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
 
                 IconButton(
                     onClick = {
-                        started = !started
-                        if (started) {
-                            viewModel.saveNetWorkSettings(host, port.toInt())
-                            activity.postToMediaController { mediaController ->
-                                mediaController.run {
-                                    setMediaItem(
-                                        MediaItem.fromUri("tcp://$host:$port").buildUpon()
-                                            .setMediaMetadata(
-                                                MediaMetadata.Builder()
-                                                    .setTitle("Audio Share")
-                                                    .setArtist("$host:$port")
-                                                    .setArtworkUri(context.getResourceUri(R.drawable.artwork))
-                                                    .build()
-                                            )
-                                            .build()
-                                    )
+                        scope.launch {
+                            if (started) {
+                                app.getMediaController().pause()
+                            } else {
+                                viewModel.saveNetWorkSettings(host, port.toInt()).join()
+                                app.getMediaController().run {
+                                    setMediaItem(app.getMediaItem())
                                     prepare()
                                     play()
                                 }
-                            }
-                        } else {
-                            activity.postToMediaController { mediaController ->
-                                mediaController.pause()
                             }
                         }
                     },
@@ -170,14 +155,16 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
                     }
                 }
 
-                activity.postToMediaController { mediaController ->
-                    started = mediaController.playWhenReady
-                    mediaController.addListener(listener)
+                scope.launch {
+                    app.getMediaController().run {
+                        started = playWhenReady
+                        addListener(listener)
+                    }
                 }
 
                 onStopOrDispose {
-                    activity.postToMediaController { mediaController ->
-                        mediaController.removeListener(listener)
+                    scope.launch {
+                        app.getMediaController().removeListener(listener)
                     }
                 }
             }

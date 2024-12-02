@@ -19,7 +19,6 @@ package io.github.mkckr0.audio_share_app
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -28,20 +27,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.media3.session.MediaController
-import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.ListenableFuture
 import io.github.mkckr0.audio_share_app.model.Asset
-import io.github.mkckr0.audio_share_app.service.PlaybackService
 import io.github.mkckr0.audio_share_app.ui.screen.MainScreen
 import io.github.mkckr0.audio_share_app.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
-
-    private lateinit var mediaControllerFuture: ListenableFuture<MediaController>
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -53,7 +43,7 @@ class MainActivity : ComponentActivity() {
         }
 
         // create notification channel
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager =
                 getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val channel = NotificationChannel(
@@ -68,21 +58,6 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
         }
-
-        val sessionToken =
-            SessionToken(application, ComponentName(application, PlaybackService::class.java))
-        mediaControllerFuture = MediaController.Builder(application, sessionToken).buildAsync()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        MediaController.releaseFuture(mediaControllerFuture)
-    }
-
-    fun postToMediaController(task: (mediaController: MediaController) -> Unit) {
-        mediaControllerFuture.addListener({
-            task(mediaControllerFuture.get())
-        }, ContextCompat.getMainExecutor(this))
     }
 
     override fun onNewIntent(intent: Intent) {

@@ -51,11 +51,9 @@ import kotlinx.io.Buffer
 import kotlinx.io.readByteArray
 import kotlinx.io.readIntLe
 import kotlinx.io.writeIntLe
-import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.Timer
-import kotlin.concurrent.timer
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
@@ -152,6 +150,12 @@ class NetClient {
 
     fun start() {
         scope.launch {
+
+            if (_selectorManager != null) {
+                Log.d(tag, "repeat start")
+                throw Exception("repeat start")
+            }
+
             Log.d(tag, "connecting $_host:$_port")
             _callback?.launch {
                 log("connecting $_host:$_port")
