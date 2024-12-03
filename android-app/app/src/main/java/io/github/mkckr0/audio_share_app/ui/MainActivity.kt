@@ -14,11 +14,12 @@
  *    limitations under the License.
  */
 
-package io.github.mkckr0.audio_share_app
+package io.github.mkckr0.audio_share_app.ui
 
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -27,11 +28,20 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import com.google.common.util.concurrent.ListenableFuture
 import io.github.mkckr0.audio_share_app.model.Asset
+import io.github.mkckr0.audio_share_app.model.Channel
+import io.github.mkckr0.audio_share_app.service.PlaybackService
 import io.github.mkckr0.audio_share_app.ui.screen.MainScreen
 import io.github.mkckr0.audio_share_app.ui.theme.AppTheme
+import kotlinx.coroutines.guava.await
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var _mediaControllerFuture: ListenableFuture<MediaController>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -58,6 +68,21 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
         }
+
+        // create MediaController
+        val sessionToken =
+            SessionToken(this, ComponentName(this, PlaybackService::class.java))
+        _mediaControllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
+    }
+
+    override fun onDestroy() {
+        MediaController.releaseFuture(_mediaControllerFuture)
+
+        super.onDestroy()
+    }
+
+    suspend fun awaitMediaController(): MediaController {
+        return _mediaControllerFuture.await()
     }
 
     override fun onNewIntent(intent: Intent) {

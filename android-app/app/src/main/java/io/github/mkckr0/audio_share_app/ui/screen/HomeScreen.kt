@@ -51,15 +51,15 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.Player
-import io.github.mkckr0.audio_share_app.AudioShareApp
 import io.github.mkckr0.audio_share_app.service.AudioPlayer
+import io.github.mkckr0.audio_share_app.ui.MainActivity
 import io.github.mkckr0.audio_share_app.ui.screen.HomeScreenViewModel.UiState
 import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
     val context = LocalContext.current
-    val app = context.applicationContext as AudioShareApp
+    val activity = context as MainActivity
     val scope = rememberCoroutineScope()
 
     when (val uiState = viewModel.uiState.collectAsStateWithLifecycle().value) {
@@ -108,14 +108,10 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
                     onClick = {
                         scope.launch {
                             if (started) {
-                                app.getMediaController().pause()
+                                activity.awaitMediaController().stop()
                             } else {
                                 viewModel.saveNetWorkSettings(host, port.toInt()).join()
-                                app.getMediaController().run {
-                                    setMediaItem(app.getMediaItem())
-                                    prepare()
-                                    play()
-                                }
+                                activity.awaitMediaController().play()
                             }
                         }
                     },
@@ -156,7 +152,7 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
                 }
 
                 scope.launch {
-                    app.getMediaController().run {
+                    activity.awaitMediaController().run {
                         started = playWhenReady
                         addListener(listener)
                     }
@@ -164,7 +160,7 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
 
                 onStopOrDispose {
                     scope.launch {
-                        app.getMediaController().removeListener(listener)
+                        activity.awaitMediaController().removeListener(listener)
                     }
                 }
             }

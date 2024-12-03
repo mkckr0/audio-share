@@ -23,8 +23,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.mkckr0.audio_share_app.R
-import io.github.mkckr0.audio_share_app.getInteger
 import io.github.mkckr0.audio_share_app.model.NetworkConfigKeys
+import io.github.mkckr0.audio_share_app.model.getInteger
 import io.github.mkckr0.audio_share_app.model.networkConfigDataStore
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharingStarted

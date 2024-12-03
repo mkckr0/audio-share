@@ -29,7 +29,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.Player.Commands
 import androidx.media3.common.SimpleBasePlayer
@@ -37,17 +40,26 @@ import androidx.media3.common.util.UnstableApi
 import com.google.common.util.concurrent.Futures.immediateVoidFuture
 import com.google.common.util.concurrent.ListenableFuture
 import io.github.mkckr0.audio_share_app.R
-import io.github.mkckr0.audio_share_app.getFloat
 import io.github.mkckr0.audio_share_app.model.AudioConfigKeys
+import io.github.mkckr0.audio_share_app.model.NetworkConfigKeys
 import io.github.mkckr0.audio_share_app.model.audioConfigDataStore
+import io.github.mkckr0.audio_share_app.model.getFloat
+import io.github.mkckr0.audio_share_app.model.getInteger
+import io.github.mkckr0.audio_share_app.model.getResourceUri
+import io.github.mkckr0.audio_share_app.model.networkConfigDataStore
 import io.github.mkckr0.audio_share_app.pb.Client
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.guava.future
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import java.nio.ByteBuffer
 import kotlin.time.Duration.Companion.seconds
@@ -56,11 +68,11 @@ import kotlin.time.Duration.Companion.seconds
 class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper()) {
 
     private val tag = AudioPlayer::class.simpleName
+
     private var _state: State
     override fun getState(): State = _state
 
-    private var _netClient: NetClient? = null
-    private val netClient get() = _netClient!!
+    private val netClient = NetClient()
 
     private var _audioTrack: AudioTrack? = null
     private val audioTrack get() = _audioTrack!!
@@ -68,9 +80,8 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
     private var _loudnessEnhancer: LoudnessEnhancer? = null
     private val loudnessEnhancer get() = _loudnessEnhancer!!
 
-    private val audioPlayerScope = MainScope() + CoroutineName("AudioPlayerScope")
-
-    private lateinit var _mediaItem: MediaItem
+    private val scope: CoroutineScope = MainScope()
+    private val retryScope: CoroutineScope = MainScope()
 
     companion object {
         var message by mutableStateOf("")
@@ -81,70 +92,84 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
             .setAvailableCommands(
                 Commands.Builder()
                     .addAll(
-                        COMMAND_PREPARE,
                         COMMAND_PLAY_PAUSE,
-                        COMMAND_SET_MEDIA_ITEM,
+                        COMMAND_STOP,
                         COMMAND_GET_CURRENT_MEDIA_ITEM,
                         COMMAND_GET_METADATA,
+                        COMMAND_RELEASE,
                     )
                     .build()
             )
             .build()
     }
 
-    override fun handleSetMediaItems(
-        mediaItems: MutableList<MediaItem>,
-        startIndex: Int,
-        startPositionMs: Long
-    ): ListenableFuture<*> {
-        Log.d(tag, "handleSetMediaItems ${mediaItems.first().localConfiguration?.uri}")
-        _mediaItem = mediaItems.first()
-        return immediateVoidFuture()
-    }
+    override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
+        return future {
+            Log.d(tag, "handleSetPlayWhenReady playWhenReady=$playWhenReady")
+            _state = state.buildUpon().setPlayerError(null).build()
+            if (playWhenReady) {
+                val networkConfig = context.networkConfigDataStore.data.first()
+                val host = networkConfig[stringPreferencesKey(NetworkConfigKeys.HOST)]
+                    ?: context.getString(R.string.default_host)
+                val port = networkConfig[intPreferencesKey(NetworkConfigKeys.PORT)]
+                    ?: context.getInteger(R.integer.default_port)
 
-    override fun handlePrepare(): ListenableFuture<*> {
-        Log.d(tag, "handlePrepare")
-        _state = state.buildUpon()
-            .setPlaylist(listOf(
-                MediaItemData.Builder("media-1")
-                    .setMediaItem(_mediaItem)
+                val mediaItem = MediaItem.fromUri("tcp://$host:$port").buildUpon()
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle("Audio Share")
+                            .setArtist("$host:$port")
+                            .setArtworkUri(context.getResourceUri(R.drawable.artwork))
+                            .build()
+                    )
                     .build()
-            ))
-            .setCurrentMediaItemIndex(0)
-            .build()
-        invalidateState()   // update currentMediaItem
-        currentMediaItem?.localConfiguration?.uri?.let {
-            _netClient = NetClient().apply {
-                configure(it.host!!, it.port, NetClientCallBack())
+
+                _state = state.buildUpon()
+                    .setPlaylist(
+                        listOf(
+                            MediaItemData.Builder("media-1")
+                                .setMediaItem(mediaItem)
+                                .build()
+                        )
+                    )
+                    .setCurrentMediaItemIndex(0)
+                    .setPlaybackState(Player.STATE_BUFFERING)
+                    .setPlayWhenReady(true, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
+                    .build()
+
+                netClient.start(
+                    host = host,
+                    port = port,
+                    callback = NetClientCallBack()
+                )
+            } else {
+                _state = state.buildUpon()
+                    .setPlayWhenReady(false, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
+                    .build()
+                netClient.stop()
+                retryScope.coroutineContext.cancelChildren()
+                message = "stopped"
             }
         }
-        return immediateVoidFuture()
     }
 
-    override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
-        _state = state.buildUpon().setPlayerError(null).build()
-        Log.d(tag, "handleSetPlayWhenReady playWhenReady=$playWhenReady")
-        if (playWhenReady) {
-            _state = state.buildUpon()
-                .setPlaybackState(Player.STATE_BUFFERING)
-                .setPlayWhenReady(true, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
-                .build()
-            netClient.start()
-        } else {
-            _state = state.buildUpon()
-                .setPlaybackState(STATE_ENDED)
-                .setPlayWhenReady(false, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
-                .build()
-            netClient.stop()
-            audioPlayerScope.coroutineContext.cancelChildren()
-            message = "stopped"
-        }
+    override fun handleStop(): ListenableFuture<*> {
+        Log.d(tag, "handleStop")
+        _state = state.buildUpon()
+            .setPlaybackState(STATE_IDLE)
+            .setPlayWhenReady(false, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
+            .build()
+        netClient.stop()
+        retryScope.coroutineContext.cancelChildren()
+        message = "stopped"
         return immediateVoidFuture()
     }
 
     override fun handleRelease(): ListenableFuture<*> {
-        _netClient?.stop()
-        _netClient = null
+        Log.d(tag, "handleRelease")
+        scope.cancel()
+        netClient.stop()
+        retryScope.cancel()
         _loudnessEnhancer?.run {
             release()
         }
@@ -155,13 +180,14 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
             release()
         }
         _audioTrack = null
+        _state = State.Builder().build()
         return immediateVoidFuture()
     }
 
     inner class NetClientCallBack : NetClient.Callback {
         private val tag = NetClientCallBack::class.simpleName
 
-        override val scope: CoroutineScope = audioPlayerScope
+        override val scope: CoroutineScope = MainScope() + CoroutineName("NetClientCallbackScope")
 
         override suspend fun log(message: String) {
 //            Log.d(tag, "logMessage: $message")
@@ -202,15 +228,22 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                 else -> AudioFormat.CHANNEL_INVALID
             }
 
-            Log.i(tag, "encoding: $encoding, channelMask: $channelMask, sampleRate: ${format.sampleRate}")
+            Log.i(
+                tag,
+                "encoding: $encoding, channelMask: $channelMask, sampleRate: ${format.sampleRate}"
+            )
 
-            val minBufferSize = AudioTrack.getMinBufferSize(format.sampleRate, channelMask, encoding)
+            val minBufferSize =
+                AudioTrack.getMinBufferSize(format.sampleRate, channelMask, encoding)
 
             Log.i(tag, "min buffer size: $minBufferSize bytes")
 
             val audioConfig = context.audioConfigDataStore.data.first()
 
-            val bufferScale = (audioConfig[floatPreferencesKey(AudioConfigKeys.BUFFER_SCALE)] ?: context.getFloat(R.string.default_buffer_scale)).toInt()
+            val bufferScale =
+                (audioConfig[floatPreferencesKey(AudioConfigKeys.BUFFER_SCALE)] ?: context.getFloat(
+                    R.string.default_buffer_scale
+                )).toInt()
             Log.i(tag, "buffer scale: $bufferScale")
 
             _audioTrack = AudioTrack.Builder()
@@ -231,11 +264,14 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                 .setTransferMode(AudioTrack.MODE_STREAM)
                 .build()
 
-            val volume = audioConfig[floatPreferencesKey(AudioConfigKeys.VOLUME)] ?: context.getFloat(R.string.default_volume)
+            val volume = audioConfig[floatPreferencesKey(AudioConfigKeys.VOLUME)]
+                ?: context.getFloat(R.string.default_volume)
             Log.i(tag, "volume: $volume")
             audioTrack.setVolume(volume)
 
-            val loudnessEnhancerGain = (audioConfig[floatPreferencesKey(AudioConfigKeys.LOUDNESS_ENHANCER)] ?: context.getFloat(R.string.default_loudness_enhancer)).toInt()
+            val loudnessEnhancerGain =
+                (audioConfig[floatPreferencesKey(AudioConfigKeys.LOUDNESS_ENHANCER)]
+                    ?: context.getFloat(R.string.default_loudness_enhancer)).toInt()
             Log.i(tag, "loudness enhancer: ${loudnessEnhancerGain}mB")
             if (loudnessEnhancerGain > 0) {
                 _loudnessEnhancer = LoudnessEnhancer(audioTrack.audioSessionId)
@@ -260,18 +296,43 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
         }
 
         override suspend fun onError(message: String?, cause: Throwable?) {
+            // switch to retryScope to prevent NetClient cancel callback scope
+            retryScope.launch {
+                netClient.stop()
 
-            netClient.stop()
+                // retry
+                delay(3.seconds)
 
-            // retry
-            delay(3.seconds)
-            _state = state.buildUpon()
-                .setPlayerError(null)
-                .setPlaybackState(Player.STATE_BUFFERING)
-                .build()
-            invalidateState()
-            netClient.start()
+                _state = state.buildUpon()
+                    .setPlayerError(null)
+                    .setPlaybackState(Player.STATE_BUFFERING)
+                    .build()
+                invalidateState()
+
+                val networkConfig = context.networkConfigDataStore.data.first()
+                val host = networkConfig[stringPreferencesKey(NetworkConfigKeys.HOST)]
+                    ?: context.getString(R.string.default_host)
+                val port = networkConfig[intPreferencesKey(NetworkConfigKeys.PORT)]
+                    ?: context.getInteger(R.integer.default_port)
+                netClient.start(
+                    host = host,
+                    port = port,
+                    callback = NetClientCallBack()
+                )
+            }
         }
     }
 
+    /**
+     * All exceptions in ListenableFuture will be suppressed, need log it
+     */
+    private fun future(block: suspend CoroutineScope.() -> Unit): ListenableFuture<*> {
+        return scope.future {
+            try {
+                block()
+            } catch (e: Exception) {
+                Log.e(tag, e.stackTraceToString())
+            }
+        }
+    }
 }

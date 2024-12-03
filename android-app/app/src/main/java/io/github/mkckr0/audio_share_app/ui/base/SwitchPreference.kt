@@ -88,8 +88,8 @@ fun SwitchPreference(
     key: String,
     title: String,
     defaultValue: Boolean = false,
-    summaryOn: String = "",
-    summaryOff: String = "",
+    summaryOn: String = "On",
+    summaryOff: String = "Off",
     onChange: ((checked: Boolean) -> Unit)? = null,
 ) {
     BaseSwitchPreference(icon, key, title, defaultValue, summaryOn, summaryOff, onChange)
@@ -101,8 +101,8 @@ fun SwitchPreference(
     key: String,
     title: String,
     defaultValue: Boolean = false,
-    summaryOn: String = "",
-    summaryOff: String = "",
+    summaryOn: String = "On",
+    summaryOff: String = "Off",
     onChange: ((checked: Boolean) -> Unit)? = null,
 ) {
     BaseSwitchPreference(icon, key, title, defaultValue, summaryOn, summaryOff, onChange)

@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package io.github.mkckr0.audio_share_app
+package io.github.mkckr0.audio_share_app.model
 
 import android.annotation.SuppressLint
 import android.app.NotificationManager

@@ -22,9 +22,9 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.mkckr0.audio_share_app.R
-import io.github.mkckr0.audio_share_app.getBoolean
 import io.github.mkckr0.audio_share_app.model.AppSettingsKeys
 import io.github.mkckr0.audio_share_app.model.appSettingsDataStore
+import io.github.mkckr0.audio_share_app.model.getBoolean
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map

@@ -16,27 +16,38 @@
 
 package io.github.mkckr0.audio_share_app.ui.screen
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Autorenew
+import androidx.compose.material.icons.filled.BatterySaver
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Power
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.filled.Wallpaper
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
@@ -44,9 +55,9 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import io.github.mkckr0.audio_share_app.BuildConfig
 import io.github.mkckr0.audio_share_app.R
-import io.github.mkckr0.audio_share_app.WorkName
-import io.github.mkckr0.audio_share_app.getBoolean
 import io.github.mkckr0.audio_share_app.model.AppSettingsKeys
+import io.github.mkckr0.audio_share_app.model.WorkName
+import io.github.mkckr0.audio_share_app.model.getBoolean
 import io.github.mkckr0.audio_share_app.ui.base.EditTextPreference
 import io.github.mkckr0.audio_share_app.ui.base.Preference
 import io.github.mkckr0.audio_share_app.ui.base.PreferenceCategory
@@ -59,6 +70,7 @@ import io.github.mkckr0.audio_share_app.ui.theme.parseColor
 import io.github.mkckr0.audio_share_app.worker.UpdateWorker
 import java.util.concurrent.TimeUnit
 
+@SuppressLint("BatteryLife")
 @Composable
 fun SettingsScreen() {
 
@@ -67,6 +79,55 @@ fun SettingsScreen() {
     val context = LocalContext.current
 
     PreferenceScreen {
+
+        PreferenceCategory("Auto Start") {
+            SwitchPreference(
+                icon = Icons.Default.Power,
+                key = "",
+                title = "Auto start playback when system booted",
+            )
+            SwitchPreference(
+                icon = Icons.Default.Power,
+                key = "",
+                title = "Auto start playback when app started",
+            )
+        }
+
+        val getBatteryOptimizationState = {
+            val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (powerManager.isIgnoringBatteryOptimizations(BuildConfig.APPLICATION_ID)) {
+                "Ignored"
+            } else {
+                "Not ignored"
+            }
+        }
+        var batteryOptimizationState by remember {
+            mutableStateOf(getBatteryOptimizationState())
+        }
+        LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+            batteryOptimizationState = getBatteryOptimizationState()
+        }
+
+        PreferenceCategory("Battery optimization") {
+            Preference(
+                icon = Icons.Default.BatterySaver,
+                title = "Request ignore battery optimization",
+                summary = batteryOptimizationState,
+                intent = rememberIntent(
+                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    "package:${BuildConfig.APPLICATION_ID}"
+                )
+            )
+            Preference(
+                icon = Icons.Default.Settings,
+                title = "Battery optimization settings",
+                summary = "Change battery optimization settings",
+                intent = rememberIntent(
+                    Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
+                )
+            )
+        }
+
         PreferenceCategory("Theme") {
             if (isDynamicColorFromWallpaperAvailable()) {
                 SwitchPreference(
@@ -74,8 +135,6 @@ fun SettingsScreen() {
                     key = AppSettingsKeys.DYNAMIC_COLOR_FROM_WALLPAPER,
                     title = "Dynamic color from wallpaper",
                     defaultValue = context.getBoolean(R.bool.default_dynamic_color_from_wallpaper),
-                    summaryOn = "On",
-                    summaryOff = "Off",
                 )
             }
             EditTextPreference(
@@ -108,7 +167,8 @@ fun SettingsScreen() {
                         Settings.ACTION_APP_NOTIFICATION_SETTINGS,
                         extras = Bundle().apply {
                             putString(Settings.EXTRA_APP_PACKAGE, BuildConfig.APPLICATION_ID)
-                        })
+                        }
+                    )
                 )
             }
         }
@@ -120,8 +180,6 @@ fun SettingsScreen() {
                 key = "auto_check_for_update",
                 title = "Auto check for update",
                 defaultValue = context.getBoolean(R.bool.default_auto_check_for_update),
-                summaryOn = "On",
-                summaryOff = "Off",
             ) { checked ->
                 if (checked) {
                     Log.d(tag, "UpdateWorker beginAutoUpdate")

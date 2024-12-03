@@ -26,8 +26,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.mkckr0.audio_share_app.R
-import io.github.mkckr0.audio_share_app.getFloat
 import io.github.mkckr0.audio_share_app.model.AudioConfigKeys
+import io.github.mkckr0.audio_share_app.model.getFloat
 import io.github.mkckr0.audio_share_app.ui.base.ConfigGroup
 import io.github.mkckr0.audio_share_app.ui.base.SliderConfig
 import io.github.mkckr0.audio_share_app.ui.theme.AppTheme

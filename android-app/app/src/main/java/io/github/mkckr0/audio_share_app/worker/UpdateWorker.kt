@@ -29,12 +29,12 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import io.github.mkckr0.audio_share_app.BuildConfig
-import io.github.mkckr0.audio_share_app.Channel
-import io.github.mkckr0.audio_share_app.MainActivity
-import io.github.mkckr0.audio_share_app.Notification
+import io.github.mkckr0.audio_share_app.ui.MainActivity
 import io.github.mkckr0.audio_share_app.R
-import io.github.mkckr0.audio_share_app.Util
+import io.github.mkckr0.audio_share_app.model.Channel
 import io.github.mkckr0.audio_share_app.model.LatestRelease
+import io.github.mkckr0.audio_share_app.model.Notification
+import io.github.mkckr0.audio_share_app.model.Util
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
