@@ -33,7 +33,10 @@ import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Power
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.filled.Wallpaper
@@ -82,14 +85,16 @@ fun SettingsScreen() {
 
         PreferenceCategory("Auto Start") {
             SwitchPreference(
-                icon = Icons.Default.Power,
-                key = "",
+                icon = Icons.Default.PowerSettingsNew,
+                key = AppSettingsKeys.START_PLAYBACK_WHEN_SYSTEM_BOOTED,
                 title = "Auto start playback when system booted",
+                defaultValue = context.getBoolean(R.bool.default_start_playback_when_system_booted)
             )
             SwitchPreference(
-                icon = Icons.Default.Power,
-                key = "",
+                icon = Icons.Default.PlayCircle,
+                key = AppSettingsKeys.START_PLAYBACK_WHEN_APP_STARTED,
                 title = "Auto start playback when app started",
+                defaultValue = context.getBoolean(R.bool.default_start_playback_when_app_started)
             )
         }
 
@@ -177,7 +182,7 @@ fun SettingsScreen() {
             val workManager = remember { WorkManager.getInstance(context.applicationContext) }
             SwitchPreference(
                 icon = Icons.Default.Autorenew,
-                key = "auto_check_for_update",
+                key = AppSettingsKeys.AUTO_CHECK_FOR_UPDATE,
                 title = "Auto check for update",
                 defaultValue = context.getBoolean(R.bool.default_auto_check_for_update),
             ) { checked ->

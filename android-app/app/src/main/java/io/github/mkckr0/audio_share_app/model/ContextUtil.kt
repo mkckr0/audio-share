@@ -17,7 +17,6 @@
 package io.github.mkckr0.audio_share_app.model
 
 import android.app.ActivityManager
-import android.content.ComponentName
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
@@ -28,7 +27,6 @@ import androidx.annotation.BoolRes
 import androidx.annotation.IntegerRes
 import androidx.annotation.StringRes
 import io.github.mkckr0.audio_share_app.BuildConfig
-import io.github.mkckr0.audio_share_app.ui.MainActivity
 
 fun Context.getResourceUri(@AnyRes resId: Int): Uri {
     return Uri.Builder()

@@ -48,11 +48,8 @@ import io.github.mkckr0.audio_share_app.model.getInteger
 import io.github.mkckr0.audio_share_app.model.getResourceUri
 import io.github.mkckr0.audio_share_app.model.networkConfigDataStore
 import io.github.mkckr0.audio_share_app.pb.Client
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren

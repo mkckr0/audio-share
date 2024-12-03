@@ -21,10 +21,16 @@ import android.content.ComponentName
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import io.github.mkckr0.audio_share_app.R
+import io.github.mkckr0.audio_share_app.model.AppSettingsKeys
+import io.github.mkckr0.audio_share_app.model.appSettingsDataStore
+import io.github.mkckr0.audio_share_app.model.getBoolean
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -46,12 +52,18 @@ class BootService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(tag, "onStartCommand")
         MainScope().launch {
-            val sessionToken =
-                SessionToken(this@BootService, ComponentName(this@BootService, PlaybackService::class.java))
-            val mediaController = MediaController.Builder(this@BootService, sessionToken).buildAsync().await()
-            mediaController.play()
-            delay(3.seconds)
-            mediaController.release()
+            val appSettings = appSettingsDataStore.data.first()
+            val autoStart = appSettings[booleanPreferencesKey(AppSettingsKeys.START_PLAYBACK_WHEN_SYSTEM_BOOTED)] ?: getBoolean(R.bool.default_start_playback_when_system_booted)
+
+            if (autoStart) {
+                val sessionToken =
+                    SessionToken(this@BootService, ComponentName(this@BootService, PlaybackService::class.java))
+                val mediaController = MediaController.Builder(this@BootService, sessionToken).buildAsync().await()
+                mediaController.play()
+                delay(3.seconds)
+                mediaController.release()
+            }
+
             stopSelf()
         }
         return START_NOT_STICKY

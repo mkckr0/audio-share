@@ -16,13 +16,9 @@
 
 package io.github.mkckr0.audio_share_app.service
 
-import android.content.ComponentName
 import android.content.Intent
-import android.os.Build
-import android.service.quicksettings.TileService
 import android.util.Log
 import androidx.annotation.OptIn
-import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
