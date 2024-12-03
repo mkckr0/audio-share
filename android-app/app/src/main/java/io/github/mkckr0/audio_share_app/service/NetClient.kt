@@ -40,6 +40,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.channels.UnresolvedAddressException
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
@@ -51,7 +52,6 @@ class NetClient {
         SupervisorJob() + Dispatchers.IO + CoroutineName("NetClientCoroutine") + CoroutineExceptionHandler { _, cause ->
             Log.d(tag, cause.stackTraceToString())
             _callback?.launch {
-                log(cause.message ?: cause.stackTraceToString())
                 onError(cause.message, cause)
             }
         }
@@ -99,7 +99,7 @@ class NetClient {
             _callback = callback
 
             if (_selectorManager != null) {
-                throw Exception("repeat start")
+                throw Exception("Repeat start")
             }
 
             _callback?.launch {
@@ -112,7 +112,9 @@ class NetClient {
                     aSocket(selectorManager).tcp().connect(host, port)
                 }
             } catch (e: TimeoutCancellationException) {
-                throw Exception("connect timeout")
+                throw Exception("Connect timeout")
+            } catch (e: UnresolvedAddressException) {
+                throw Exception("Unresolved address")
             }
 
             _callback?.launch {

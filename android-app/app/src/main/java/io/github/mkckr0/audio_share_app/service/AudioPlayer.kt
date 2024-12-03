@@ -145,7 +145,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                     .build()
                 netClient.stop()
                 retryScope.coroutineContext.cancelChildren()
-                message = "stopped"
+                message = "Stopped"
             }
         }
     }
@@ -158,7 +158,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
             .build()
         netClient.stop()
         retryScope.coroutineContext.cancelChildren()
-        message = "stopped"
+        message = "Stopped"
         return immediateVoidFuture()
     }
 
@@ -285,7 +285,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                 .build()
             invalidateState()
             Log.d(tag, "onPlaybackStarted")
-            message = "started"
+            message = "Started"
         }
 
         override suspend fun onReceiveAudioData(audioData: ByteBuffer) {
@@ -295,6 +295,9 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
         override suspend fun onError(message: String?, cause: Throwable?) {
             // switch to retryScope to prevent NetClient cancel callback scope
             retryScope.launch {
+
+                log("${message ?: cause?.stackTraceToString()} (will retry in 3 seconds)")
+
                 netClient.stop()
 
                 // retry

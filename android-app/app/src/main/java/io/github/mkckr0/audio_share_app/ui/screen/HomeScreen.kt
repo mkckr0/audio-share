@@ -16,6 +16,7 @@
 
 package io.github.mkckr0.audio_share_app.ui.screen
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +37,7 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,6 +70,13 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
             var host by remember(uiState.host) { mutableStateOf(uiState.host) }
             var port by remember(uiState.port) { mutableStateOf(uiState.port.toString()) }
             var started by remember { mutableStateOf(false) }
+            val isHostError by remember { derivedStateOf {
+                host.isEmpty()
+            } }
+            val isPortError by remember { derivedStateOf {
+                port.isEmpty()
+            } }
+
             Column(
                 modifier = Modifier
                     .padding(16.dp)
@@ -85,8 +94,13 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
                 ) {
                     OutlinedTextField(
                         value = host,
-                        onValueChange = { host = it },
+                        onValueChange = {
+                            if (it.isEmpty() || !it.contains(Regex("\\s"))) {
+                                host = it
+                            }
+                        },
                         enabled = !started,
+                        isError = isHostError,
                         label = { Text("Host") },
                         modifier = Modifier.weight(0.7f),
                     )
@@ -98,6 +112,7 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
                             }
                         },
                         enabled = !started,
+                        isError = isPortError,
                         label = { Text("Port") },
                         modifier = Modifier.weight(0.3f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -106,12 +121,19 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
 
                 IconButton(
                     onClick = {
+                        if (isHostError || isPortError) {
+                            return@IconButton
+                        }
                         scope.launch {
                             if (started) {
                                 activity.awaitMediaController().stop()
                             } else {
-                                viewModel.saveNetWorkSettings(host, port.toInt()).join()
-                                activity.awaitMediaController().play()
+                                try {
+                                    viewModel.saveNetWorkSettings(host, port.toInt()).join()
+                                    activity.awaitMediaController().play()
+                                } catch (_: NumberFormatException) {
+                                    return@launch
+                                }
                             }
                         }
                     },
