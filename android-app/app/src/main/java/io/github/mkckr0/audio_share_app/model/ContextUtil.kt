@@ -16,15 +16,21 @@
 
 package io.github.mkckr0.audio_share_app.model
 
+import android.app.ActivityManager
+import android.content.ComponentName
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
+import android.os.Build
+import android.os.PowerManager
 import androidx.annotation.AnyRes
 import androidx.annotation.BoolRes
 import androidx.annotation.IntegerRes
 import androidx.annotation.StringRes
+import io.github.mkckr0.audio_share_app.BuildConfig
+import io.github.mkckr0.audio_share_app.ui.MainActivity
 
-fun Context.getResourceUri(@AnyRes resId: Int) : Uri {
+fun Context.getResourceUri(@AnyRes resId: Int): Uri {
     return Uri.Builder()
         .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
         .authority(resources.getResourcePackageName(resId))
@@ -42,4 +48,25 @@ fun Context.getInteger(@IntegerRes resId: Int): Int {
 
 fun Context.getFloat(@StringRes resId: Int): Float {
     return resources.getString(resId).toFloat()
+}
+
+fun Context.canStartForegroundService(): Boolean {
+
+    val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+    if (powerManager.isIgnoringBatteryOptimizations(BuildConfig.APPLICATION_ID)) {
+        return true
+    }
+
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+        return true
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S_V2) {
+        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        if (activityManager.appTasks.find { it.taskInfo.isVisible } != null) {
+            return true
+        }
+    }
+
+    return false
 }

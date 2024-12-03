@@ -17,33 +17,20 @@
 package io.github.mkckr0.audio_share_app.service
 
 import android.content.BroadcastReceiver
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import androidx.media3.session.MediaController
-import androidx.media3.session.SessionToken
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.guava.await
-import kotlinx.coroutines.runBlocking
-import kotlin.time.Duration.Companion.seconds
 
 class BootReceiver : BroadcastReceiver() {
 
     private val tag = BootReceiver::class.simpleName
 
     override fun onReceive(context: Context, intent: Intent) {
+        Log.d(tag, "onReceive $intent")
         when(intent.action) {
             Intent.ACTION_BOOT_COMPLETED -> {
-                Log.d(tag, "onReceive $intent")
-                runBlocking {
-                    val sessionToken =
-                        SessionToken(context.applicationContext, ComponentName(context.applicationContext, PlaybackService::class.java))
-                    val mediaController = MediaController.Builder(context.applicationContext, sessionToken).buildAsync().await()
-                    mediaController.play()
-                    delay(1.seconds)
-                    mediaController.release()
-                }
+                // https://developer.android.com/about/versions/15/behavior-changes-15#fgs-boot-completed
+                context.startService(Intent(context, BootService::class.java))
             }
         }
     }

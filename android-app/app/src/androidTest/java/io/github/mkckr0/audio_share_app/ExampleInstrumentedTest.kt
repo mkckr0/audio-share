@@ -1,7 +1,9 @@
 package io.github.mkckr0.audio_share_app
 
+import android.content.Intent
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.mkckr0.audio_share_app.service.BootService
 
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -20,5 +22,11 @@ class ExampleInstrumentedTest {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
         assertEquals("io.github.mkckr0.audio_share_app", appContext.packageName)
+    }
+
+    @Test
+    fun testBootService() {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        appContext.startService(Intent(appContext, BootService::class.java))
     }
 }

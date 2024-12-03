@@ -16,6 +16,8 @@
 
 package io.github.mkckr0.audio_share_app.service
 
+import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
@@ -29,6 +31,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionError
 import androidx.media3.session.SessionToken
+import io.github.mkckr0.audio_share_app.model.canStartForegroundService
+import io.github.mkckr0.audio_share_app.ui.MainActivity
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
@@ -70,14 +74,32 @@ class QSTileService : TileService() {
     override fun onClick() {
         Log.d(tag, "onClick")
         super.onClick()
+        // https://developer.android.com/develop/background-work/services/foreground-services#background-start-restriction-exemptions
         scope.launch {
-            getMediaController().run {
-                if (qsTile.state == Tile.STATE_ACTIVE) {
-                    stop()
-                    toggleState(false)
-                } else {
-                    play()
+            if (qsTile.state == Tile.STATE_ACTIVE) {
+                getMediaController().stop()
+                toggleState(false)
+            } else {
+                if (applicationContext.canStartForegroundService()) {
+                    getMediaController().play()
                     toggleState(true)
+                } else {
+                    Log.d(tag, "can't start foreground service")
+                    val intent = Intent(
+                        applicationContext,
+                        MainActivity::class.java
+                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        val pendingIntent = PendingIntent.getActivity(
+                            applicationContext,
+                            0,
+                            intent,
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        )
+                        startActivityAndCollapse(pendingIntent)
+                    } else {
+                        startActivityAndCollapse(intent)
+                    }
                 }
             }
         }
