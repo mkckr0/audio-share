@@ -41,7 +41,10 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 <img src="docs/img/win_02.png" width="45%" alt="docs/img/win_02.png">
 
 <img src="metadata/en-US/images/phoneScreenshots/1.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/1.png">&nbsp;
-<img src="metadata/en-US/images/phoneScreenshots/2.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/2.png">
+<img src="metadata/en-US/images/phoneScreenshots/2.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/2.png">&nbsp;
+<img src="metadata/en-US/images/phoneScreenshots/3.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/3.png"><br/>
+<img src="metadata/en-US/images/phoneScreenshots/4.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/4.png">&nbsp;
+<img src="metadata/en-US/images/phoneScreenshots/5.png" width="30%" alt="metadata/en-US/images/phoneScreenshots/5.png">
 
 
 ## Requirements
@@ -56,9 +59,6 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
 - Download APK file and AudioShareServer.exe from [latest release](https://github.com/mkckr0/audio-share/releases/latest).
 - Open the AudioShareServer.exe on your computer. The default arguments may work well. But you may still have to check the "Host" part. It's normally the LAN address, such as `192.168.xxx.xxx`. Make sure your phone can connect your computer over this IP address. Then Click "Start Server" button.
 - Install APK to your phone and open it. Modify the "Host" part to make sure it's same as the value of previous step, such as `192.168.xxx.xxx`. Click "▶" button and enjoy the audio🎶.
-
-> [!CAUTION]
-> This app doesn't support auto reconnecting feature at present. Once the app is killed  or disconnected by Android power saver, the audio playing will be stop. Adding app to the whitelist of power saver is recommended. To do this, you can press "Request Ignore Battery Optimizations" on app's Settings.
 
 
 ## Usage for Windows/Linux CMD
@@ -187,6 +187,14 @@ total: 1
 ```
 
 
+## Known Issues
+
+### The quick settings tile can't start playback directly
+
+[Restrictions on starting a foreground service from the background](https://developer.android.com/develop/background-work/services/foreground-services#bg-access-restrictions)  
+Turns off or ignore battery optimizations can let it work.
+
+
 ## Compile from source
 
 - Android App
@@ -229,19 +237,20 @@ This project is licensed under the [Apache-2.0 license](https://opensource.org/l
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmkckr0%2Faudio-share.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmkckr0%2Faudio-share?ref=badge_large)
 
+
 ## Used Third-party Libraries
 
+- [Asio](https://github.com/chriskohlhoff/asio) licensed under the [BSL-1.0 license](http://www.boost.org/LICENSE_1_0.txt)
 - [nlohmann/json](https://github.com/nlohmann/json) licensed under the [MIT license](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT)
 - [WIL](https://github.com/microsoft/wil) licensed under the [MIT license](https://github.com/microsoft/wil/blob/master/LICENSE)
-- [Asio](https://github.com/chriskohlhoff/asio) licensed under the [BSL-1.0 license](http://www.boost.org/LICENSE_1_0.txt).
-- [Protocol Buffers](https://github.com/protocolbuffers/protobuf) licensed under the [LICENSE](https://github.com/protocolbuffers/protobuf/blob/main/LICENSE).
-- [spdlog](https://github.com/gabime/spdlog) licensed under the [MIT license](https://github.com/gabime/spdlog/blob/v1.x/LICENSE).
-- [{fmt}](https://github.com/fmtlib/fmt) licensed under the [LICENSE](https://github.com/fmtlib/fmt/blob/master/LICENSE).
+- [Protocol Buffers](https://github.com/protocolbuffers/protobuf) licensed under the [LICENSE](https://github.com/protocolbuffers/protobuf/blob/main/LICENSE)
+- [spdlog](https://github.com/gabime/spdlog) licensed under the [MIT license](https://github.com/gabime/spdlog/blob/v1.x/LICENSE)
+- [{fmt}](https://github.com/fmtlib/fmt) licensed under the [LICENSE](https://github.com/fmtlib/fmt/blob/master/LICENSE)
 - [cxxopts](https://github.com/jarro2783/cxxopts) licensed under the [MIT license](https://github.com/jarro2783/cxxopts/blob/master/LICENSE)
-- [Netty](https://github.com/netty/netty) licensed under the [Apache-2.0 license](http://www.apache.org/licenses/LICENSE-2.0).
-- [Material Components for Android](https://github.com/material-components/material-components-android) licensed under the [Apache-2.0 license](http://www.apache.org/licenses/LICENSE-2.0).
-- [Protobuf Plugin for Gradle](https://github.com/google/protobuf-gradle-plugin) licensed under the [LICENSE](https://github.com/google/protobuf-gradle-plugin/blob/master/LICENSE).
-- [PipeWire](https://gitlab.freedesktop.org/pipewire/pipewire) licensed under the [LICENSE](https://gitlab.freedesktop.org/pipewire/pipewire/-/blob/master/LICENSE).
+- [PipeWire](https://gitlab.freedesktop.org/pipewire/pipewire) licensed under the [LICENSE](https://gitlab.freedesktop.org/pipewire/pipewire/-/blob/master/LICENSE)
+- [Ktor](https://github.com/ktorio/ktor) licensed under the [Apache-2.0 license](http://www.apache.org/licenses/LICENSE-2.0)
+- [MaterialKolor](https://github.com/jordond/MaterialKolor) licensed under the [MIT license](https://github.com/jordond/MaterialKolor/blob/main/LICENSE)
+
 
 ## Sponsors
 

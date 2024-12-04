@@ -1,0 +1,14 @@
+Android App
+
+- Fix crash when "Dynamic Color from Color" is empty #107
+- Migrate legacy Android layout UI to Android Compose #89
+- The app theme can be applied immediately that needn't restart
+- Replace Netty with Ktor to provide more clear code
+- Implement Media Session to let it behave like other normal music player #108
+- Add auto reconnecting when error happens #69
+- Add quick settings tile to control the playback #50
+- Add auto start playback when system boot #7
+
+Server MFC
+
+- Add single instance check for server MFC #85
