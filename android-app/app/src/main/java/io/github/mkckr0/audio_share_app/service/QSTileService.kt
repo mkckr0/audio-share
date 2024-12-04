@@ -16,6 +16,7 @@
 
 package io.github.mkckr0.audio_share_app.service
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Intent
@@ -97,6 +98,7 @@ class QSTileService : TileService() {
                         )
                         startActivityAndCollapse(pendingIntent)
                     } else {
+                        @Suppress("DEPRECATION", "StartActivityAndCollapseDeprecated")
                         startActivityAndCollapse(intent)
                     }
                 }
