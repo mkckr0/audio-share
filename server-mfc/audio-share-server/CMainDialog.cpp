@@ -252,7 +252,7 @@ LRESULT CMainDialog::OnNotifyIcon(WPARAM wParam, LPARAM lParam)
     auto pos_y = GET_Y_LPARAM(wParam);
 
     if (event == WM_LBUTTONDOWN) {
-        this->OnAppShow();
+        this->SendMessageW(WM_COMMAND, ID_APP_SHOW);
     }
     else if (event == WM_RBUTTONDOWN) {
         // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-trackpopupmenu#remarks

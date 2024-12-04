@@ -38,6 +38,7 @@ class CAudioShareServerApp : public CWinAppEx
 {
 public:
 	CAudioShareServerApp();
+	~CAudioShareServerApp();
 
 // Overrides
 public:
@@ -45,6 +46,10 @@ public:
 	CMainDialog* GetMainDialog();
 
 // Implementation
+private:
+	void EnsureSingleton();
+
+public:
 	bool m_bHide;
 	std::wstring m_exePath;
 

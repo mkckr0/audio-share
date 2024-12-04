@@ -40,7 +40,6 @@ public:
 
 private:
 	COLORREF GetBrushColor(HBRUSH brush);
-	void SetAutoRun(bool bEnable);
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME
