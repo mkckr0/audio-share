@@ -33,9 +33,7 @@ import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlayCircle
-import androidx.compose.material.icons.filled.Power
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Update
@@ -86,15 +84,15 @@ fun SettingsScreen() {
         PreferenceCategory("Auto Start") {
             SwitchPreference(
                 icon = Icons.Default.PowerSettingsNew,
-                key = AppSettingsKeys.START_PLAYBACK_WHEN_SYSTEM_BOOTED,
-                title = "Auto start playback when system booted",
-                defaultValue = context.getBoolean(R.bool.default_start_playback_when_system_booted)
+                key = AppSettingsKeys.START_PLAYBACK_WHEN_SYSTEM_BOOT,
+                title = "Auto start playback when system boots",
+                defaultValue = context.getBoolean(R.bool.default_start_playback_when_system_boot)
             )
             SwitchPreference(
                 icon = Icons.Default.PlayCircle,
-                key = AppSettingsKeys.START_PLAYBACK_WHEN_APP_STARTED,
-                title = "Auto start playback when app started",
-                defaultValue = context.getBoolean(R.bool.default_start_playback_when_app_started)
+                key = AppSettingsKeys.START_PLAYBACK_WHEN_APP_START,
+                title = "Auto start playback when app starts",
+                defaultValue = context.getBoolean(R.bool.default_start_playback_when_app_start)
             )
         }
 

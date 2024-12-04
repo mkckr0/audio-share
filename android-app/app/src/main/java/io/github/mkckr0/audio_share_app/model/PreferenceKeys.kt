@@ -28,8 +28,8 @@ object AudioConfigKeys {
 }
 
 object AppSettingsKeys {
-    const val START_PLAYBACK_WHEN_SYSTEM_BOOTED = "start_playback_when_system_booted"
-    const val START_PLAYBACK_WHEN_APP_STARTED = "start_playback_when_app_started"
+    const val START_PLAYBACK_WHEN_SYSTEM_BOOT = "start_playback_when_system_boot"
+    const val START_PLAYBACK_WHEN_APP_START = "start_playback_when_app_start"
     const val DYNAMIC_COLOR_FROM_WALLPAPER = "dynamic_color_from_wallpaper"
     const val DYNAMIC_COLOR_FROM_SEED_COLOR = "dynamic_color_from_seed_color"
     const val AUTO_CHECK_FOR_UPDATE = "auto_check_for_update"

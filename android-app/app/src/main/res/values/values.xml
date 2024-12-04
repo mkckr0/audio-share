@@ -9,8 +9,8 @@
     <string name="default_loudness_enhancer" translatable="false">0</string>
 
     <!-- App Settings Defaults -->
-    <bool name="default_start_playback_when_system_booted" translatable="false">false</bool>
-    <bool name="default_start_playback_when_app_started" translatable="false">false</bool>
+    <bool name="default_start_playback_when_system_boot" translatable="false">false</bool>
+    <bool name="default_start_playback_when_app_start" translatable="false">false</bool>
     <bool name="default_dynamic_color_from_wallpaper" translatable="false">false</bool>
     <string name="default_dynamic_color_from_seed_color" translatable="false">#63A002</string>
     <bool name="default_auto_check_for_update" translatable="false">false</bool>

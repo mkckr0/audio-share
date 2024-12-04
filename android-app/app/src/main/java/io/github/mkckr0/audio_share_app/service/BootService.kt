@@ -53,7 +53,7 @@ class BootService : Service() {
         Log.d(tag, "onStartCommand")
         MainScope().launch {
             val appSettings = appSettingsDataStore.data.first()
-            val autoStart = appSettings[booleanPreferencesKey(AppSettingsKeys.START_PLAYBACK_WHEN_SYSTEM_BOOTED)] ?: getBoolean(R.bool.default_start_playback_when_system_booted)
+            val autoStart = appSettings[booleanPreferencesKey(AppSettingsKeys.START_PLAYBACK_WHEN_SYSTEM_BOOT)] ?: getBoolean(R.bool.default_start_playback_when_system_boot)
 
             if (autoStart) {
                 val sessionToken =

@@ -85,8 +85,8 @@ class MainActivity : ComponentActivity() {
         // auto start playback
         MainScope().launch {
             val appSettings = appSettingsDataStore.data.first()
-            val autoStart = appSettings[booleanPreferencesKey(AppSettingsKeys.START_PLAYBACK_WHEN_APP_STARTED)] ?: getBoolean(
-                R.bool.default_start_playback_when_app_started)
+            val autoStart = appSettings[booleanPreferencesKey(AppSettingsKeys.START_PLAYBACK_WHEN_APP_START)] ?: getBoolean(
+                R.bool.default_start_playback_when_app_start)
 
             if (autoStart) {
                 awaitMediaController().play()
