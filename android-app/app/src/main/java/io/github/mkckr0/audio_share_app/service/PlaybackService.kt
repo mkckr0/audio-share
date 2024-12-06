@@ -16,12 +16,14 @@
 
 package io.github.mkckr0.audio_share_app.service
 
+import android.app.PendingIntent
 import android.content.Intent
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import io.github.mkckr0.audio_share_app.ui.MainActivity
 
 class PlaybackService : MediaSessionService() {
 
@@ -34,6 +36,17 @@ class PlaybackService : MediaSessionService() {
         Log.d(tag, "onCreate")
         super.onCreate()
         mediaSession = MediaSession.Builder(this, AudioPlayer(this))
+            .setSessionActivity(
+                PendingIntent.getActivity(
+                    applicationContext,
+                    0,
+                    Intent(
+                        applicationContext,
+                        MainActivity::class.java
+                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            )
             .build()
     }
 
