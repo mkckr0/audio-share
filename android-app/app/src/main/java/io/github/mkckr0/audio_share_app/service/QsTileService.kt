@@ -16,7 +16,6 @@
 
 package io.github.mkckr0.audio_share_app.service
 
-import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Intent
@@ -38,9 +37,9 @@ import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.N)
-class QSTileService : TileService() {
+class QsTileService : TileService() {
 
-    private val tag = QSTileService::class.simpleName
+    private val tag = QsTileService::class.simpleName
 
     private val scope = MainScope()
     private var _mediaController: MediaController? = null
@@ -74,7 +73,6 @@ class QSTileService : TileService() {
     override fun onClick() {
         Log.d(tag, "onClick")
         super.onClick()
-        // https://developer.android.com/develop/background-work/services/foreground-services#background-start-restriction-exemptions
         scope.launch {
             if (qsTile.state == Tile.STATE_ACTIVE) {
                 getMediaController().stop()

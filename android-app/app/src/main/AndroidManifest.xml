@@ -46,7 +46,7 @@
         </service>
 
         <service
-            android:name=".service.QSTileService"
+            android:name=".service.QsTileService"
             android:exported="true"
             android:icon="@drawable/play_circle_white"
             android:label="@string/app_name"

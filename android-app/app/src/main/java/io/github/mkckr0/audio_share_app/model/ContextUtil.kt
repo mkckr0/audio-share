@@ -48,6 +48,9 @@ fun Context.getFloat(@StringRes resId: Int): Float {
     return resources.getString(resId).toFloat()
 }
 
+/**
+ * https://developer.android.com/develop/background-work/services/foreground-services#background-start-restriction-exemptions
+ */
 fun Context.canStartForegroundService(): Boolean {
 
     val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
