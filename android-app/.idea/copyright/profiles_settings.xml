@@ -1,0 +1,8 @@
+<component name="CopyrightManager">
+  <settings default="Apache License">
+    <module2copyright>
+      <element module="Source Code" copyright="Apache License" />
+    </module2copyright>
+    <LanguageOptions name="__TEMPLATE__" />
+  </settings>
+</component>
