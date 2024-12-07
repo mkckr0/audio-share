@@ -19,15 +19,12 @@ package io.github.mkckr0.audio_share_app.service
 import android.util.Log
 import io.github.mkckr0.audio_share_app.pb.Client.AudioFormat
 import io.ktor.network.selector.SelectorManager
-import io.ktor.network.sockets.BoundDatagramSocket
 import io.ktor.network.sockets.ConnectedDatagramSocket
 import io.ktor.network.sockets.InetSocketAddress
 import io.ktor.network.sockets.Socket
 import io.ktor.network.sockets.aSocket
 import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
-import io.ktor.network.sockets.toJavaAddress
-import io.ktor.util.network.address
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
