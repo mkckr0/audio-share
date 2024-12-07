@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Source Code" pattern="file[audio-share-app.app.main]:java//*" />
+</component>
