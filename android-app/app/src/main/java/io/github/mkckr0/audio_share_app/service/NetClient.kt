@@ -20,6 +20,7 @@ import android.util.Log
 import io.github.mkckr0.audio_share_app.pb.Client.AudioFormat
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.BoundDatagramSocket
+import io.ktor.network.sockets.ConnectedDatagramSocket
 import io.ktor.network.sockets.InetSocketAddress
 import io.ktor.network.sockets.Socket
 import io.ktor.network.sockets.aSocket
@@ -65,7 +66,7 @@ class NetClient {
     private val selectorManager get() = _selectorManager!!
     private var _tcpSocket: Socket? = null
     private val tcpSocket get() = _tcpSocket!!
-    private var _udpSocket: BoundDatagramSocket? = null
+    private var _udpSocket: ConnectedDatagramSocket? = null
     private val udpSocket get() = _udpSocket!!
 
     private var _heartbeatLastTick = TimeSource.Monotonic.markNow()
@@ -124,9 +125,6 @@ class NetClient {
             val tcpReadChannel = tcpSocket.openReadChannel()
             val tcpWriteChannel = tcpSocket.openWriteChannel()
 
-            _udpSocket = aSocket(selectorManager).udp()
-                .bind(InetSocketAddress(tcpSocket.localAddress.toJavaAddress().address, 0))
-
             // get format
             tcpWriteChannel.writeCMD(CMD.CMD_GET_FORMAT)
             var cmd = tcpReadChannel.readCMD()
@@ -157,6 +155,9 @@ class NetClient {
                 onPlaybackStarted()
             }
 
+            _udpSocket = aSocket(selectorManager).udp()
+                .connect(InetSocketAddress(host, port))
+
             // heartbeat loop
             scope.launch {
                 _heartbeatLastTick = TimeSource.Monotonic.markNow()
@@ -181,7 +182,7 @@ class NetClient {
 
             // audio data read loop
             scope.launch {
-                udpSocket.writeIntLE(id, InetSocketAddress(host, port))
+                udpSocket.writeIntLE(id)
                 while (true) {
                     val buf = udpSocket.readByteBuffer()
                     _callback?.launch {
