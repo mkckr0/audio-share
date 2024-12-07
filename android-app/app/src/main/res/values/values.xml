@@ -1,6 +1,6 @@
 <resources>
     <!-- Network Config Defaults -->
-    <string name="default_host" translatable="false">192.168.3.2</string>
+    <string name="default_host" translatable="false">192.168.</string>
     <integer name="default_port" translatable="false">65530</integer>
 
     <!-- Audio Config Defaults -->
