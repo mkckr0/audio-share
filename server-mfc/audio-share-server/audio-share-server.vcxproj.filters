@@ -68,14 +68,14 @@
     <ClInclude Include="AppMsg.h">
       <Filter>mfc</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>mfc</Filter>
-    </ClInclude>
     <ClInclude Include="CAboutDialog.h">
       <Filter>mfc</Filter>
     </ClInclude>
     <ClInclude Include="util.hpp">
       <Filter>mfc</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>res</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -131,7 +131,7 @@
     <Image Include="res\AudioShareServer.ico">
       <Filter>res</Filter>
     </Image>
-    <Image Include="res\refresh.png">
+    <Image Include="res\AudioShareServer.bmp">
       <Filter>res</Filter>
     </Image>
   </ItemGroup>

@@ -22,4 +22,6 @@
 
 #include "framework.h"
 
+int dpToPx(int dp);
+
 #endif //PCH_H

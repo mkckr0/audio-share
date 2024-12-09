@@ -19,3 +19,8 @@
 #include "pch.h"
 
 // 当使用预编译的头时，需要使用此源文件，编译才能成功。
+
+int dpToPx(int dp)
+{
+	return dp * GetDpiForSystem() / USER_DEFAULT_SCREEN_DPI;
+}
