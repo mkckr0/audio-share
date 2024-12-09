@@ -10,6 +10,7 @@
 #define IDD_APP_SETTINGS                104
 #define IDR_MAINFRAME                   128
 #define IDR_MENU_SYSTEM_TRAY            129
+#define IDB_BITMAP_APP                  130
 #define IDC_MFCLINK1                    1000
 #define IDC_TAB                         1001
 #define IDC_EDIT_PORT                   1100
@@ -39,7 +40,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        130
+#define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32774
 #define _APS_NEXT_CONTROL_VALUE         1216
 #define _APS_NEXT_SYMED_VALUE           107

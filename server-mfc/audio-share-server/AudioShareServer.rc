@@ -9,12 +9,12 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
+#define WINVER 0x0A00
 #ifndef APSTUDIO_INVOKED
 #include "targetver.h"
 #endif
 #include "afxres.h"
 #include "verrsrc.h"
-
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
@@ -23,6 +23,14 @@
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_BITMAP_APP          BITMAP                  "res\\AudioShareServer.bmp"
+
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -37,6 +45,7 @@ END
 
 2 TEXTINCLUDE 
 BEGIN
+    "#define WINVER 0x0A00\r\n"
     "#ifndef APSTUDIO_INVOKED\r\n"
     "#include ""targetver.h""\r\n"
     "#endif\r\n"
@@ -86,8 +95,8 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSM
 CAPTION "About Audio Share Server"
 FONT 10, "MS Shell Dlg", 400, 0, 0x0
 BEGIN
-    ICON            IDR_MAINFRAME,IDC_STATIC,7,7,12,11,SS_REALSIZEIMAGE
-    LTEXT           "Audio Share Server",IDC_STATIC_NAME,110,15,174,18,SS_NOPREFIX
+    CONTROL         IDB_BITMAP_APP,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZECONTROL,7,7,96,82
+    LTEXT           "Audio Share Server",IDC_STATIC_NAME,110,15,174,23,SS_NOPREFIX
     LTEXT           "Copyright (C) 2022-2024",IDC_STATIC_COPYRIGHT,110,60,174,8,SS_CENTERIMAGE
     DEFPUSHBUTTON   "OK",IDOK,234,98,50,14,WS_GROUP
     CONTROL         "Home Page",IDC_MFCLINK1,"MfcLink",WS_TABSTOP,36,98,35,10
