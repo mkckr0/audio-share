@@ -52,8 +52,8 @@ Audio Share can share Windows/Linux computer's audio to Android phone over netwo
     - Windows 10+ x86_64 with [Microsoft Visual C++ 2015-2022 Redistributable (x64)](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) ([vc_redist.x64.exe](https://aka.ms/vs/17/release/vc_redist.x64.exe)).
     - Linux with PipeWire.
 - The audio player on PC can work normally. That's to say that you should have a sound card and the audio endpoint is in available state. Otherwise, you need some [extra setups](#extra-setups-for-no-audio-endpoint).
-- Android 6.0(API 23)+.
-
+- The phone with Android 6.0(API 23)+.
+- The network (e.g. Wi-Fi or USB tethering) that the phone can connect with the PC.
 
 ## Usage for Windows GUI
 - Download APK file and AudioShareServer.exe from [latest release](https://github.com/mkckr0/audio-share/releases/latest).
