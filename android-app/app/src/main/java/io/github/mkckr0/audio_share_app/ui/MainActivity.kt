@@ -25,6 +25,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -48,6 +49,8 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
+    private val tag = MainActivity::class.simpleName
+
     private lateinit var _mediaControllerFuture: ListenableFuture<MediaController>
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,6 +62,8 @@ class MainActivity : ComponentActivity() {
                 MainScreen()
             }
         }
+
+        Log.d(tag, "onCreate3")
 
         // create notification channel
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
