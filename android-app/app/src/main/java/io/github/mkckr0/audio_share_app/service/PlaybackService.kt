@@ -28,6 +28,8 @@ import androidx.media3.session.CommandButton.SLOT_BACK
 import androidx.media3.session.CommandButton.SLOT_BACK_SECONDARY
 import androidx.media3.session.CommandButton.SLOT_FORWARD
 import androidx.media3.session.CommandButton.SLOT_FORWARD_SECONDARY
+import androidx.media3.session.DefaultMediaNotificationProvider
+import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.ConnectionResult.AcceptedResultBuilder
 import androidx.media3.session.MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS
@@ -120,6 +122,14 @@ class PlaybackService : MediaSessionService() {
                 ) {
                     Log.d(tag, "onDisconnected")
                     super.onDisconnected(session, controller)
+                }
+
+                override fun onPlaybackResumption(
+                    mediaSession: MediaSession,
+                    controller: MediaSession.ControllerInfo
+                ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+                    Log.d(tag, "onPlaybackResumption")
+                    return super.onPlaybackResumption(mediaSession, controller)
                 }
             })
             .build()

@@ -66,7 +66,20 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
 
     private val tag = AudioPlayer::class.simpleName
 
-    private var _state: State
+    private var _initState: State = State.Builder()
+        .setAvailableCommands(
+            Commands.Builder()
+                .addAll(
+                    COMMAND_PLAY_PAUSE,
+                    COMMAND_STOP,
+                    COMMAND_GET_CURRENT_MEDIA_ITEM,
+                    COMMAND_GET_METADATA,
+                    COMMAND_RELEASE,
+                )
+                .build()
+        )
+        .build()
+    private var _state: State = _initState
     override fun getState(): State = _state
 
     private val netClient = NetClient()
@@ -82,22 +95,6 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
 
     companion object {
         var message by mutableStateOf("")
-    }
-
-    init {
-        _state = State.Builder()
-            .setAvailableCommands(
-                Commands.Builder()
-                    .addAll(
-                        COMMAND_PLAY_PAUSE,
-                        COMMAND_STOP,
-                        COMMAND_GET_CURRENT_MEDIA_ITEM,
-                        COMMAND_GET_METADATA,
-                        COMMAND_RELEASE,
-                    )
-                    .build()
-            )
-            .build()
     }
 
     override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
@@ -145,14 +142,14 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                     .build()
                 netClient.stop()
                 retryScope.coroutineContext.cancelChildren()
-                message = "Stopped"
+                message = "Paused"
             }
         }
     }
 
     override fun handleStop(): ListenableFuture<*> {
         Log.d(tag, "handleStop")
-        _state = state.buildUpon()
+        _state = _initState.buildUpon()
             .setPlaybackState(STATE_IDLE)
             .setPlayWhenReady(false, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
             .build()
