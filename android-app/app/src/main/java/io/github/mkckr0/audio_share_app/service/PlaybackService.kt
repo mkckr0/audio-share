@@ -82,10 +82,14 @@ class PlaybackService : MediaSessionService() {
                 )
             )
             .setCallback(object : MediaSession.Callback {
+
+                private val tag = "MediaSession.Callback"
+
                 override fun onConnect(
                     session: MediaSession,
                     controller: MediaSession.ControllerInfo
                 ): MediaSession.ConnectionResult {
+                    Log.d(tag, "onConnect ${controller.packageName} ${controller.connectionHints}")
                     if (session.isMediaNotificationController(controller)) {
                         return AcceptedResultBuilder(session)
                             .setAvailableSessionCommands(
@@ -109,6 +113,14 @@ class PlaybackService : MediaSessionService() {
                     }
                     return super.onCustomCommand(session, controller, customCommand, args)
                 }
+
+                override fun onDisconnected(
+                    session: MediaSession,
+                    controller: MediaSession.ControllerInfo
+                ) {
+                    Log.d(tag, "onDisconnected")
+                    super.onDisconnected(session, controller)
+                }
             })
             .build()
     }
@@ -128,6 +140,7 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
+        Log.d(tag, "onTaskRemoved")
         super.onTaskRemoved(rootIntent)
 //        stopSelf()
     }

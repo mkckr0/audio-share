@@ -29,6 +29,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.os.bundleOf
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -63,8 +64,6 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        Log.d(tag, "onCreate3")
-
         // create notification channel
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager =
@@ -85,7 +84,9 @@ class MainActivity : ComponentActivity() {
         // create MediaController
         val sessionToken =
             SessionToken(this, ComponentName(this, PlaybackService::class.java))
-        _mediaControllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
+        _mediaControllerFuture = MediaController.Builder(this, sessionToken)
+            .setConnectionHints(bundleOf("src" to "MainActivity"))
+            .buildAsync()
 
         // auto start playback
         MainScope().launch {

@@ -21,6 +21,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
+import androidx.core.os.bundleOf
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -58,7 +59,9 @@ class BootService : Service() {
             if (autoStart) {
                 val sessionToken =
                     SessionToken(this@BootService, ComponentName(this@BootService, PlaybackService::class.java))
-                val mediaController = MediaController.Builder(this@BootService, sessionToken).buildAsync().await()
+                val mediaController = MediaController.Builder(this@BootService, sessionToken)
+                    .setConnectionHints(bundleOf("src" to "BootService"))
+                    .buildAsync().await()
                 mediaController.play()
                 delay(3.seconds)
                 mediaController.release()

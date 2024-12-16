@@ -26,6 +26,7 @@ import android.service.quicksettings.TileService
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
+import androidx.core.os.bundleOf
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionError
@@ -43,6 +44,16 @@ class QsTileService : TileService() {
 
     private val scope = MainScope()
     private var _mediaController: MediaController? = null
+
+    override fun onCreate() {
+        Log.d(tag, "onCreate")
+        super.onCreate()
+    }
+
+    override fun onDestroy() {
+        Log.d(tag, "onDestroy")
+        super.onDestroy()
+    }
 
     override fun onBind(intent: Intent?): IBinder? {
         Log.d(tag, "onBind")
@@ -120,6 +131,7 @@ class QsTileService : TileService() {
             val sessionToken =
                 SessionToken(this, ComponentName(this, PlaybackService::class.java))
             _mediaController = MediaController.Builder(this, sessionToken)
+                .setConnectionHints(bundleOf("src" to "QsTileService"))
                 .setListener(object : MediaController.Listener {
                     override fun onDisconnected(controller: MediaController) {
                         super.onDisconnected(controller)
