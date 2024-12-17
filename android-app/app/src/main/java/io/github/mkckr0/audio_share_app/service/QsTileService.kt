@@ -20,6 +20,7 @@ import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
+import android.os.Bundle
 import android.os.IBinder
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
@@ -29,13 +30,17 @@ import androidx.annotation.RequiresApi
 import androidx.core.os.bundleOf
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
+import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionError
 import androidx.media3.session.SessionToken
 import io.github.mkckr0.audio_share_app.model.canStartForegroundService
+import io.github.mkckr0.audio_share_app.service.PlaybackService.Companion.ACTION_STOP_SERVICE
 import io.github.mkckr0.audio_share_app.ui.MainActivity
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 @RequiresApi(Build.VERSION_CODES.N)
 class QsTileService : TileService() {
@@ -43,7 +48,6 @@ class QsTileService : TileService() {
     private val tag = QsTileService::class.simpleName
 
     private val scope = MainScope()
-    private var _mediaController: MediaController? = null
 
     override fun onCreate() {
         Log.d(tag, "onCreate")
@@ -68,30 +72,27 @@ class QsTileService : TileService() {
     override fun onStartListening() {
         Log.d(tag, "onStartListening")
         super.onStartListening()
-        scope.launch {
-            getMediaController().run {
-                toggleState(playWhenReady)
-            }
+        withMediaController {
+            toggleState(playWhenReady)
         }
     }
 
     override fun onStopListening() {
         Log.d(tag, "onStopListening")
         super.onStopListening()
-        _mediaController?.release()
     }
 
     override fun onClick() {
         Log.d(tag, "onClick")
         super.onClick()
-        scope.launch {
-            if (qsTile.state == Tile.STATE_ACTIVE) {
-                getMediaController().stop()
-                toggleState(false)
+        withMediaController {
+            if (playWhenReady) {
+                sendCustomCommand(SessionCommand(ACTION_STOP_SERVICE, Bundle.EMPTY), Bundle.EMPTY)
+                delay(1.seconds)
             } else {
                 if (applicationContext.canStartForegroundService()) {
-                    getMediaController().play()
-                    toggleState(true)
+                    play()
+                    delay(1.seconds)
                 } else {
                     Log.d(tag, "can't start foreground service")
                     val intent = Intent(
@@ -126,17 +127,16 @@ class QsTileService : TileService() {
     }
 
     @OptIn(UnstableApi::class)
-    private suspend fun getMediaController(): MediaController {
-        if (_mediaController == null) {
+    private fun withMediaController(block: suspend MediaController.() -> Unit) {
+        scope.launch {
             val sessionToken =
-                SessionToken(this, ComponentName(this, PlaybackService::class.java))
-            _mediaController = MediaController.Builder(this, sessionToken)
+                SessionToken(this@QsTileService, ComponentName(this@QsTileService, PlaybackService::class.java))
+            val mediaController = MediaController.Builder(this@QsTileService, sessionToken)
                 .setConnectionHints(bundleOf("src" to "QsTileService"))
                 .setListener(object : MediaController.Listener {
                     override fun onDisconnected(controller: MediaController) {
                         super.onDisconnected(controller)
                         Log.d(tag, "onDisconnected")
-                        _mediaController = null
                     }
 
                     override fun onError(controller: MediaController, sessionError: SessionError) {
@@ -145,7 +145,8 @@ class QsTileService : TileService() {
                     }
                 })
                 .buildAsync().await()
+            block.invoke(mediaController)
+            mediaController.release()
         }
-        return _mediaController!!
     }
 }

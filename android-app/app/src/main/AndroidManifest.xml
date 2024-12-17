@@ -57,7 +57,7 @@
 
             <meta-data
                 android:name="android.service.quicksettings.ACTIVE_TILE"
-                android:value="false" />
+                android:value="true" />
             <meta-data
                 android:name="android.service.quicksettings.TOGGLEABLE_TILE"
                 android:value="true" />

@@ -17,10 +17,14 @@
 package io.github.mkckr0.audio_share_app.service
 
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.service.quicksettings.TileService
 import android.util.Log
 import androidx.annotation.OptIn
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.CommandButton
 import androidx.media3.session.CommandButton.ICON_STOP
@@ -28,8 +32,6 @@ import androidx.media3.session.CommandButton.SLOT_BACK
 import androidx.media3.session.CommandButton.SLOT_BACK_SECONDARY
 import androidx.media3.session.CommandButton.SLOT_FORWARD
 import androidx.media3.session.CommandButton.SLOT_FORWARD_SECONDARY
-import androidx.media3.session.DefaultMediaNotificationProvider
-import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.ConnectionResult.AcceptedResultBuilder
 import androidx.media3.session.MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS
@@ -47,10 +49,10 @@ class PlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
 
     companion object {
-        private const val ACTION_STOP = "action_stop"
+        const val ACTION_STOP_SERVICE = "action_stop_service"
     }
 
-    private val customCommandStop = SessionCommand(ACTION_STOP, Bundle.EMPTY)
+    private val customCommandStop = SessionCommand(ACTION_STOP_SERVICE, Bundle.EMPTY)
 
     @OptIn(UnstableApi::class)
     override fun onCreate() {
@@ -92,15 +94,12 @@ class PlaybackService : MediaSessionService() {
                     controller: MediaSession.ControllerInfo
                 ): MediaSession.ConnectionResult {
                     Log.d(tag, "onConnect ${controller.packageName} ${controller.connectionHints}")
-                    if (session.isMediaNotificationController(controller)) {
-                        return AcceptedResultBuilder(session)
-                            .setAvailableSessionCommands(
-                                DEFAULT_SESSION_COMMANDS.buildUpon()
-                                    .add(customCommandStop).build()
-                            )
-                            .build()
-                    }
-                    return super.onConnect(session, controller)
+                    return AcceptedResultBuilder(session)
+                        .setAvailableSessionCommands(
+                            DEFAULT_SESSION_COMMANDS.buildUpon()
+                                .add(customCommandStop).build()
+                        )
+                        .build()
                 }
 
                 override fun onCustomCommand(
@@ -109,8 +108,10 @@ class PlaybackService : MediaSessionService() {
                     customCommand: SessionCommand,
                     args: Bundle
                 ): ListenableFuture<SessionResult> {
-                    if (customCommand.customAction == ACTION_STOP) {
+                    if (customCommand.customAction == ACTION_STOP_SERVICE) {
+                        Log.d(tag, "ACTION_STOP_SERVICE")
                         session.player.stop()
+                        stopSelf()
                         return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
                     }
                     return super.onCustomCommand(session, controller, customCommand, args)
@@ -133,6 +134,13 @@ class PlaybackService : MediaSessionService() {
                 }
             })
             .build()
+        mediaSession!!.player.addListener(object : Player.Listener {
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    TileService.requestListeningState(this@PlaybackService, ComponentName(this@PlaybackService, QsTileService::class.java))
+                }
+            }
+        })
     }
 
     override fun onDestroy() {
@@ -152,6 +160,5 @@ class PlaybackService : MediaSessionService() {
     override fun onTaskRemoved(rootIntent: Intent?) {
         Log.d(tag, "onTaskRemoved")
         super.onTaskRemoved(rootIntent)
-//        stopSelf()
     }
 }
