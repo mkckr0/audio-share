@@ -1,0 +1,9 @@
+Android App
+- Change the default host to `192.168.`
+- Add click media notification to start Activity
+- Fix the playlist exists when player stop
+- Fix the QS Tile can't stop playback service
+- Add stop button to media notification
+
+Server MFC
+- Fix DPI problem

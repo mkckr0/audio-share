@@ -34,8 +34,8 @@ android {
         applicationId = "io.github.mkckr0.audio_share_app"
         minSdk = 23
         targetSdk = 35
-        versionCode = 3000
-        versionName = "0.3.0"
+        versionCode = 3001
+        versionName = "0.3.1"
         base.archivesName = "${rootProject.name}-$versionName"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
