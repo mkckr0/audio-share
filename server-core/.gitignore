@@ -3,3 +3,5 @@
 .vscode
 out
 .idea
+.vs
+*.dmp
