@@ -19,12 +19,15 @@ package io.github.mkckr0.audio_share_app.service
 import android.util.Log
 import io.github.mkckr0.audio_share_app.pb.Client.AudioFormat
 import io.ktor.network.selector.SelectorManager
+import io.ktor.network.sockets.BoundDatagramSocket
 import io.ktor.network.sockets.ConnectedDatagramSocket
 import io.ktor.network.sockets.InetSocketAddress
 import io.ktor.network.sockets.Socket
 import io.ktor.network.sockets.aSocket
 import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
+import io.ktor.network.sockets.toJavaAddress
+import io.ktor.util.network.address
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -63,7 +66,8 @@ class NetClient {
     private val selectorManager get() = _selectorManager!!
     private var _tcpSocket: Socket? = null
     private val tcpSocket get() = _tcpSocket!!
-    private var _udpSocket: ConnectedDatagramSocket? = null
+//    private var _udpSocket: ConnectedDatagramSocket? = null
+    private var _udpSocket: BoundDatagramSocket? = null
     private val udpSocket get() = _udpSocket!!
 
     private var _heartbeatLastTick = TimeSource.Monotonic.markNow()
@@ -152,8 +156,10 @@ class NetClient {
                 onPlaybackStarted()
             }
 
+//            _udpSocket = aSocket(selectorManager).udp()
+//                .connect(InetSocketAddress(host, port))
             _udpSocket = aSocket(selectorManager).udp()
-                .connect(InetSocketAddress(host, port))
+                .bind(InetSocketAddress(tcpSocket.localAddress.toJavaAddress().address, 0))
 
             // heartbeat loop
             scope.launch {
@@ -179,7 +185,8 @@ class NetClient {
 
             // audio data read loop
             scope.launch {
-                udpSocket.writeIntLE(id)
+                udpSocket.writeIntLE(id, InetSocketAddress(host, port))
+//                udpSocket.writeIntLE(id)
                 while (true) {
                     val buf = udpSocket.readByteBuffer()
                     _callback?.launch {

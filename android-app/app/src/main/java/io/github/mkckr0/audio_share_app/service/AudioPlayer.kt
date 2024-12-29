@@ -286,6 +286,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
         }
 
         override suspend fun onReceiveAudioData(audioData: ByteBuffer) {
+//            Log.d(tag, "${audioData.remaining()}")
             audioTrack.write(audioData, audioData.remaining(), AudioTrack.WRITE_NON_BLOCKING)
         }
 

@@ -18,8 +18,12 @@ package io.github.mkckr0.audio_share_app.service
 
 import io.github.mkckr0.audio_share_app.pb.Client.AudioFormat
 import io.github.mkckr0.audio_share_app.service.NetClient.CMD
+import io.ktor.network.sockets.BoundDatagramSocket
 import io.ktor.network.sockets.ConnectedDatagramSocket
 import io.ktor.network.sockets.Datagram
+import io.ktor.network.sockets.DatagramReadChannel
+import io.ktor.network.sockets.DatagramWriteChannel
+import io.ktor.network.sockets.SocketAddress
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.core.build
@@ -62,6 +66,13 @@ suspend fun ConnectedDatagramSocket.writeIntLE(value: Int) {
     }.build(), remoteAddress))
 }
 
-suspend fun ConnectedDatagramSocket.readByteBuffer(): ByteBuffer {
+suspend fun DatagramWriteChannel.writeIntLE(value: Int, address: SocketAddress) {
+    send(Datagram(Buffer().apply {
+        this.writeIntLe(value)
+    }.build(), address))
+}
+
+suspend fun DatagramReadChannel.readByteBuffer(): ByteBuffer {
     return ByteBuffer.wrap(receive().packet.readByteArray())
 }
+
