@@ -1,19 +1,3 @@
-/*
- *    Copyright 2022-2024 mkckr0 <https://github.com/mkckr0>
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
-
 package io.github.mkckr0.audio_share_app.service
 
 import android.content.Context
@@ -178,13 +162,22 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
         return immediateVoidFuture()
     }
 
+    fun disableMusicInfo() {
+        Log.d(tag, "disableMusicInfo")
+        // Logic to disable music info
+        _state = state.buildUpon()
+            .setMediaMetadata(MediaMetadata.EMPTY)
+            .build()
+        invalidateState()
+        message = "Music Info Disabled"
+    }
+
     inner class NetClientCallBack : NetClient.Callback {
         private val tag = NetClientCallBack::class.simpleName
 
         override val scope: CoroutineScope = MainScope() + CoroutineName("NetClientCallbackScope")
 
         override suspend fun log(message: String) {
-//            Log.d(tag, "logMessage: $message")
             AudioPlayer.message = message
         }
 
@@ -286,7 +279,6 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
         }
 
         override suspend fun onReceiveAudioData(audioData: ByteBuffer) {
-//            Log.d(tag, "${audioData.remaining()}")
             audioTrack.write(audioData, audioData.remaining(), AudioTrack.WRITE_NON_BLOCKING)
         }
 
