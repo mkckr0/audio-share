@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.InfoOff
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material3.Icon
@@ -142,6 +143,21 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
                     Icon(
                         imageVector = if (started) Icons.Default.PauseCircle else Icons.Default.PlayCircle,
                         contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        // Logic to disable music info
+                        viewModel.disableMusicInfo()
+                    },
+                    modifier = Modifier.size(80.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.InfoOff,
+                        contentDescription = "Disable Music Info",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.fillMaxSize()
                     )
