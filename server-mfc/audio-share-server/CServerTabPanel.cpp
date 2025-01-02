@@ -103,8 +103,8 @@ void CServerTabPanel::OnBnClickedButtonReset()
         }
         m_comboBoxAudioEndpoint.ResetContent();
 
-        auto nIndex = m_comboBoxAudioEndpoint.AddString(L"Default");
-        m_comboBoxAudioEndpoint.SetItemDataPtr(nIndex, _wcsdup(L"default"));
+        auto nDefaultIndex = m_comboBoxAudioEndpoint.AddString(L"Default");
+        m_comboBoxAudioEndpoint.SetItemDataPtr(nDefaultIndex, _wcsdup(L"default"));
         
         audio_manager::endpoint_list_t endpoint_list = m_audio_manager->get_endpoint_list();
         for (auto&& [id, name] : endpoint_list) {
@@ -118,6 +118,11 @@ void CServerTabPanel::OnBnClickedButtonReset()
                 m_comboBoxAudioEndpoint.SetCurSel(nIndex);
                 break;
             }
+        }
+        if (m_comboBoxAudioEndpoint.GetCurSel() == CB_ERR) {
+            // selected endpoint is not in list, no selected
+            theApp.WriteProfileStringW(L"Capture", L"endpoint", L"default");
+            m_comboBoxAudioEndpoint.SetCurSel(nDefaultIndex);
         }
     }
 
@@ -146,6 +151,10 @@ void CServerTabPanel::OnBnClickedButtonReset()
                 break;
             }
         }
+        if (m_comboEncoding.GetCurSel() == CB_ERR) {
+            theApp.WriteProfileInt(L"Capture", L"endpoint", (int)encoding_t::encoding_default);
+            m_comboEncoding.SetCurSel(0);
+        }
     }
 }
 
@@ -162,6 +171,11 @@ void CServerTabPanel::OnBnClickedStartServer()
     if (text == L"Start Server") {
         if (m_comboBoxAudioEndpoint.GetCount() == 1) {
             AfxMessageBox(L"No Audio Endpoint", MB_OK | MB_ICONSTOP);
+            return;
+        }
+
+        if (m_comboBoxAudioEndpoint.GetCurSel() == CB_ERR) {
+            AfxMessageBox(L"No Selected Audio Endpoint", MB_OK | MB_ICONSTOP);
             return;
         }
 
