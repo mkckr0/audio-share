@@ -1,0 +1,42 @@
+﻿language name,en-US,zh-CN
+primary language identifier,LANG_ENGLISH,LANG_CHINESE
+sublanguage identifier,SUBLANG_ENGLISH_US,SUBLANG_CHINESE_SIMPLIFIED
+comment,English (United States),"Chinese (Simplified, China)"
+#,#,#
+https://learn.microsoft.com/en-us/windows/win32/menurc/fonts-and-font-metrics,MS Shell Dlg,Microsoft YaHei UI
+#,#,#
+,Server Address,服务器地址
+,Host,主机
+,Port,端口
+,Capture,捕获
+,Audio Endpoint,音频端点
+,Start Server,启动服务器
+,Stop Server,关闭服务器
+,Action,动作
+,Reset,重置
+,Encoding,编码
+,Sound Panel,声音面板
+,Default,默认
+#,#,#
+,Exit,退出
+,Hide,隐藏
+,About,关于
+,Behavior,行为
+,Auto run the app when system starts,当系统启动时自动运行应用
+,When app starts,当应用启动时
+,Do nothing,不做任何事
+,Start server,启动服务器
+,Keep last state,保持之前状态
+,When click close button,当点击关闭按钮时
+,Exit,退出
+,Minimize to system tray,最小化到系统栏
+,Firewall,防火墙
+,Repair Firewall,修复防火墙
+,Update,更新
+,Check for Update,检查更新
+,Auto check for update,自动检查更新
+#,#,#
+,Show,显示
+#,#,#
+,Server,服务器
+,App Settings,应用设置

@@ -42,6 +42,10 @@ CAudioShareServerApp::CAudioShareServerApp()
 {
     EnsureSingleton();
 
+    const WCHAR pwszLanguagesBuffer[] = L"zh-CN\0en-US\0";
+    ULONG ulNumLanguages{};
+    SetProcessPreferredUILanguages(MUI_LANGUAGE_NAME, pwszLanguagesBuffer, &ulNumLanguages);
+
     // support Restart Manager
     m_dwRestartManagerSupportFlags = AFX_RESTART_MANAGER_SUPPORT_RESTART;
 

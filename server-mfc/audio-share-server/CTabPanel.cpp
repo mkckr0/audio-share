@@ -4,10 +4,10 @@
 
 IMPLEMENT_DYNAMIC(CTabPanel, CDialogEx)
 
-CTabPanel::CTabPanel(UINT nIDTemplate, LPCWSTR lpszTitle, CWnd* pParent)
+CTabPanel::CTabPanel(UINT nIDTemplate, UINT nIDTitle, CWnd* pParent)
     : CDialogEx(nIDTemplate, pParent)
-    , m_strTitle(lpszTitle)
 {
+    (void)m_strTitle.LoadStringW(nIDTitle);
 }
 
 CTabPanel::~CTabPanel()
