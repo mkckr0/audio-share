@@ -9,7 +9,7 @@ class CTabPanel : public CDialogEx
     DECLARE_DYNAMIC(CTabPanel)
 
 public:
-    CTabPanel(UINT nIDTemplate, LPCWSTR lpszTitle, CWnd* pParent);
+    CTabPanel(UINT nIDTemplate, UINT nIDTitle, CWnd* pParent);
     virtual ~CTabPanel();
 
 // Attributes:

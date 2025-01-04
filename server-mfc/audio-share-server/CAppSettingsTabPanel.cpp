@@ -30,7 +30,7 @@ constexpr int check_update_interval = 3 * 60 * 60 * 1000;
 IMPLEMENT_DYNAMIC(CAppSettingsTabPanel, CTabPanel)
 
 CAppSettingsTabPanel::CAppSettingsTabPanel(CWnd* pParent)
-    : CTabPanel(IDD_APP_SETTINGS, L"App Settings", pParent)
+    : CTabPanel(IDD_APP_SETTINGS, IDS_APP_SETTINGS, pParent)
     , m_lpszSection(L"App Settings")
     , m_bAutoRun(FALSE)
     , m_nWhenAppStart(0)

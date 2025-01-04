@@ -24,6 +24,9 @@
     <Filter Include="mfc\tab">
       <UniqueIdentifier>{72a364f6-c99f-471b-94ca-4f2fb1275b87}</UniqueIdentifier>
     </Filter>
+    <Filter Include="res\i18n">
+      <UniqueIdentifier>{57e8666b-87c2-41f5-9e9d-0f19ddea6485}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AudioShareServer.h">
@@ -120,11 +123,11 @@
     <ResourceCompile Include="AudioShareServer.rc">
       <Filter>res</Filter>
     </ResourceCompile>
+    <ResourceCompile Include="i18n\AudioShareServer_zh-CN.rc">
+      <Filter>res\i18n</Filter>
+    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\AudioShareServer.rc2">
-      <Filter>res</Filter>
-    </None>
     <None Include="settings.props" />
   </ItemGroup>
   <ItemGroup>

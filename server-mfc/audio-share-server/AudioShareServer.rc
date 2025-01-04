@@ -15,6 +15,7 @@
 #endif
 #include "afxres.h"
 #include "verrsrc.h"
+
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
@@ -63,7 +64,6 @@ BEGIN
     "\r\n"
     "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)\r\n"
     "LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US\r\n"
-    "#include ""res\\AudioShareServer.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
     "#include ""afxres.rc""      // Standard components\r\n"
     "#if !defined(_AFXDLL)\r\n"
     "#include ""afxribbon.rc""   // MFC ribbon and control bar resources\r\n"
@@ -154,7 +154,7 @@ BEGIN
     CONTROL         "Exit",IDC_RADIO_EXIT,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,43,130,27,10,WS_EX_TRANSPARENT
     CONTROL         "Minimize to system tray",IDC_RADIO_MINIMIZE,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,43,142,89,10,WS_EX_TRANSPARENT
     GROUPBOX        "Firewall",IDC_STATIC,7,165,276,33,WS_GROUP,WS_EX_TRANSPARENT
-    PUSHBUTTON      "Repair Firewall",IDC_BUTTON_REPPAIR_FIREWALL,35,178,64,14
+    PUSHBUTTON      "Repair Firewall",IDC_BUTTON_REPPAIR_FIREWALL,35,178,69,14
     GROUPBOX        "Update",IDC_STATIC,7,200,276,35,WS_GROUP,WS_EX_TRANSPARENT
     PUSHBUTTON      "Check for Update",IDC_BUTTON_UPDATE,35,213,69,14
     CONTROL         "Auto check for update",IDC_CHECK_AUTO_UPDATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,116,216,85,10,WS_EX_TRANSPARENT
@@ -243,6 +243,7 @@ BEGIN
         RIGHTMARGIN, 283
         VERTGUIDE, 35
         VERTGUIDE, 43
+        VERTGUIDE, 104
         VERTGUIDE, 268
         TOPMARGIN, 7
         BOTTOMMARGIN, 248
@@ -325,7 +326,16 @@ END
 
 STRINGTABLE
 BEGIN
+    IDS_START_SERVER        "Start Server"
     IDS_ABOUTBOX            "About"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_STOP_SERVER         "Stop Server"
+    IDS_SERVER              "Server"
+    IDS_APP_SETTINGS        "App Settings"
+    IDS_DEFAULT             "Default"
 END
 
 #endif    // English (United States) resources
@@ -345,7 +355,6 @@ END
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#include "res\AudioShareServer.rc2"  // non-Microsoft Visual C++ edited resources
 #include "afxres.rc"      // Standard components
 #if !defined(_AFXDLL)
 #include "afxribbon.rc"   // MFC ribbon and control bar resources

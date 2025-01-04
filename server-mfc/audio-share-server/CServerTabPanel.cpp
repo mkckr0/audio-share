@@ -13,7 +13,8 @@
 IMPLEMENT_DYNAMIC(CServerTabPanel, CTabPanel)
 
 CServerTabPanel::CServerTabPanel(CWnd* pParent)
-    : CTabPanel(IDD_SERVER, L"Server", pParent)
+    : CTabPanel(IDD_SERVER, IDS_SERVER, pParent)
+    , m_bStarted(false)
 {
 }
 
@@ -28,7 +29,7 @@ void CServerTabPanel::SwitchServer()
 
 bool CServerTabPanel::IsRunning()
 {
-    return m_network_manager->is_running();
+    return m_bStarted;
 }
 
 void CServerTabPanel::DoDataExchange(CDataExchange* pDX)
@@ -96,6 +97,9 @@ void CServerTabPanel::OnBnClickedButtonReset()
         m_editPort.SetWindowTextW(theApp.GetProfileStringW(L"Network", L"port", L"65530"));
     }
 
+    CString defaultString;
+    defaultString.LoadStringW(IDS_DEFAULT);
+
     // audio endpoint list
     {
         for (int nIndex = m_comboBoxAudioEndpoint.GetCount() - 1; nIndex >= 0; --nIndex) {
@@ -103,7 +107,7 @@ void CServerTabPanel::OnBnClickedButtonReset()
         }
         m_comboBoxAudioEndpoint.ResetContent();
 
-        auto nDefaultIndex = m_comboBoxAudioEndpoint.AddString(L"Default");
+        auto nDefaultIndex = m_comboBoxAudioEndpoint.AddString(defaultString);
         m_comboBoxAudioEndpoint.SetItemDataPtr(nDefaultIndex, _wcsdup(L"default"));
         
         audio_manager::endpoint_list_t endpoint_list = m_audio_manager->get_endpoint_list();
@@ -131,7 +135,7 @@ void CServerTabPanel::OnBnClickedButtonReset()
         m_comboEncoding.ResetContent();
         using encoding_t = audio_manager::encoding_t;
         std::vector<std::pair<encoding_t, std::wstring>> array = {
-            { encoding_t::encoding_default, L"Default" },
+            { encoding_t::encoding_default, defaultString.GetString() },
             { encoding_t::encoding_f32, L"32 bit floating-point PCM" },
             { encoding_t::encoding_s8, L"8 bit integer PCM" },
             { encoding_t::encoding_s16, L"16 bit integer PCM" },
@@ -166,9 +170,7 @@ void CServerTabPanel::OnBnClickedStartServer()
         return;
     }
 
-    CString text;
-    m_buttonServer.GetWindowText(text);
-    if (text == L"Start Server") {
+    if (!IsRunning()) {
         if (m_comboBoxAudioEndpoint.GetCount() == 1) {
             AfxMessageBox(L"No Audio Endpoint", MB_OK | MB_ICONSTOP);
             return;
@@ -184,8 +186,8 @@ void CServerTabPanel::OnBnClickedStartServer()
         m_buttonServer.EnableWindow(false);
 
         CString host_str, port_str;
-        m_comboBoxHost.GetWindowText(host_str);
-        m_editPort.GetWindowText(port_str);
+        m_comboBoxHost.GetWindowTextW(host_str);
+        m_editPort.GetWindowTextW(port_str);
         std::string host = wchars_to_mbs(host_str.GetString());
         std::uint16_t port = std::stoi(wchars_to_mbs(port_str.GetString()));
         audio_manager::capture_config config;
@@ -198,19 +200,24 @@ void CServerTabPanel::OnBnClickedStartServer()
             AfxMessageBox(CString(e.what()), MB_OK | MB_ICONSTOP);
             EnableInputControls(true);
             m_buttonServer.EnableWindow(true);
-            m_buttonServer.SetWindowText(L"Start Server");
+            CString s;
+            (void)s.LoadStringW(IDS_START_SERVER);
+            m_buttonServer.SetWindowTextW(s);
             m_buttonServer.SetFocus();
             return;
         }
 
         m_buttonServer.EnableWindow(true);
-        m_buttonServer.SetWindowText(L"Stop Server");
+        CString s;
+        (void)s.LoadStringW(IDS_STOP_SERVER);
+        m_buttonServer.SetWindowTextW(s);
         m_buttonServer.SetFocus();
         theApp.WriteProfileStringW(L"Network", L"host", host_str);
         theApp.WriteProfileStringW(L"Network", L"port", port_str);
         theApp.WriteProfileStringW(L"Capture", L"endpoint", mbs_to_wchars(config.endpoint_id).c_str());
         theApp.WriteProfileInt(L"Capture", L"encoding", (int)config.encoding);
         theApp.WriteProfileInt(L"App", L"Running", true);
+        m_bStarted = true;
     }
     else {
         // stop
@@ -219,9 +226,12 @@ void CServerTabPanel::OnBnClickedStartServer()
 
         EnableInputControls(true);
         m_buttonServer.EnableWindow(true);
-        m_buttonServer.SetWindowText(L"Start Server");
+        CString s;
+        (void)s.LoadStringW(IDS_START_SERVER);
+        m_buttonServer.SetWindowTextW(s);
         m_buttonServer.SetFocus();
         theApp.WriteProfileInt(L"App", L"Running", false);
+        m_bStarted = false;
     }
 }
 

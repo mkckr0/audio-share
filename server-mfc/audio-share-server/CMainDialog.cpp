@@ -314,14 +314,15 @@ void CMainDialog::OnAppAbout()
 
 void CMainDialog::OnUpdateStartServer(CCmdUI* pCmdUI)
 {
-    pCmdUI->SetText(m_tabPanelServer->IsRunning() ? L"Stop Server" : L"Start Server");
+    CString s;
+    s.LoadStringW(m_tabPanelServer->IsRunning() ? IDS_STOP_SERVER : IDS_START_SERVER);
+    pCmdUI->SetText(s);
 }
 
 void CMainDialog::OnStartServer()
 {
     m_tabPanelServer->SwitchServer();
 }
-
 
 void CMainDialog::OnAppExit()
 {

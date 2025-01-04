@@ -4,10 +4,15 @@
 //
 #define IDM_ABOUTBOX                    0x0010
 #define IDD_ABOUTBOX                    100
-#define IDS_ABOUTBOX                    101
-#define IDD_MAIN                        102
-#define IDD_SERVER                      103
-#define IDD_APP_SETTINGS                104
+#define IDD_MAIN                        101
+#define IDD_SERVER                      102
+#define IDD_APP_SETTINGS                103
+#define IDS_START_SERVER                110
+#define IDS_ABOUTBOX                    111
+#define IDS_STOP_SERVER                 112
+#define IDS_SERVER                      113
+#define IDS_APP_SETTINGS                114
+#define IDS_DEFAULT                     115
 #define IDR_MAINFRAME                   128
 #define IDR_MENU_SYSTEM_TRAY            129
 #define IDB_BITMAP_APP                  130
@@ -41,7 +46,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        131
-#define _APS_NEXT_COMMAND_VALUE         32774
+#define _APS_NEXT_COMMAND_VALUE         32773
 #define _APS_NEXT_CONTROL_VALUE         1216
 #define _APS_NEXT_SYMED_VALUE           107
 #endif
