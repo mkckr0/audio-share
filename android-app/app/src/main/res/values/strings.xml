@@ -44,4 +44,12 @@
     <string name="label_no_post_notification_permission">No permission to post notification</string>
     <string name="label_tap_notification_1">Tap this notification to start downloading</string>
     <string name="label_tap_notification_2">Has an update, tap the notification to start downloading</string>
+    <!-- Audio Player -->
+    <string name="label_started">Started</string>
+    <string name="label_stopped">Stopped</string>
+    <string name="label_paused">Paused</string>
+    <string name="label_retry">will retry in %d seconds</string>
+    <string name="label_timeout">Connect timeout</string>
+    <string name="label_unresolved_address">Unresolved address</string>
+    <string name="label_connecting">Connecting</string>
 </resources>

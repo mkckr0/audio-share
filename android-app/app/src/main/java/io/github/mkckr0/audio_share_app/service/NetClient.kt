@@ -16,7 +16,9 @@
 
 package io.github.mkckr0.audio_share_app.service
 
+import android.content.Context
 import android.util.Log
+import io.github.mkckr0.audio_share_app.R
 import io.github.mkckr0.audio_share_app.pb.Client.AudioFormat
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.BoundDatagramSocket
@@ -45,7 +47,7 @@ import java.nio.channels.UnresolvedAddressException
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
-class NetClient {
+class NetClient(val context: Context) {
 
     private val tag = NetClient::class.simpleName
 
@@ -105,7 +107,7 @@ class NetClient {
             }
 
             _callback?.launch {
-                log("connecting $host:$port")
+                log("${context.getString(R.string.label_connecting)} $host:$port")
             }
             _selectorManager = SelectorManager(Dispatchers.IO)
 
@@ -114,13 +116,13 @@ class NetClient {
                     aSocket(selectorManager).tcp().connect(host, port)
                 }
             } catch (e: TimeoutCancellationException) {
-                throw Exception("Connect timeout")
+                throw Exception(context.getString(R.string.label_timeout))
             } catch (e: UnresolvedAddressException) {
-                throw Exception("Unresolved address")
+                throw Exception(context.getString(R.string.label_unresolved_address))
             }
 
             _callback?.launch {
-                log("tcp connected")
+                log("TCP connected")
             }
 
             val tcpReadChannel = tcpSocket.openReadChannel()

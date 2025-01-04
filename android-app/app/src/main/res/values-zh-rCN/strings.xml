@@ -44,4 +44,12 @@
     <string name="label_no_post_notification_permission">无通知权限</string>
     <string name="label_tap_notification_1">点击本通知开始下载</string>
     <string name="label_tap_notification_2">有新版本，点击通知开始下载</string>
+    <!-- Audio Player -->
+    <string name="label_started">已开始</string>
+    <string name="label_stopped">已关闭</string>
+    <string name="label_paused">已暂停</string>
+    <string name="label_retry">会在%d秒内重试</string>
+    <string name="label_timeout">连接超时</string>
+    <string name="label_unresolved_address">无法解析的地址</string>
+    <string name="label_connecting">正在连接</string>
 </resources>

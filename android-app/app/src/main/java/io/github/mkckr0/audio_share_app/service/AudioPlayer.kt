@@ -82,7 +82,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
     private var _state: State = _initState
     override fun getState(): State = _state
 
-    private val netClient = NetClient()
+    private val netClient = NetClient(context.applicationContext)
 
     private var _audioTrack: AudioTrack? = null
     private val audioTrack get() = _audioTrack!!
@@ -142,7 +142,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                     .build()
                 netClient.stop()
                 retryScope.coroutineContext.cancelChildren()
-                message = "Paused"
+                message = context.getString(R.string.label_paused)
             }
         }
     }
@@ -155,7 +155,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
             .build()
         netClient.stop()
         retryScope.coroutineContext.cancelChildren()
-        message = "Stopped"
+        message = context.getString(R.string.label_stopped)
         return immediateVoidFuture()
     }
 
@@ -282,7 +282,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                 .build()
             invalidateState()
             Log.d(tag, "onPlaybackStarted")
-            message = "Started"
+            message = context.getString(R.string.label_started)
         }
 
         override suspend fun onReceiveAudioData(audioData: ByteBuffer) {
@@ -294,12 +294,15 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
             // switch to retryScope to prevent NetClient cancel callback scope
             retryScope.launch {
 
-                log("${message ?: cause?.stackTraceToString()} (will retry in 3 seconds)")
-
                 netClient.stop()
 
-                // retry
-                delay(3.seconds)
+                val reason = message ?: cause?.stackTraceToString()
+                var wait = 3
+                while (wait > 0) {
+                    log("$reason, ${context.getString(R.string.label_retry).format(wait)}")
+                    delay(1.seconds)
+                    --wait
+                }
 
                 _state = state.buildUpon()
                     .setPlayerError(null)
