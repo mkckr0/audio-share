@@ -51,6 +51,7 @@ void CAppSettingsTabPanel::DoDataExchange(CDataExchange* pDX)
     DDX_Radio(pDX, IDC_RADIO_EXIT, m_nWhenClose);
     DDX_Check(pDX, IDC_CHECK_AUTORUN, m_bAutoRun);
     DDX_Check(pDX, IDC_CHECK_AUTO_UPDATE, m_bAutoUpdate);
+    DDX_Control(pDX, IDC_COMBO_LANGUAGE, m_comboLanguage);
 }
 
 
@@ -63,6 +64,7 @@ BEGIN_MESSAGE_MAP(CAppSettingsTabPanel, CTabPanel)
     ON_COMMAND_RANGE(IDC_RADIO_EXIT, IDC_RADIO_MINIMIZE, CAppSettingsTabPanel::OnBnClickedWhenCloseButton)
     ON_BN_CLICKED(IDC_BUTTON_UPDATE, &CAppSettingsTabPanel::OnBnClickedButtonUpdate)
     ON_WM_TIMER()
+    ON_CBN_SELCHANGE(IDC_COMBO_LANGUAGE, &CAppSettingsTabPanel::OnCbnSelchangeComboLanguage)
 END_MESSAGE_MAP()
 
 
@@ -89,6 +91,25 @@ BOOL CAppSettingsTabPanel::OnInitDialog()
     m_bAutoUpdate = theApp.GetProfileIntW(m_lpszSection, L"AutoUpdate", false);
     if (m_bAutoUpdate) {
         this->SetTimer(TIMER_ID_CHECK_UPDATE, check_update_interval, nullptr);
+    }
+
+    // language list
+    CString s;
+    std::vector<std::pair<std::wstring, std::wstring>> array = {
+        { L"default", ((void)s.LoadStringW(IDS_DEFAULT), s.GetString()) },
+        { L"en-US", ((void)s.LoadStringW(IDS_ENGLISH), s.GetString())},
+        { L"zh-CN", ((void)s.LoadStringW(IDS_SIMPLIFIED_CHINESE), s.GetString())},
+    };
+    for (auto&& lang : array) {
+        auto nIndex = m_comboLanguage.AddString(lang.second.c_str());
+        m_comboLanguage.SetItemDataPtr(nIndex, _wcsdup(lang.first.c_str()));
+    }
+    auto configLanguage = theApp.GetProfileStringW(L"App", L"language", L"default");
+    for (int nIndex = 0; nIndex < m_comboLanguage.GetCount(); ++nIndex) {
+        if (configLanguage == (LPCWSTR)m_comboLanguage.GetItemDataPtr(nIndex)) {
+            m_comboLanguage.SetCurSel(nIndex);
+            break;
+        }
     }
 
     this->UpdateData(false);
@@ -182,7 +203,7 @@ void CAppSettingsTabPanel::OnBnClickedButtonReppairFirewall()
         pNetFwRule->put_Protocol(NET_FW_IP_PROTOCOL_UDP);
         THROW_IF_FAILED((pNetFwRules->Add(pNetFwRule.get())));
 
-        AfxMessageBox(L"Success", MB_OK | MB_ICONINFORMATION);
+        AfxMessageBox(IDS_SUCCESS, MB_OK | MB_ICONINFORMATION);
     }
     catch (...) {
         auto err_msg = wstr_win_err(wil::Win32ErrorFromCaughtException());
@@ -275,10 +296,12 @@ void CAppSettingsTabPanel::CheckForUpdate(BOOL bPromptError)
             if (util::is_newer_version(tag_name, version)) {
                 auto pMainDialog = theApp.GetMainDialog();
                 pMainDialog->SetUpdateLink(CA2W(std::string(res["html_url"]).c_str()));
-                pMainDialog->ShowBalloonNotification(L"New Update", CA2W(tag_name.c_str()));
+                CString s;
+                (void)s.LoadStringW(IDS_NEW_VERSION);
+                pMainDialog->ShowBalloonNotification(s, CA2W(tag_name.c_str()));
             }
             else {
-                AfxMessageBox(L"No update", MB_OK | MB_ICONINFORMATION);
+                AfxMessageBox(IDS_NO_UPDATE, MB_OK | MB_ICONINFORMATION);
             }
         }
         catch (const std::exception& e) {
@@ -307,4 +330,11 @@ void CAppSettingsTabPanel::OnTimer(UINT_PTR nIDEvent)
     }
 
     CTabPanel::OnTimer(nIDEvent);
+}
+
+
+void CAppSettingsTabPanel::OnCbnSelchangeComboLanguage()
+{
+    auto lang = (LPCWSTR)m_comboLanguage.GetItemDataPtr(m_comboLanguage.GetCurSel());
+    theApp.WriteProfileStringW(L"App", L"language", lang);
 }

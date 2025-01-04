@@ -98,7 +98,7 @@ void CServerTabPanel::OnBnClickedButtonReset()
     }
 
     CString defaultString;
-    defaultString.LoadStringW(IDS_DEFAULT);
+    (void)defaultString.LoadStringW(IDS_DEFAULT);
 
     // audio endpoint list
     {
@@ -172,12 +172,12 @@ void CServerTabPanel::OnBnClickedStartServer()
 
     if (!IsRunning()) {
         if (m_comboBoxAudioEndpoint.GetCount() == 1) {
-            AfxMessageBox(L"No Audio Endpoint", MB_OK | MB_ICONSTOP);
+            AfxMessageBox(IDS_NO_ENDPOINT, MB_OK | MB_ICONSTOP);
             return;
         }
 
         if (m_comboBoxAudioEndpoint.GetCurSel() == CB_ERR) {
-            AfxMessageBox(L"No Selected Audio Endpoint", MB_OK | MB_ICONSTOP);
+            AfxMessageBox(IDS_NO_SELECTED_ENDPOINT, MB_OK | MB_ICONSTOP);
             return;
         }
 

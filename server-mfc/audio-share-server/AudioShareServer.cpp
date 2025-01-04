@@ -42,15 +42,9 @@ CAudioShareServerApp::CAudioShareServerApp()
 {
     EnsureSingleton();
 
-    const WCHAR pwszLanguagesBuffer[] = L"zh-CN\0en-US\0";
-    ULONG ulNumLanguages{};
-    SetProcessPreferredUILanguages(MUI_LANGUAGE_NAME, pwszLanguagesBuffer, &ulNumLanguages);
-
-    // support Restart Manager
-    m_dwRestartManagerSupportFlags = AFX_RESTART_MANAGER_SUPPORT_RESTART;
-
     // TODO: add construction code here,
     // Place all significant initialization in InitInstance
+    m_pszAppName = _wcsdup(L"Audio Share Server");
 
     WCHAR lpFileName[1024];
     GetModuleFileNameW(nullptr, lpFileName, sizeof(lpFileName));
@@ -89,7 +83,7 @@ BOOL CAudioShareServerApp::InitInstance()
     InitCtrls.dwSize = sizeof(InitCtrls);
     // Set this to include all the common control classes you want to use
     // in your application.
-    InitCtrls.dwICC = ICC_WIN95_CLASSES;
+    InitCtrls.dwICC = ICC_STANDARD_CLASSES | ICC_USEREX_CLASSES | ICC_TAB_CLASSES;
     InitCommonControlsEx(&InitCtrls);
 
     CWinAppEx::InitInstance();
@@ -119,6 +113,14 @@ BOOL CAudioShareServerApp::InitInstance()
             CFile::Remove(m_pszProfileName);
         }
         this->WriteProfileInt(L"App", L"configVersion", nConfigVersion);
+    }
+
+    auto configLang = this->GetProfileStringW(L"App", L"language", L"default");
+    if (configLang != "default") {
+        std::wstring lang(configLang.GetString());
+        lang.push_back(L'\0');
+        ULONG ulNumLanguages = 1;
+        SetProcessPreferredUILanguages(MUI_LANGUAGE_NAME, lang.c_str(), &ulNumLanguages);
     }
 
     struct MyCCommandLineInfo : CCommandLineInfo {
@@ -207,7 +209,7 @@ void CAudioShareServerApp::EnsureSingleton()
             while (true) {
                 int cmd{};
                 DWORD bytesRead{};
-                ReadFile(hMailSlot.get(), &cmd, sizeof(cmd), &bytesRead, nullptr);
+                (void)ReadFile(hMailSlot.get(), &cmd, sizeof(cmd), &bytesRead, nullptr);
                 this->GetMainDialog()->SendMessageW(WM_COMMAND, ID_APP_SHOW);
                 TRACE(traceAppMsg, 0, "read loop");
             }

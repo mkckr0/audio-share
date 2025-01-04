@@ -17,6 +17,8 @@ https://learn.microsoft.com/en-us/windows/win32/menurc/fonts-and-font-metrics,MS
 ,Encoding,编码
 ,Sound Panel,声音面板
 ,Default,默认
+,No Audio Endpoint,没有音频端点
+,No Selected Audio Endpoint,没有选择音频端点
 #,#,#
 ,Exit,退出
 ,Hide,隐藏
@@ -35,8 +37,17 @@ https://learn.microsoft.com/en-us/windows/win32/menurc/fonts-and-font-metrics,MS
 ,Update,更新
 ,Check for Update,检查更新
 ,Auto check for update,自动检查更新
+,Appearance,外观
+,Language,语言
 #,#,#
 ,Show,显示
 #,#,#
 ,Server,服务器
 ,App Settings,应用设置
+#,#,#
+,Success,成功
+,New Version,新版本
+,No Update,没有更新
+#,#,#
+,English,英语
+,Simplified Chinese,简体中文

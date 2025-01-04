@@ -13,6 +13,13 @@
 #define IDS_SERVER                      113
 #define IDS_APP_SETTINGS                114
 #define IDS_DEFAULT                     115
+#define IDS_NO_ENDPOINT                 116
+#define IDS_NO_SELECTED_ENDPOINT        117
+#define IDS_ENGLISH                     118
+#define IDS_SIMPLIFIED_CHINESE          119
+#define IDS_SUCCESS                     120
+#define IDS_NO_UPDATE                   121
+#define IDS_NEW_VERSION                 122
 #define IDR_MAINFRAME                   128
 #define IDR_MENU_SYSTEM_TRAY            129
 #define IDB_BITMAP_APP                  130
@@ -38,6 +45,7 @@
 #define IDC_STATIC_VERSION              1213
 #define IDC_STATIC_COPYRIGHT            1214
 #define IDC_STATIC_NAME                 1215
+#define IDC_COMBO_LANGUAGE              1216
 #define ID_APP_SHOW                     32771
 #define ID_START_SERVER                 32772
 
@@ -47,7 +55,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32773
-#define _APS_NEXT_CONTROL_VALUE         1216
+#define _APS_NEXT_CONTROL_VALUE         1218
 #define _APS_NEXT_SYMED_VALUE           107
 #endif
 #endif

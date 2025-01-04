@@ -49,4 +49,6 @@ public:
 	// auto check for update
 	BOOL m_bAutoUpdate;
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	CComboBox m_comboLanguage;
+	afx_msg void OnCbnSelchangeComboLanguage();
 };
