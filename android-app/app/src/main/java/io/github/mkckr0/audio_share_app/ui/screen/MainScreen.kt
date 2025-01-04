@@ -16,6 +16,9 @@
 
 package io.github.mkckr0.audio_share_app.ui.screen
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -95,6 +98,8 @@ fun MainScreen() {
             navController = navController,
             startDestination = Route.Home,
             modifier = Modifier.padding(innerPadding),
+            enterTransition = { fadeIn(animationSpec = tween(100)) },
+            exitTransition = { fadeOut(animationSpec = tween(100)) },
         ) {
             composable<Route.Home> { HomeScreen() }
             composable<Route.Audio> { AudioScreen() }
