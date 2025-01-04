@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Main Screen -->
+    <string name="label_home">首页</string>
+    <string name="label_audio">音频</string>
+    <string name="label_settings">设置</string>
+    <!-- Home Screen -->
+    <string name="label_host">主机</string>
+    <string name="label_port">端口</string>
+    <!-- Audio Screen -->
+    <string name="label_audio_track">音轨</string>
+    <string name="label_volume_linear_gain">音量（线性增益）</string>
+    <string name="label_buffer_scale">缓冲区倍数（MinBufferSize 的倍数）</string>
+    <string name="label_audio_effect">音效</string>
+    <string name="label_loudness_enhancer">响度增强器</string>
+    <!-- Settings Screen -->
+    <string name="label_auto_start">自动开始</string>
+    <string name="label_auto_start_when_system_boots">当系统启动时自动播放</string>
+    <string name="label_auto_start_when_app_starts">当应用启动时自动播放</string>
+    <string name="label_ignored">已忽略</string>
+    <string name="label_not_ignored">未忽略</string>
+    <string name="label_battery_optimization">电池优化</string>
+    <string name="label_request_battery_optimization">请求忽略电池优化</string>
+    <string name="label_battery_optimization_settings">电池优化设置</string>
+    <string name="label_appearance">外观</string>
+    <string name="label_language">语言</string>
+    <string name="label_dynamic_color_from_wallpaper">从壁纸获得动态颜色</string>
+    <string name="label_dynamic_color_from_seed_color">从种子颜色获得动态颜色</string>
+    <string name="label_color_is_invalid">颜色无效</string>
+    <string name="label_notification">通知</string>
+    <string name="label_notification_settings">通知设置</string>
+    <string name="label_update">更新</string>
+    <string name="label_auto_check_for_update">自动检查更新</string>
+    <string name="label_check_for_update">检查更新</string>
+    <string name="label_latest_release">最新版本</string>
+    <string name="label_about">关于</string>
+    <string name="label_issues">议题</string>
+    <string name="label_report_a_bug">报告错误或请求新特性</string>
+    <string name="label_version">版本</string>
+    <!-- Update Worker -->
+    <string name="label_no_update">无更新</string>
+    <string name="label_has_an_update_1">有更新，但无 APK</string>
+    <string name="label_has_an_update_2">新版本（%s）</string>
+    <string name="label_no_post_notification_permission">无通知权限</string>
+    <string name="label_tap_notification_1">点击本通知开始下载</string>
+    <string name="label_tap_notification_2">有新版本，点击通知开始下载</string>
+</resources>

@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -39,6 +40,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import io.github.mkckr0.audio_share_app.R
 import kotlinx.serialization.Serializable
 
 sealed class Route {
@@ -54,14 +56,15 @@ sealed class Route {
 
 data class TopLevelRoute(val label: String, val icon: ImageVector, val route: Route)
 
-val topLevelRoutes = listOf(
-    TopLevelRoute("Home", Icons.Default.Home, Route.Home),
-    TopLevelRoute("Audio", Icons.Default.Audiotrack, Route.Audio),
-    TopLevelRoute("Settings", Icons.Default.Settings, Route.Settings),
-)
-
 @Composable
 fun MainScreen() {
+    val context = LocalContext.current
+    val topLevelRoutes = listOf(
+        TopLevelRoute(context.getString(R.string.label_home), Icons.Default.Home, Route.Home),
+        TopLevelRoute(context.getString(R.string.label_audio), Icons.Default.Audiotrack, Route.Audio),
+        TopLevelRoute(context.getString(R.string.label_settings), Icons.Default.Settings, Route.Settings),
+    )
+
     val navController = rememberNavController()
     Scaffold(
         modifier = Modifier.fillMaxSize(),

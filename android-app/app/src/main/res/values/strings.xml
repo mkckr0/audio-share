@@ -1,6 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">Audio Share</string>
-    <string name="project_url" translatable="false">https://github.com/mkckr0/audio-share</string>
-    <string name="latest_release_url" translatable="false">https://github.com/mkckr0/audio-share/releases/latest</string>
-    <string name="issues_url" translatable="false">https://github.com/mkckr0/audio-share/issues</string>
+    <!-- Main Screen -->
+    <string name="label_home">Home</string>
+    <string name="label_audio">Audio</string>
+    <string name="label_settings">Settings</string>
+    <!-- Home Screen -->
+    <string name="label_host">Host</string>
+    <string name="label_port">Port</string>
+    <!-- Audio Screen -->
+    <string name="label_audio_track">Audio Track</string>
+    <string name="label_volume_linear_gain">Volume(Linear Gain)</string>
+    <string name="label_buffer_scale">Buffer Scale(Multiple of MinBufferSize)</string>
+    <string name="label_audio_effect">Audio Effect</string>
+    <string name="label_loudness_enhancer">Loudness Enhancer</string>
+    <!-- Settings Screen -->
+    <string name="label_auto_start">Auto Start</string>
+    <string name="label_auto_start_when_system_boots">Auto start playback when system boots</string>
+    <string name="label_auto_start_when_app_starts">Auto start playback when app starts</string>
+    <string name="label_ignored">Ignored</string>
+    <string name="label_not_ignored">Not ignored</string>
+    <string name="label_battery_optimization">Battery optimization</string>
+    <string name="label_request_battery_optimization">Request ignore battery optimization</string>
+    <string name="label_battery_optimization_settings">Battery optimization settings</string>
+    <string name="label_appearance">Appearance</string>
+    <string name="label_language">Language</string>
+    <string name="label_dynamic_color_from_wallpaper">Dynamic color from wallpaper</string>
+    <string name="label_dynamic_color_from_seed_color">Dynamic color from seed color</string>
+    <string name="label_color_is_invalid">color is invalid</string>
+    <string name="label_notification">Notification</string>
+    <string name="label_notification_settings">Notification settings</string>
+    <string name="label_update">Update</string>
+    <string name="label_auto_check_for_update">Auto check for update</string>
+    <string name="label_check_for_update">Check for update</string>
+    <string name="label_latest_release">Latest release</string>
+    <string name="label_about">About</string>
+    <string name="label_issues">Issues</string>
+    <string name="label_report_a_bug">Report a bug or request a new feature</string>
+    <string name="label_version">Version</string>
+    <!-- Update Worker -->
+    <string name="label_no_update">No update</string>
+    <string name="label_has_an_update_1">Has an update, but no APK</string>
+    <string name="label_has_an_update_2">New version (%s)</string>
+    <string name="label_no_post_notification_permission">No permission to post notification</string>
+    <string name="label_tap_notification_1">Tap this notification to start downloading</string>
+    <string name="label_tap_notification_2">Has an update, tap the notification to start downloading</string>
 </resources>

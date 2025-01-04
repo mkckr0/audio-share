@@ -16,7 +16,6 @@
 
 package io.github.mkckr0.audio_share_app.ui.screen
 
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -53,6 +52,7 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.Player
+import io.github.mkckr0.audio_share_app.R
 import io.github.mkckr0.audio_share_app.service.AudioPlayer
 import io.github.mkckr0.audio_share_app.ui.MainActivity
 import io.github.mkckr0.audio_share_app.ui.screen.HomeScreenViewModel.UiState
@@ -101,7 +101,7 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
                         },
                         enabled = !started,
                         isError = isHostError,
-                        label = { Text("Host") },
+                        label = { Text(context.getString(R.string.label_host)) },
                         modifier = Modifier.weight(0.7f),
                     )
                     OutlinedTextField(
@@ -113,7 +113,7 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
                         },
                         enabled = !started,
                         isError = isPortError,
-                        label = { Text("Port") },
+                        label = { Text(context.getString(R.string.label_port)) },
                         modifier = Modifier.weight(0.3f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     )

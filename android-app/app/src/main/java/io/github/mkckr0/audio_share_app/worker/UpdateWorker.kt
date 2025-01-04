@@ -26,6 +26,7 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.contentValuesOf
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import io.github.mkckr0.audio_share_app.BuildConfig
@@ -73,7 +74,7 @@ class UpdateWorker(appContext: Context, workerParams: WorkerParameters) : Worker
 
             withContext(Dispatchers.Main) {
                 if (!Util.isNewerVersion(latestRelease.tagName, "v${BuildConfig.VERSION_NAME}")) {
-                    showMessage("No update")
+                    showMessage(applicationContext.getString(R.string.label_no_update))
                     return@withContext
                 }
 
@@ -81,7 +82,7 @@ class UpdateWorker(appContext: Context, workerParams: WorkerParameters) : Worker
                     it.name.matches(Regex("audio-share-app-[0-9.]*-release.apk"))
                 }
                 if (apkAsset == null) {
-                    showMessage("Has an update, but no APK")
+                    showMessage(applicationContext.getString(R.string.label_has_an_update_1))
                     return@withContext
                 }
 
@@ -91,7 +92,7 @@ class UpdateWorker(appContext: Context, workerParams: WorkerParameters) : Worker
                             Manifest.permission.POST_NOTIFICATIONS
                         ) != PackageManager.PERMISSION_GRANTED
                     ) {
-                        showMessage("Post notification permission is denied")
+                        showMessage("No permission to post notification")
                         return@with
                     }
 
@@ -112,14 +113,14 @@ class UpdateWorker(appContext: Context, workerParams: WorkerParameters) : Worker
                         Channel.UPDATE.id
                     )
                         .setSmallIcon(R.drawable.baseline_update)
-                        .setContentTitle("Has an update(${latestRelease.tagName})")
-                        .setContentText("Tap this notification to start downloading")
+                        .setContentTitle(applicationContext.getString(R.string.label_has_an_update_2).format(latestRelease.tagName))
+                        .setContentText(applicationContext.getString(R.string.label_tap_notification_1))
                         .setContentIntent(pendingIntent)
                         .setAutoCancel(true)
                         .build()
 
                     notify(Notification.UPDATE.id, notification)
-                    showMessage("Has an update, tap the notification to start downloading")
+                    showMessage(applicationContext.getString(R.string.label_tap_notification_2))
                 }
             }
         }
