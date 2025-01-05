@@ -1,0 +1,10 @@
+Android App
+- Fix no sound on Android 6.0 #117
+- Add per-app language settings (Android 13+)
+- Add Chinese translation
+- Speed up switching animation of navigation bar
+
+Server MFC
+- Fix crash when selected endpoint is not in list #122
+- Add combo button to select language
+- Add Chinese translation
