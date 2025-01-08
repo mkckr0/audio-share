@@ -3,8 +3,6 @@ primary language identifier,LANG_ENGLISH,LANG_CHINESE
 sublanguage identifier,SUBLANG_ENGLISH_US,SUBLANG_CHINESE_SIMPLIFIED
 comment,English (United States),"Chinese (Simplified, China)"
 #,#,#
-https://learn.microsoft.com/en-us/windows/win32/menurc/fonts-and-font-metrics,MS Shell Dlg,Microsoft YaHei UI
-#,#,#
 ,Server Address,服务器地址
 ,Host,主机
 ,Port,端口

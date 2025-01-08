@@ -86,7 +86,7 @@ BOOL CAboutDialog::OnInitDialog()
 	// TODO:  Add extra initialization here
 
 	m_staticName.SetWindowTextW(GetStringFileInfo(L"ProductName"));
-	m_fontName.CreatePointFont(240, L"MS Shell Dlg");
+	m_fontName.CreatePointFont(240, L"Segoe UI");
 	m_staticName.SetFont(&m_fontName);
 	
 	m_strVersion = GetStringFileInfo(L"ProductVersion");
