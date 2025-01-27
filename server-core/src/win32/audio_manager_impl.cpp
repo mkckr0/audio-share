@@ -25,12 +25,14 @@
 #include <iostream>
 #include <vector>
 #include <cstdlib>
+#include <algorithm>
 
 #include <initguid.h>
 #include <Mmdeviceapi.h>
 #include <Functiondiscoverykeys_devpkey.h>
 #include <Audioclient.h>
 #include <Audiopolicy.h>
+#include <ksmedia.h>
 
 using namespace io::github::mkckr0::audio_share_app::pb;
 
@@ -95,6 +97,8 @@ static void exit_on_failed(HRESULT hr, const char* message = "", const char* fun
 static void print_endpoints(wil::com_ptr<IMMDeviceCollection>& pCollection);
 static void set_format(std::shared_ptr<AudioFormat>& _format, PWAVEFORMATEX pFormat);
 static std::string get_device_name(IPropertyStore* pProp);
+static std::tuple<WORD, WORD, GUID> map_encoding_to_wave_format(AudioFormat_Encoding encoding);
+static DWORD get_channel_mask(int channels);
 
 namespace detail {
 
@@ -378,6 +382,250 @@ static void set_format(std::shared_ptr<AudioFormat>& _format, PWAVEFORMATEX pFor
 
     spdlog::info("result capture format:\n{}", *pFormat);
     spdlog::info("AudioFormat:\n{}", _format->DebugString());
+}
+
+void audio_manager::audio_init(AudioFormat& format) {
+    HRESULT hr;
+    auto pEnumerator = wil::CoCreateInstance<MMDeviceEnumerator, IMMDeviceEnumerator>();
+
+    wil::com_ptr<IMMDevice> pDevice;
+    hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
+    exit_on_failed(hr, "GetDefaultAudioEndpoint");
+
+    hr = pDevice->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, (void**)&pAudioClient);
+    exit_on_failed(hr, "AudioClient activate");
+
+    WAVEFORMATEX* pDeviceFormat = nullptr;
+    hr = pAudioClient->GetMixFormat(&pDeviceFormat);
+    exit_on_failed(hr, "AudioClient getMixFormat");
+
+    REFERENCE_TIME hnsRequestedDuration = 0.01 * 10000;
+    auto [wBitsPerSample, wFormatTag, subFormat] = map_encoding_to_wave_format(format.encoding());
+    pDeviceFormat->wBitsPerSample = wBitsPerSample;
+    pDeviceFormat->nChannels = format.channels();
+    pDeviceFormat->nSamplesPerSec = format.sample_rate();
+    pDeviceFormat->nBlockAlign = pDeviceFormat->nChannels * pDeviceFormat->wBitsPerSample / 8;
+    pDeviceFormat->nAvgBytesPerSec = pDeviceFormat->nSamplesPerSec * pDeviceFormat->nBlockAlign;
+    if (pDeviceFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
+        WAVEFORMATEXTENSIBLE* pExDeviceFormat = reinterpret_cast<WAVEFORMATEXTENSIBLE*>(pDeviceFormat);
+        pExDeviceFormat->SubFormat = subFormat;
+        pExDeviceFormat->Samples.wValidBitsPerSample = pDeviceFormat->wBitsPerSample;
+        pExDeviceFormat->dwChannelMask = get_channel_mask(format.channels()); 
+    } else {
+        pDeviceFormat->wFormatTag = wFormatTag;
+    }
+
+    // finally set the format
+    WAVEFORMATEX* pClosestFormat = nullptr;
+    hr = pAudioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, pDeviceFormat, &pClosestFormat);
+    if (hr == S_FALSE) {
+        spdlog::warn("The format is not supported. using closest format.");
+        CoTaskMemFree(pDeviceFormat);
+        pDeviceFormat = pClosestFormat;
+    } else if (FAILED(hr)) {
+        CoTaskMemFree(pDeviceFormat);
+        exit_on_failed(hr, "AudioClient isFormatSupported");
+    }
+    spdlog::info(
+        "wFormatTag: {}, nChannels: {}, nSamplesPerSec: {}, nAvgBytesPerSec: {}, nBlockAlign: {}, wBitsPerSample: {}, hnsRequestedDuration: {}",
+        pDeviceFormat->wFormatTag, pDeviceFormat->nChannels, pDeviceFormat->nSamplesPerSec, pDeviceFormat->nAvgBytesPerSec, pDeviceFormat->nBlockAlign,
+        pDeviceFormat->wBitsPerSample, hnsRequestedDuration);
+
+    nBlockAlign = pDeviceFormat->nBlockAlign;
+    hr = pAudioClient->Initialize(
+        AUDCLNT_SHAREMODE_SHARED,
+        AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
+        hnsRequestedDuration,
+        0,
+        pDeviceFormat,
+        nullptr
+    );
+    exit_on_failed(hr, "AudioClient initialize"); 
+  
+    hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (!hEvent) {
+        spdlog::error("Failed to create event");
+        exit(-1);
+    }
+    hr = pAudioClient->SetEventHandle(hEvent);
+    exit_on_failed(hr, "AudioClient SetEventHandle");
+
+    hr = pAudioClient->GetService(__uuidof(IAudioRenderClient), (void**)&pRenderClient);
+    exit_on_failed(hr, "AudioClient getService");
+
+    hr = pAudioClient->GetBufferSize(&bufferFrameCount);
+    exit_on_failed(hr, "AudioClient getBufferSize");
+    spdlog::info("AudioClient bufferFrameCount: {}, bufferFrameBytes: {}", bufferFrameCount, bufferFrameCount * nBlockAlign);
+}
+
+void audio_manager::audio_start()
+{
+    auto hr = pAudioClient->Start();
+    exit_on_failed(hr, "AudioClient start");
+    _ring_buffer.resize(_buffer_capacity);
+
+    auto task = [this]() {
+        while (_running) {
+            std::vector<char> buffer;
+            {
+                std::lock_guard<std::mutex> lock(_buffer_mutex);
+                buffer.resize(0);
+                size_t available_data = 0;
+                if (_write_pos >= _read_pos) {
+                    available_data = _write_pos - _read_pos;
+                } else {
+                    available_data = _buffer_capacity - (_read_pos - _write_pos);
+                }
+                available_data = available_data - available_data % nBlockAlign;
+                if (available_data == 0) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    continue;
+                }
+
+                size_t first_chunk;
+                if (_write_pos >= _read_pos) {
+                    first_chunk = available_data;
+                } else {
+                    first_chunk = std::min(available_data, _buffer_capacity - _read_pos);
+                }
+
+                buffer.resize(available_data);
+                memcpy(buffer.data(), &_ring_buffer[_read_pos], first_chunk);
+                if (available_data > first_chunk) {
+                    memcpy(buffer.data() + first_chunk, &_ring_buffer[0], available_data - first_chunk);
+                }
+                _read_pos = (_read_pos + available_data) % _buffer_capacity;
+            }
+            size_t n = buffer.size();
+
+            HRESULT hr;
+            BYTE* pData;
+            UINT32 numFramesAvailable;
+            size_t offset = 0;
+            try {
+                while (offset < n) {
+                    hr = pAudioClient->GetCurrentPadding(&numFramesAvailable);
+                    exit_on_failed(hr, "AudioClient getCurrentPadding");
+
+                    UINT32 numFramesToWrite = bufferFrameCount - numFramesAvailable;
+                    size_t bytesToWrite = numFramesToWrite * nBlockAlign;
+
+                    hr = pRenderClient->GetBuffer(numFramesToWrite, &pData);
+                    exit_on_failed(hr, "RenderClient GetBuffer");
+                    if (bytesToWrite > (n - offset)) {
+                        bytesToWrite = n - offset;
+                        numFramesToWrite = bytesToWrite / nBlockAlign;
+                    }
+
+                    std::memcpy(pData, buffer.data() + offset, bytesToWrite);
+                    offset += bytesToWrite;
+
+                    hr = pRenderClient->ReleaseBuffer(numFramesToWrite, 0);
+                    exit_on_failed(hr, "RenderClient ReleaseBuffer");
+                    WaitForSingleObject(hEvent, INFINITE);
+                }
+            } catch (const std::exception& e) {
+                spdlog::error("Audio play failed: {}", e.what());
+            }
+        }
+    };
+
+    try {
+        if (!_play_thread.joinable()) {
+            spdlog::info("start _play_thread");
+            _running = true;
+            _play_thread = std::thread(task);
+        }
+    } catch (std::exception& e) {
+        spdlog::error("failed to start the network thread: {}", e.what());
+    }
+}
+
+void audio_manager::audio_play(const std::vector<char>& buffer)
+{
+    std::lock_guard<std::mutex> lock(_buffer_mutex);
+
+    size_t size = buffer.size();
+    const char * start = buffer.data();
+    if (size >= _buffer_capacity) {
+        start = start + (size - ((size / _buffer_capacity) * _buffer_capacity));
+    }
+
+    size_t available_space = _buffer_capacity;
+    if (_write_pos > _read_pos) {
+        available_space = _write_pos - _read_pos;
+    } else if (_write_pos < _read_pos) {
+        available_space = _buffer_capacity - (_read_pos - _write_pos);
+    }
+
+    if (size > available_space) {
+        spdlog::warn("Ring buffer overflow, lost {} old bytes", size - available_space);
+        _read_pos = (_write_pos + size) % _buffer_capacity;
+    }
+
+    size_t write_pos = _write_pos % _buffer_capacity;
+    size_t first_chunk = std::min(size, _buffer_capacity - write_pos);
+    memcpy(&_ring_buffer[write_pos], start, first_chunk);
+    if (size > first_chunk) {
+        memcpy(&_ring_buffer[0], start + first_chunk, size - first_chunk);
+    }
+    _write_pos = (_write_pos + size) % _buffer_capacity;
+}
+
+void audio_manager::audio_stop()
+{
+    _running = false;
+}
+
+static DWORD get_channel_mask(int channels)
+{
+    static const DWORD masks[] = {
+        0,
+        KSAUDIO_SPEAKER_MONO,
+        KSAUDIO_SPEAKER_STEREO,
+        KSAUDIO_SPEAKER_2POINT1,
+        KSAUDIO_SPEAKER_SURROUND,
+        KSAUDIO_SPEAKER_5POINT1_SURROUND,
+        KSAUDIO_SPEAKER_7POINT1_SURROUND
+    };
+
+    if (channels >= 0 && channels < 7) {
+        return masks[channels];
+    }
+
+    return KSAUDIO_SPEAKER_DIRECTOUT;
+}
+
+static std::tuple<WORD, WORD, GUID> map_encoding_to_wave_format(AudioFormat_Encoding encoding)
+{
+    WORD wBitsPerSample = 0;
+    WORD wFormatTag = WAVE_FORMAT_PCM;
+    GUID sub_format = KSDATAFORMAT_SUBTYPE_PCM;
+
+    switch (encoding) {
+    case AudioFormat_Encoding_ENCODING_PCM_8BIT:
+        wBitsPerSample = 8;
+        break;
+    case AudioFormat_Encoding_ENCODING_PCM_16BIT:
+        wBitsPerSample = 16;
+        break;
+    case AudioFormat_Encoding_ENCODING_PCM_24BIT:
+        wBitsPerSample = 24;
+        break;
+    case AudioFormat_Encoding_ENCODING_PCM_32BIT:
+        wBitsPerSample = 32;
+        break;
+    case AudioFormat_Encoding_ENCODING_PCM_FLOAT:
+        sub_format = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
+        wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
+        wBitsPerSample = 32;
+        break;
+    default:
+        wBitsPerSample = 16;
+        break;
+    }
+
+    return std::tuple<WORD, WORD, GUID>(wBitsPerSample, wFormatTag, sub_format);
 }
 
 static std::string get_device_name(IPropertyStore* pProp)

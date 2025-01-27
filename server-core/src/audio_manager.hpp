@@ -82,6 +82,11 @@ public:
     void start_loopback_recording(std::shared_ptr<network_manager> network_manager, const capture_config& config);
     void stop();
     void do_loopback_recording(std::shared_ptr<network_manager> network_manager, const capture_config& config);
+    
+    void audio_init(AudioFormat& format);
+    void audio_start();
+    void audio_play(const std::vector<char>& buffer);
+    void audio_stop();
 
     std::string get_format_binary();
 

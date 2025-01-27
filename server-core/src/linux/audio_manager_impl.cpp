@@ -421,4 +421,19 @@ std::string audio_manager::get_default_endpoint()
     return user_data.default_id;
 }
 
+void audio_manager::audio_init(AudioFormat& format)
+{
+    spdlog::error("not implement");
+}
+
+void audio_manager::audio_start()
+{
+    spdlog::error("not implement");
+}
+
+void audio_manager::audio_play(const std::vector<char>& buffer)
+{
+    spdlog::error("not implement");
+}
+
 #endif // linux

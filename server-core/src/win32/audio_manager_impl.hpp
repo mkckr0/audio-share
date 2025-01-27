@@ -19,9 +19,23 @@
 
 #ifdef _WINDOWS
 
+// fix: repeated inclusion of winsock2.h
+#define NOMINMAX
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
 #include <string>
+#include <vector>
+#include <mutex>
+#include <wil/com.h>
+#include <Audioclient.h>
+
+#include "client.pb.h"
+
 
 class network_manager;
+
+using AudioFormat_Encoding = io::github::mkckr0::audio_share_app::pb::AudioFormat_Encoding;
 
 namespace detail {
 
@@ -29,6 +43,21 @@ class audio_manager_impl {
 public:
     audio_manager_impl();
     ~audio_manager_impl();
+
+    WORD nBlockAlign = 0;
+    HANDLE hEvent = nullptr;
+    UINT32 bufferFrameCount = 0;
+    wil::com_ptr<IAudioClient> pAudioClient;
+    wil::com_ptr<IAudioRenderClient> pRenderClient;
+    
+    std::thread _play_thread;
+    std::atomic<bool> _running { false };
+
+    size_t _buffer_capacity = 1024 * 1024;
+    std::vector<char> _ring_buffer;
+    std::atomic<size_t> _write_pos { 0 };
+    std::atomic<size_t> _read_pos { 0 };
+    std::mutex _buffer_mutex;
 };
 
 } // namespace detail
