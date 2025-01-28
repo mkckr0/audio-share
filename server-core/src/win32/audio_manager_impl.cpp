@@ -399,7 +399,7 @@ void audio_manager::audio_init(AudioFormat& format) {
     hr = pAudioClient->GetMixFormat(&pDeviceFormat);
     exit_on_failed(hr, "AudioClient getMixFormat");
 
-    REFERENCE_TIME hnsRequestedDuration = 0.01 * 10000;
+    REFERENCE_TIME hnsRequestedDuration = 1 * 10000;
     auto [wBitsPerSample, wFormatTag, subFormat] = map_encoding_to_wave_format(format.encoding());
     pDeviceFormat->wBitsPerSample = wBitsPerSample;
     pDeviceFormat->nChannels = format.channels();
@@ -434,21 +434,13 @@ void audio_manager::audio_init(AudioFormat& format) {
     nBlockAlign = pDeviceFormat->nBlockAlign;
     hr = pAudioClient->Initialize(
         AUDCLNT_SHAREMODE_SHARED,
-        AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
+        0,
         hnsRequestedDuration,
         0,
         pDeviceFormat,
         nullptr
     );
     exit_on_failed(hr, "AudioClient initialize"); 
-  
-    hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (!hEvent) {
-        spdlog::error("Failed to create event");
-        exit(-1);
-    }
-    hr = pAudioClient->SetEventHandle(hEvent);
-    exit_on_failed(hr, "AudioClient SetEventHandle");
 
     hr = pAudioClient->GetService(__uuidof(IAudioRenderClient), (void**)&pRenderClient);
     exit_on_failed(hr, "AudioClient getService");
@@ -468,19 +460,21 @@ void audio_manager::audio_start()
         while (_running) {
             std::vector<char> buffer;
             {
-                std::lock_guard<std::mutex> lock(_buffer_mutex);
+                std::unique_lock<std::mutex> lock(_buffer_mutex);
                 buffer.resize(0);
-                size_t available_data = 0;
-                if (_write_pos >= _read_pos) {
-                    available_data = _write_pos - _read_pos;
-                } else {
-                    available_data = _buffer_capacity - (_read_pos - _write_pos);
-                }
-                available_data = available_data - available_data % nBlockAlign;
-                if (available_data == 0) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                    continue;
-                }
+
+                auto calculate_available_data = [this]() -> size_t {
+                    if (_write_pos >= _read_pos) {
+                        return _write_pos - _read_pos;
+                    } else {
+                        return _buffer_capacity - (_read_pos - _write_pos);
+                    }
+                };
+                _buffer_cv.wait(lock, [&calculate_available_data]() {
+                    return calculate_available_data() > 0;
+                });
+
+                auto available_data = calculate_available_data();
 
                 size_t first_chunk;
                 if (_write_pos >= _read_pos) {
@@ -497,7 +491,7 @@ void audio_manager::audio_start()
                 _read_pos = (_read_pos + available_data) % _buffer_capacity;
             }
             size_t n = buffer.size();
-
+            
             HRESULT hr;
             BYTE* pData;
             UINT32 numFramesAvailable;
@@ -522,7 +516,6 @@ void audio_manager::audio_start()
 
                     hr = pRenderClient->ReleaseBuffer(numFramesToWrite, 0);
                     exit_on_failed(hr, "RenderClient ReleaseBuffer");
-                    WaitForSingleObject(hEvent, INFINITE);
                 }
             } catch (const std::exception& e) {
                 spdlog::error("Audio play failed: {}", e.what());
@@ -570,6 +563,7 @@ void audio_manager::audio_play(const std::vector<char>& buffer)
         memcpy(&_ring_buffer[0], start + first_chunk, size - first_chunk);
     }
     _write_pos = (_write_pos + size) % _buffer_capacity;
+    _buffer_cv.notify_one();
 }
 
 void audio_manager::audio_stop()

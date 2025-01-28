@@ -58,6 +58,7 @@ public:
     std::atomic<size_t> _write_pos { 0 };
     std::atomic<size_t> _read_pos { 0 };
     std::mutex _buffer_mutex;
+    std::condition_variable _buffer_cv;
 };
 
 } // namespace detail
