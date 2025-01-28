@@ -68,7 +68,6 @@ class NetClient(val context: Context) {
     private val selectorManager get() = _selectorManager!!
     private var _tcpSocket: Socket? = null
     private val tcpSocket get() = _tcpSocket!!
-//    private var _udpSocket: ConnectedDatagramSocket? = null
     private var _udpSocket: BoundDatagramSocket? = null
     private val udpSocket get() = _udpSocket!!
 
@@ -158,8 +157,6 @@ class NetClient(val context: Context) {
                 onPlaybackStarted()
             }
 
-//            _udpSocket = aSocket(selectorManager).udp()
-//                .connect(InetSocketAddress(host, port))
             _udpSocket = aSocket(selectorManager).udp()
                 .bind(InetSocketAddress(tcpSocket.localAddress.toJavaAddress().address, 0))
 
@@ -188,7 +185,6 @@ class NetClient(val context: Context) {
             // audio data read loop
             scope.launch {
                 udpSocket.writeIntLE(id, InetSocketAddress(host, port))
-//                udpSocket.writeIntLE(id)
                 while (true) {
                     val buf = udpSocket.readByteBuffer()
                     _callback?.launch {
