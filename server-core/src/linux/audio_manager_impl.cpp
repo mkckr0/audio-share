@@ -61,6 +61,16 @@ struct roundtrip {
 
 namespace detail {
 
+static void log_pw_props(int id, const struct spa_dict* props)
+{
+    spdlog::trace("object id: {}", id);
+    const struct spa_dict_item* item;
+    spa_dict_for_each(item, props)
+    {
+        spdlog::trace("\t{}: \"{}\"", item->key, item->value);
+    }
+}
+
 audio_manager_impl::audio_manager_impl()
 {
     pw_init(nullptr, nullptr);
@@ -89,7 +99,6 @@ audio_manager_impl::~audio_manager_impl()
 
 void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> network_manager, const capture_config& config)
 {
-    spdlog::info("endpoint_id: {}", config.endpoint_id);
     std::string selected_endpoint_id = config.endpoint_id;
     if (selected_endpoint_id.empty() || selected_endpoint_id == "default") {
         selected_endpoint_id = get_default_endpoint();
@@ -104,7 +113,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
         return e.first == selected_endpoint_id;
     });
     if (it != endpoint_list.end()) {
-        spdlog::info("select audio endpoint: {}", it->second);
+        spdlog::info("select audio endpoint: {}, {}", selected_endpoint_id, it->second);
     } else {
         spdlog::error("selected audio endpoint is not in list");
         return;
@@ -179,88 +188,107 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
                     struct timespec timeout = {0, 1}, interval = {1, 0};
                     pw_loop_update_timer(loop, timer, &timeout, &interval, false);
                 }
-            } },
+            }
+        },
         .param_changed = [](void* data, uint32_t id, const struct spa_pod* param) {
             auto* user_data = (struct user_data_t*)data;
 
-            if (param == nullptr || id != SPA_PARAM_Format) {
+            if (param == nullptr) {
                 return;
             }
 
-            struct spa_audio_info audio_info {};
+            if (id == SPA_PARAM_Format) {
+                struct spa_audio_info audio_info {};
 
-            if (spa_format_parse(param, &audio_info.media_type, &audio_info.media_subtype) < 0) {
-                return;
+                if (spa_format_parse(param, &audio_info.media_type, &audio_info.media_subtype) < 0) {
+                    return;
+                }
+    
+                if (audio_info.media_type != SPA_MEDIA_TYPE_audio || audio_info.media_subtype != SPA_MEDIA_SUBTYPE_raw) {
+                    return;
+                }
+    
+                auto node_id = pw_stream_get_node_id(user_data->stream);
+                spdlog::trace("stream node id: {}", node_id);
+
+                auto props = pw_stream_get_properties(user_data->stream);
+                void* state{};
+                const char* key{};
+                spdlog::trace("stream properties:");
+                while((key = pw_properties_iterate(props, &state)) != NULL) {
+                    auto value = pw_properties_get(props, key);
+                    spdlog::trace("\t{} = \"{}\"", key, value);
+                }
+
+                auto name = pw_stream_get_name(user_data->stream);
+                spdlog::info("stream name: {}", name);
+
+                spa_format_audio_raw_parse(param, &audio_info.info.raw);
+                spdlog::info("audio_info.info.raw.format: {}", (int)audio_info.info.raw.format);
+    
+                switch (audio_info.info.raw.format)
+                {
+                case SPA_AUDIO_FORMAT_F32_LE:
+                    user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_FLOAT);
+                    break;
+                case SPA_AUDIO_FORMAT_S8:
+                    user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_8BIT);
+                    break;
+                case SPA_AUDIO_FORMAT_S16_LE:
+                    user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_16BIT);
+                    break;
+                case SPA_AUDIO_FORMAT_S24_LE:
+                    user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_24BIT);
+                    break;
+                case SPA_AUDIO_FORMAT_S32_LE:
+                    user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_32BIT);
+                    break;
+                default:
+                    user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_INVALID);
+                    spdlog::info("the capture format is not supported");
+                    exit(EXIT_FAILURE);
+                }
+                spdlog::info("the capture format is supported");
+                user_data->format->set_channels((int)audio_info.info.raw.channels);
+                user_data->format->set_sample_rate((int)audio_info.info.raw.rate);
+                int bits_per_sample = 0;
+                switch (audio_info.info.raw.format)
+                {
+                case SPA_AUDIO_FORMAT_S8:
+                case SPA_AUDIO_FORMAT_U8:
+                    bits_per_sample = 8;
+                    break;
+                case SPA_AUDIO_FORMAT_S16_LE:
+                case SPA_AUDIO_FORMAT_S16_BE:
+                case SPA_AUDIO_FORMAT_U16_LE:
+                case SPA_AUDIO_FORMAT_U16_BE:
+                    bits_per_sample = 16;
+                    break;
+                case SPA_AUDIO_FORMAT_S24_LE:
+                case SPA_AUDIO_FORMAT_S24_BE:
+                case SPA_AUDIO_FORMAT_U24_LE:
+                case SPA_AUDIO_FORMAT_U24_BE:
+                    bits_per_sample = 24;
+                    break;
+                case SPA_AUDIO_FORMAT_S32_LE:
+                case SPA_AUDIO_FORMAT_S32_BE:
+                case SPA_AUDIO_FORMAT_U32_LE:
+                case SPA_AUDIO_FORMAT_U32_BE:
+                case SPA_AUDIO_FORMAT_F32_LE:
+                case SPA_AUDIO_FORMAT_F32_BE:
+                case SPA_AUDIO_FORMAT_F32P:
+                    bits_per_sample = 32;
+                    break;
+                default:
+                    bits_per_sample = 0;
+                    break;
+                }
+    
+                user_data->block_align = bits_per_sample / 8 * user_data->format->channels();
+                spdlog::info("block_align: {}", user_data->block_align);
+                spdlog::info("AudioFormat:\n{}", user_data->format->DebugString());
             }
-
-            if (audio_info.media_type != SPA_MEDIA_TYPE_audio || audio_info.media_subtype != SPA_MEDIA_SUBTYPE_raw) {
-                return;
-            }
-
-            spa_format_audio_raw_parse(param, &audio_info.info.raw);
-            spdlog::info("audio_info.info.raw.format: {}", (int)audio_info.info.raw.format);
-
-            switch (audio_info.info.raw.format)
-            {
-            case SPA_AUDIO_FORMAT_F32_LE:
-                user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_FLOAT);
-                break;
-            case SPA_AUDIO_FORMAT_S8:
-                user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_8BIT);
-                break;
-            case SPA_AUDIO_FORMAT_S16_LE:
-                user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_16BIT);
-                break;
-            case SPA_AUDIO_FORMAT_S24_LE:
-                user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_24BIT);
-                break;
-            case SPA_AUDIO_FORMAT_S32_LE:
-                user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_PCM_32BIT);
-                break;
-            default:
-                user_data->format->set_encoding(AudioFormat_Encoding_ENCODING_INVALID);
-                spdlog::info("the capture format is not supported");
-                exit(EXIT_FAILURE);
-            }
-            spdlog::info("the capture format is supported");
-            user_data->format->set_channels((int)audio_info.info.raw.channels);
-            user_data->format->set_sample_rate((int)audio_info.info.raw.rate);
-            int bits_per_sample = 0;
-            switch (audio_info.info.raw.format)
-            {
-            case SPA_AUDIO_FORMAT_S8:
-            case SPA_AUDIO_FORMAT_U8:
-                bits_per_sample = 8;
-                break;
-            case SPA_AUDIO_FORMAT_S16_LE:
-            case SPA_AUDIO_FORMAT_S16_BE:
-            case SPA_AUDIO_FORMAT_U16_LE:
-            case SPA_AUDIO_FORMAT_U16_BE:
-                bits_per_sample = 16;
-                break;
-            case SPA_AUDIO_FORMAT_S24_LE:
-            case SPA_AUDIO_FORMAT_S24_BE:
-            case SPA_AUDIO_FORMAT_U24_LE:
-            case SPA_AUDIO_FORMAT_U24_BE:
-                bits_per_sample = 24;
-                break;
-            case SPA_AUDIO_FORMAT_S32_LE:
-            case SPA_AUDIO_FORMAT_S32_BE:
-            case SPA_AUDIO_FORMAT_U32_LE:
-            case SPA_AUDIO_FORMAT_U32_BE:
-            case SPA_AUDIO_FORMAT_F32_LE:
-            case SPA_AUDIO_FORMAT_F32_BE:
-            case SPA_AUDIO_FORMAT_F32P:
-                bits_per_sample = 32;
-                break;
-            default:
-                bits_per_sample = 0;
-                break;
-            }
-
-            user_data->block_align = bits_per_sample / 8 * user_data->format->channels();
-            spdlog::info("block_align: {}", user_data->block_align);
-            spdlog::info("AudioFormat:\n{}", user_data->format->DebugString()); },
+        },
         .process = [](void* data) {
             auto* user_data = (struct user_data_t*)data;
             struct pw_buffer *b;
@@ -281,13 +309,16 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
             user_data->network_manager->broadcast_audio_data(begin, count, user_data->block_align);
     
-            pw_stream_queue_buffer(user_data->stream, b); },
+            pw_stream_queue_buffer(user_data->stream, b);
+        },
     };
 
     struct pw_properties* props = pw_properties_new(
         PW_KEY_MEDIA_TYPE, "Audio",
         PW_KEY_MEDIA_CATEGORY, "Capture",
         PW_KEY_MEDIA_ROLE, "Music",
+        PW_KEY_APP_NAME, "Audio Share Server",
+        PW_KEY_NODE_NAME, "Audio Share Server",
         nullptr);
 
     user_data.stream = pw_stream_new_simple(pw_main_loop_get_loop(_loop), "audio-share-server", props, &stream_events, &user_data);
@@ -348,12 +379,7 @@ audio_manager::endpoint_list_t audio_manager::get_endpoint_list()
                     user_data->default_index = (int)user_data->endpoint_list_ptr->size() - 1;
                 }
 
-                spdlog::trace("object id: {}", id);
-                const struct spa_dict_item* item;
-                spa_dict_for_each(item, props)
-                {
-                    spdlog::trace("\t{}: \"{}\"", item->key, item->value);
-                }
+                detail::log_pw_props(id, props);
             }
         },
     };
@@ -397,13 +423,6 @@ std::string audio_manager::get_default_endpoint()
                 if (priority > user_data->default_priority) {
                     user_data->default_priority = priority;
                     user_data->default_id = std::to_string(id);
-                }
-
-                spdlog::trace("object id: {}", id);
-                const struct spa_dict_item* item;
-                spa_dict_for_each(item, props)
-                {
-                    spdlog::trace("\t{}: \"{}\"", item->key, item->value);
                 }
             }
         },
