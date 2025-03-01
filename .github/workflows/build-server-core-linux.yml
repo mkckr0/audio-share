@@ -10,7 +10,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             vcpkg_triplet: x64-linux
             cmake_preset: linux-Release
             platform: linux
