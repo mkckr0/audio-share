@@ -21,25 +21,33 @@ jobs:
     env:
       VCPKG_DEFAULT_TRIPLET: ${{ matrix.vcpkg_triplet }}
     steps:
-      - uses: actions/checkout@v3
-      - run: git pull
+      - uses: actions/checkout@v4
+      
       - name: Install Linux Deps
-        run: sudo apt update && sudo apt install libpipewire-0.3-dev
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: sudo apt install libpipewire-0.3-dev
+
       - uses: lukka/get-cmake@latest
+      
       - uses: lukka/run-vcpkg@v11
         with:
           vcpkgGitCommitId: 10b7a178346f3f0abef60cecd5130e295afd8da4
+      
       - run: vcpkg integrate install
-      - run: vcpkg install asio protobuf spdlog cxxopts
+      
+      - run: vcpkg install asio protobuf cxxopts
+
+      - run: vcpkg install spdlog
+      
       - uses: lukka/run-cmake@v10
         with:
           cmakeListsTxtPath: ${{ github.workspace }}/server-core/CMakeLists.txt
           configurePreset: ${{ matrix.cmake_preset }}
           buildPreset: ${{ matrix.cmake_preset }}
+      
       - name: Pack
         run: bash pack.sh ${{ matrix.platform }}
-      - uses: actions/upload-artifact@v3
+      
+      - uses: actions/upload-artifact@v4
         with:
           name: server-core-${{ matrix.platform }}
           path: |
