@@ -319,6 +319,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
         PW_KEY_MEDIA_ROLE, "Music",
         PW_KEY_APP_NAME, "Audio Share Server",
         PW_KEY_NODE_NAME, "Audio Share Server",
+        PW_KEY_TARGET_OBJECT, selected_endpoint_id.c_str(),
         nullptr);
 
     user_data.stream = pw_stream_new_simple(pw_main_loop_get_loop(_loop), "audio-share-server", props, &stream_events, &user_data);
@@ -335,7 +336,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     params[0] = spa_format_audio_raw_build(&pod_builder, SPA_PARAM_EnumFormat, &info);
     // clang-format on
 
-    pw_stream_connect(user_data.stream, PW_DIRECTION_INPUT, std::stoi(selected_endpoint_id),
+    pw_stream_connect(user_data.stream, PW_DIRECTION_INPUT, PW_ID_ANY,
         pw_stream_flags(PW_STREAM_FLAG_AUTOCONNECT
             | PW_STREAM_FLAG_MAP_BUFFERS
             | PW_STREAM_FLAG_RT_PROCESS),
@@ -365,13 +366,13 @@ audio_manager::endpoint_list_t audio_manager::get_endpoint_list()
                 }
 
                 auto user_data = (user_data_t*)object;
-                // const char* object_serial = spa_dict_lookup(props, PW_KEY_OBJECT_SERIAL);
+                const char* object_serial = spa_dict_lookup(props, PW_KEY_OBJECT_SERIAL);
                 const char* nick_name = spa_dict_lookup(props, PW_KEY_NODE_NICK);
                 const char* name = spa_dict_lookup(props, PW_KEY_NODE_NAME);
                 const char* description = spa_dict_lookup(props, PW_KEY_NODE_DESCRIPTION);
                 const char* priority_session = spa_dict_lookup(props, PW_KEY_PRIORITY_SESSION);
 
-                user_data->endpoint_list_ptr->emplace_back(std::to_string(id), nick_name ? nick_name : (description ? description : name));
+                user_data->endpoint_list_ptr->emplace_back(object_serial, nick_name ? nick_name : (description ? description : name));
 
                 int priority = priority_session ? std::stoi(priority_session) : -1;
                 if (priority > user_data->default_priority) {
@@ -418,11 +419,12 @@ std::string audio_manager::get_default_endpoint()
 
                 auto user_data = (user_data_t*)object;
                 const char* priority_session = spa_dict_lookup(props, PW_KEY_PRIORITY_SESSION);
+                const char* object_serial = spa_dict_lookup(props, PW_KEY_OBJECT_SERIAL);
 
                 int priority = priority_session ? std::stoi(priority_session) : -1;
                 if (priority > user_data->default_priority) {
                     user_data->default_priority = priority;
-                    user_data->default_id = std::to_string(id);
+                    user_data->default_id = object_serial;
                 }
             }
         },

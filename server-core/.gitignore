@@ -5,3 +5,5 @@ out
 .idea
 .vs
 *.dmp
+*.log
+*.dot
