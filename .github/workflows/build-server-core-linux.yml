@@ -8,7 +8,7 @@ jobs:
     name: Build server-core
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
         include:
           - os: ubuntu-22.04
             vcpkg_triplet: x64-linux
