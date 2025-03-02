@@ -1,0 +1,5 @@
+Server Core
+- Fix can't select the specified endpoint on Linux. #140
+
+Server MFC
+- Set font to "Segoe UI" instead of "MS Shell Dlg".
