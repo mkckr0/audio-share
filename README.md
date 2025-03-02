@@ -198,6 +198,7 @@ Turns off or ignore battery optimizations can let it work.
 ## Compile from source
 
 - Android App
+    - Install JDK 17 manually or by Andorid Studio.
     - Android Studio will import all dependencies automatically.
 
 - Server MFC
