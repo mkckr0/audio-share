@@ -103,7 +103,7 @@ jobs:
       
       - name: Install Linux Deps
         run: sudo apt install libpipewire-0.3-dev
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
       
       - uses: lukka/get-cmake@latest
       
@@ -119,7 +119,7 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
       
       - run: vcpkg install spdlog
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
       
       - uses: lukka/run-cmake@v10
         with:
