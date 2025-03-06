@@ -259,7 +259,7 @@ void CAppSettingsTabPanel::OnBnClickedButtonUpdate()
     this->CheckForUpdate(true);
 }
 
-void CAppSettingsTabPanel::CheckForUpdate(BOOL bPromptError)
+void CAppSettingsTabPanel::CheckForUpdate(bool bPromptError)
 {
     std::thread([=] {
         try
@@ -281,7 +281,7 @@ void CAppSettingsTabPanel::CheckForUpdate(BOOL bPromptError)
             }
             auto cleanup = wil::scope_exit([&] {
                 httpFile->Close();
-                });
+            });
 
             std::string response;
             char buf[1024];
@@ -301,7 +301,9 @@ void CAppSettingsTabPanel::CheckForUpdate(BOOL bPromptError)
                 pMainDialog->ShowBalloonNotification(s, CA2W(tag_name.c_str()));
             }
             else {
-                AfxMessageBox(IDS_NO_UPDATE, MB_OK | MB_ICONINFORMATION);
+                if (bPromptError) {
+                    AfxMessageBox(IDS_NO_UPDATE, MB_OK | MB_ICONINFORMATION);
+                }
             }
         }
         catch (const std::exception& e) {
