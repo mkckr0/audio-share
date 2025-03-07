@@ -23,6 +23,7 @@
 #include <coroutine>
 
 #ifdef _WINDOWS
+#define NOMINMAX
 #include <iphlpapi.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -36,6 +37,7 @@
 #endif
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/bin_to_hex.h>
 #include <fmt/ranges.h>
 
 namespace ip = asio::ip;
@@ -422,4 +424,199 @@ void network_manager::broadcast_audio_data(const char* data, size_t count, int b
             }
         }
     });
+}
+
+
+void network_manager::start_client(const std::string& host, uint16_t port)
+{
+    if (_ioc == nullptr) {
+        _ioc = std::make_shared<asio::io_context>();
+    }
+
+    auto task = [] (std::shared_ptr<network_manager> self, const std::string host, uint16_t port) -> void {
+        assert(self != nullptr && "self is a null pointer");
+        assert(self->_ioc != nullptr && "network_manager::_ioc is a null pointer");
+
+        try {
+            spdlog::info("connect to server {}:{}", host, port);
+            asio::co_spawn(*self->_ioc, self->client_connect(self, host, port), asio::detached);
+            auto work = asio::make_work_guard(*self->_ioc);
+            self->_ioc->run();
+        } catch (std::exception& e) {
+            spdlog::error("exception in io_context thread: {}", e.what());
+        }
+    };
+
+    try {
+        if (!_net_thread.joinable()) {
+            spdlog::info("start thread");
+            _net_thread = std::thread(task, shared_from_this(), host, port);
+        }
+    } catch (std::exception& e) {
+        spdlog::error("failed to start the network thread: {}", e.what());
+    }
+
+    spdlog::info("start client");
+}
+
+asio::awaitable<void> network_manager::client_heartbeat_loop(std::shared_ptr<tcp_socket> socket)
+{
+    asio::steady_timer timer(*_ioc);
+
+    while (true) {
+        if (!is_running()) {
+            co_return;
+        }
+        cmd_t cmd = cmd_t::cmd_heartbeat;
+        auto [ec, _] = co_await asio::async_write(*socket, asio::buffer(&cmd, sizeof(cmd)));
+        if (ec) {
+            spdlog::error("send cmd_heartbeat failed, {}", ec.message());
+            co_return;
+        }
+
+        spdlog::trace("send cmd_heartbeat successfully, {}", ec.message());
+        timer.expires_after(std::chrono::seconds(3));
+        co_await timer.async_wait(asio::use_awaitable);
+    }
+}
+
+asio::awaitable<void> network_manager::client_udp_loop(audio_manager::AudioFormat audio_format, const std::string host, uint16_t port, uint32_t id)
+{
+    spdlog::info("udp connect: {}:{}, id:{}", host, port, id);
+    
+    asio::steady_timer timer(*_ioc);
+    ip::udp::resolver resolver(*_ioc);
+    ip::udp::endpoint endpoint = *resolver.resolve(asio::ip::udp::v4(), host, std::to_string(port)).begin();
+    ip::udp::socket socket(*_ioc, asio::ip::udp::v4());
+
+    asio::error_code ec{};
+    uint32_t n;
+    co_await socket.async_connect(endpoint, asio::redirect_error(asio::use_awaitable, ec));
+
+    n = co_await socket.async_send(asio::buffer(&id, sizeof(id)), asio::redirect_error(asio::use_awaitable, ec));
+    if (ec) {
+        spdlog::error("udp send id failed, {}", ec.message());
+    }
+    spdlog::info("send size: {}, content: {}", n, std::format("{:08x}", id));
+
+    std::array<char, 4096> recv_buffer {};
+    _audio_manager->audio_init(audio_format);
+    _audio_manager->audio_start();
+    while (true) {
+        if (!is_running()) {
+            co_return;
+        }
+        n = co_await socket.async_receive(asio::buffer(recv_buffer), asio::redirect_error(asio::use_awaitable, ec));
+        if (ec) {
+            continue;
+        }
+        _audio_manager->audio_play(std::vector<char>(recv_buffer.begin(), recv_buffer.begin() + n));
+    }
+}
+
+asio::awaitable<void> network_manager::client_connect(std::shared_ptr<network_manager> self, const std::string host, uint16_t port)
+{
+    audio_manager::AudioFormat audio_format;
+    uint32_t udp_id = 0;
+    auto socket = std::make_shared<tcp_socket>(*self->_ioc);
+    ip::tcp::resolver resolver(*self->_ioc);
+    ip::tcp::resolver::results_type endpoints = resolver.resolve(host, std::to_string(port));
+
+    try {
+        // resolve
+        {
+            auto [ec, _] = co_await asio::async_connect(*socket, endpoints);
+            if (ec) {
+                spdlog::error("error connecting to server: {}", ec.message());
+                co_return;
+            }
+        }
+
+        // get audio format
+        {
+            cmd_t cmd = cmd_t::cmd_get_format;
+            uint32_t size = 0;
+            auto [ec, _] = co_await asio::async_write(*socket, asio::buffer(&cmd, sizeof(cmd)));
+            if (ec) {
+                spdlog::error("send cmd_get_format error, {}", ec.message());
+                co_return;
+            }
+            spdlog::info("send cmd_get_format successfully, cmd: {}", (size_t)cmd);
+
+            cmd = cmd_t::cmd_none;
+            std::array<uint32_t, 2> buffer = { static_cast<uint32_t>(cmd), size };
+            std::tie(ec, _) = co_await asio::async_read(*socket, asio::buffer(buffer.data(), sizeof(buffer)));
+            if (ec) {
+                spdlog::error("read cmd_get_format error, {}", ec.message());
+                co_return;
+            }
+            cmd = static_cast<cmd_t>(buffer[0]);
+            size = buffer[1];
+            if (cmd != cmd_t::cmd_get_format || size <= 0) {
+                spdlog::error("read cmd_get_format error, cmd: {}, size: {}", (size_t)cmd, size);
+                co_return;
+            }
+            spdlog::info("read cmd_get_format successfully, cmd: {}, size: {}", (size_t)cmd, size);
+
+            std::vector<char> format(size);
+            std::tie(ec, _) = co_await asio::async_read(*socket, asio::buffer(format, size));
+            if (ec) {
+                spdlog::error("error read audio format, {}", ec.message());
+                co_return;
+            }
+            std::string str(format.begin(), format.end());
+            if (!audio_format.ParseFromString(str)) {
+                spdlog::error("error parse audio format");
+                co_return;
+            }
+            spdlog::info("get audio format successfully, sample_rate: {}, channels: {}, encoding: {}",
+                         (uint32_t)audio_format.sample_rate(), (uint32_t)audio_format.channels(), (uint32_t)audio_format.encoding());
+        }
+
+        // start play
+        {
+            cmd_t cmd = cmd_t::cmd_start_play;
+            auto [ec, _] = co_await asio::async_write(*socket, asio::buffer(&cmd, sizeof(cmd)));
+            if (ec) {
+                spdlog::error("error send cmd_start_play, {}", ec.message());
+                co_return;
+            }
+
+            cmd = cmd_t::cmd_none;
+            std::array<uint32_t, 2> buffer = { static_cast<uint32_t>(cmd), udp_id};
+            std::tie(ec, _) = co_await asio::async_read(*socket, asio::buffer(buffer.data(), sizeof(buffer)));
+            if (ec) {
+                spdlog::error("error read cmd_start_play. {}", ec.message());
+                co_return;
+            }
+            cmd = static_cast<cmd_t>(buffer[0]);
+            if (cmd != cmd_t::cmd_start_play) {
+                spdlog::error("read cmd_start_play error, cmd: {}, udp_id: {}", (size_t)cmd, udp_id);
+                co_return;
+            }
+
+            udp_id = buffer[1];
+            spdlog::info("get udp_id successfully, udp_id: {}", std::format("{:08x}", udp_id));
+        }
+
+        asio::co_spawn(*self->_ioc, self->client_heartbeat_loop(socket), asio::detached);
+        asio::co_spawn(*self->_ioc, self->client_udp_loop(audio_format, host, port, udp_id), asio::detached);
+    } catch (std::exception& e) {
+        spdlog::error("error connecting to server: {}", e.what());
+    }
+}
+
+void network_manager::wait_client()
+{
+    _net_thread.join();
+}
+
+void network_manager::stop_client()
+{
+    if (_ioc) {
+        _ioc->stop();
+    }
+    _net_thread.join();
+    _ioc = nullptr;
+    spdlog::info("client stopped");
 }

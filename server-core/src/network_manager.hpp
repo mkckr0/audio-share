@@ -64,6 +64,9 @@ public:
     void start_server(const std::string& host, uint16_t port, const audio_manager::capture_config& capture_config);
     void stop_server();
     void wait_server();
+    void start_client(const std::string& host, uint16_t port);
+    void stop_client();
+    void wait_client();
     bool is_running() const;
 
 private:
@@ -71,7 +74,10 @@ private:
     asio::awaitable<void> read_loop(std::shared_ptr<tcp_socket> peer);
     asio::awaitable<void> heartbeat_loop(std::shared_ptr<tcp_socket> peer);
     asio::awaitable<void> accept_udp_loop();
-    
+    asio::awaitable<void> client_connect(std::shared_ptr<network_manager> self, const std::string host, uint16_t port);
+    asio::awaitable<void> client_heartbeat_loop(std::shared_ptr<tcp_socket> socket);
+    asio::awaitable<void> client_udp_loop(audio_manager::AudioFormat audio_format, const std::string host, uint16_t port, uint32_t id);
+
     playing_peer_list_t::iterator close_session(std::shared_ptr<tcp_socket>& peer);
     int add_playing_peer(std::shared_ptr<tcp_socket>& peer);
     playing_peer_list_t::iterator remove_playing_peer(std::shared_ptr<tcp_socket>& peer);

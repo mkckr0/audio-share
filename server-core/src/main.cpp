@@ -1,12 +1,24 @@
-#include "config.h"
-#include "audio_manager.hpp"
-#include "network_manager.hpp"
-
 #include <cxxopts.hpp>
 #include <iostream>
 #include <spdlog/spdlog.h>
 
+#include "config.h"
+#include "audio_manager.hpp"
+#include "network_manager.hpp"
+
 using string = std::string;
+
+std::pair<std::string, uint16_t> parse_host_port(const std::string& s) {
+    size_t pos = s.find(':');
+    std::string host = s.substr(0, pos);
+    uint16_t port;
+    if (pos == std::string::npos) {
+        port = 65530;
+    } else {
+        port = (uint16_t)std::stoi(s.substr(pos + 1));
+    }
+    return {host, port};
+}
 
 int main(int argc, char* argv[])
 {
@@ -18,12 +30,14 @@ int main(int argc, char* argv[])
     help_string += fmt::format("  {} --bind={} --encoding=f32 --channels=2 --sample-rate=48000\n", AUDIO_SHARE_BIN_NAME, default_address.empty() ? "192.168.3.2": default_address);
     help_string += fmt::format("  {} -l\n", AUDIO_SHARE_BIN_NAME);
     help_string += fmt::format("  {} --list-encoding\n", AUDIO_SHARE_BIN_NAME);
+    help_string += fmt::format("  {} --connect={}\n", AUDIO_SHARE_BIN_NAME, "192.168.3.2");
     cxxopts::Options options(AUDIO_SHARE_BIN_NAME, help_string);
 
     // clang-format off
     options.add_options()
         ("h,help", "Print usage")
         ("l,list-endpoint", "List available endpoints")
+        ("connect", "Connect to server", cxxopts::value<string>(), "[host][:<port>]")
         ("b,bind", "The server bind address. If not set, will use default", cxxopts::value<string>()->implicit_value(default_address), "[host][:<port>]")
         ("e,endpoint", "Specify the endpoint id. If not set or set \"default\", will use default", cxxopts::value<string>()->default_value("default"), "[endpoint]")
         ("encoding", "Specify the capture encoding. If not set or set \"default\", will use default", cxxopts::value<audio_manager::encoding_t>()->default_value("default"), "[encoding]")
@@ -82,14 +96,7 @@ int main(int argc, char* argv[])
 
         if (result.count("bind")) {
             auto s = result["bind"].as<string>();
-            size_t pos = s.find(':');
-            string host = s.substr(0, pos);
-            uint16_t port;
-            if (pos == string::npos) {
-                port = 65530;
-            } else {
-                port = (uint16_t)std::stoi(s.substr(pos + 1));
-            }
+            auto [host, port] = parse_host_port(s);
 
             auto audio_manager = std::make_shared<class audio_manager>();
 
@@ -104,6 +111,19 @@ int main(int argc, char* argv[])
 
             network_manager->start_server(host, port, capture_config);
             network_manager->wait_server();
+
+            return EXIT_SUCCESS;
+        }
+
+        if (result.count("connect")) {
+            auto s = result["connect"].as<string>();
+            auto [host, port] = parse_host_port(s);
+
+            auto audio_manager = std::make_shared<class audio_manager>();
+            auto network_manager = std::make_shared<class network_manager>(audio_manager);
+
+            network_manager->start_client(host, port);
+            network_manager->wait_client();
 
             return EXIT_SUCCESS;
         }
