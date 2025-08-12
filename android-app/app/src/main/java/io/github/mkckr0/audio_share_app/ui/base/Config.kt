@@ -32,12 +32,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.isTraceInProgress
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
@@ -49,7 +55,12 @@ import kotlinx.coroutines.launch
 fun ConfigGroup(title: String, content: @Composable () -> Unit) {
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp).semantics(
+                mergeDescendants = true
+            ){
+                isTraversalGroup = true
+                traversalIndex = 1f
+            },
         ) {
             Text(
                 text = title,
@@ -110,7 +121,9 @@ fun SliderConfig(
                 track = {
                     SliderDefaults.Track(it, drawTick = { _, _ -> })
                 },
-                modifier = Modifier.padding(top = 4.dp, start = 2.dp, end = 2.dp),
+                modifier = Modifier.padding(top = 4.dp, start = 2.dp, end = 2.dp).semantics {
+                    contentDescription = "$title " + valueFormatter(tempValue)
+                },
             )
         }
     }
