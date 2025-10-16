@@ -27,19 +27,18 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Autorenew
-import androidx.compose.material.icons.filled.BatterySaver
-import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.ColorLens
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.NewReleases
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.PowerSettingsNew
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Update
-import androidx.compose.material.icons.filled.Wallpaper
+import androidx.compose.material.icons.outlined.BatterySaver
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.ColorLens
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.NewReleases
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.PlayCircle
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Wallpaper
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -91,7 +90,7 @@ fun SettingsScreen() {
                 defaultValue = context.getBoolean(R.bool.default_start_playback_when_system_boot)
             )
             SwitchPreference(
-                icon = Icons.Default.PlayCircle,
+                icon = Icons.Outlined.PlayCircle,
                 key = AppSettingsKeys.START_PLAYBACK_WHEN_APP_START,
                 title = context.getString(R.string.label_auto_start_when_app_starts),
                 defaultValue = context.getBoolean(R.bool.default_start_playback_when_app_start)
@@ -115,7 +114,7 @@ fun SettingsScreen() {
 
         PreferenceCategory(context.getString(R.string.label_battery_optimization)) {
             Preference(
-                icon = Icons.Default.BatterySaver,
+                icon = Icons.Outlined.BatterySaver,
                 title = context.getString(R.string.label_request_battery_optimization),
                 summary = batteryOptimizationState,
                 intent = rememberIntent(
@@ -124,7 +123,7 @@ fun SettingsScreen() {
                 )
             )
             Preference(
-                icon = Icons.Default.Settings,
+                icon = Icons.Outlined.Settings,
                 title = context.getString(R.string.label_battery_optimization_settings),
                 intent = rememberIntent(
                     Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
@@ -145,14 +144,14 @@ fun SettingsScreen() {
             }
             if (isDynamicColorFromWallpaperAvailable()) {
                 SwitchPreference(
-                    icon = Icons.Default.Wallpaper,
+                    icon = Icons.Outlined.Wallpaper,
                     key = AppSettingsKeys.DYNAMIC_COLOR_FROM_WALLPAPER,
                     title = context.getString(R.string.label_dynamic_color_from_wallpaper),
                     defaultValue = context.getBoolean(R.bool.default_dynamic_color_from_wallpaper),
                 )
             }
             EditTextPreference(
-                icon = Icons.Default.ColorLens,
+                icon = Icons.Outlined.ColorLens,
                 key = AppSettingsKeys.DYNAMIC_COLOR_FROM_SEED_COLOR,
                 title = context.getString(R.string.label_dynamic_color_from_seed_color),
                 defaultValue = context.getString(R.string.default_dynamic_color_from_seed_color),
@@ -174,7 +173,7 @@ fun SettingsScreen() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             PreferenceCategory(context.getString(R.string.label_notification)) {
                 Preference(
-                    icon = Icons.Default.Notifications,
+                    icon = Icons.Outlined.Notifications,
                     title = context.getString(R.string.label_notification_settings),
                     intent = rememberIntent(
                         Settings.ACTION_APP_NOTIFICATION_SETTINGS,
@@ -225,7 +224,7 @@ fun SettingsScreen() {
                 )
             }
             Preference(
-                icon = Icons.Default.NewReleases,
+                icon = Icons.Outlined.NewReleases,
                 title = context.getString(R.string.label_latest_release),
                 intent = rememberIntent(
                     Intent.ACTION_VIEW,
@@ -245,7 +244,7 @@ fun SettingsScreen() {
                 )
             )
             Preference(
-                icon = Icons.Default.BugReport,
+                icon = Icons.Outlined.BugReport,
                 title = context.getString(R.string.label_issues),
                 summary = context.getString(R.string.label_report_a_bug),
                 intent = rememberIntent(
@@ -254,7 +253,7 @@ fun SettingsScreen() {
                 )
             )
             Preference(
-                icon = Icons.Default.Info,
+                icon = Icons.Outlined.Info,
                 title = context.getString(R.string.label_version),
                 summary = remember { "${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE})-${BuildConfig.BUILD_TYPE}" },
                 intent = rememberIntent(

@@ -43,31 +43,31 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            val keystoreProperties = Properties().apply {
-                load(rootProject.file("keystore.properties").inputStream())
-            }
-            storeFile = file(keystoreProperties.getProperty("storeFile"))
-            keyAlias = keystoreProperties.getProperty("keyAlias")
-            storePassword = keystoreProperties.getProperty("storePassword")
-            keyPassword = keystoreProperties.getProperty("keyPassword")
-            enableV3Signing = true
-        }
+//        create("release") {
+//            val keystoreProperties = Properties().apply {
+//                load(rootProject.file("keystore.properties").inputStream())
+//            }
+//            storeFile = file(keystoreProperties.getProperty("storeFile"))
+//            keyAlias = keystoreProperties.getProperty("keyAlias")
+//            storePassword = keystoreProperties.getProperty("storePassword")
+//            keyPassword = keystoreProperties.getProperty("keyPassword")
+//            enableV3Signing = true
+//        }
     }
 
     buildTypes {
-        release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            isDebuggable = false
-            isProfileable = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs["release"]
-        }
+//        release {
+//            isMinifyEnabled = true
+//            isShrinkResources = true
+//            isDebuggable = false
+//            isProfileable = false
+//            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+//            signingConfig = signingConfigs["release"]
+//        }
     }
 
     kotlin {
-        jvmToolchain(17)
+        jvmToolchain(21)
     }
 
     buildFeatures {

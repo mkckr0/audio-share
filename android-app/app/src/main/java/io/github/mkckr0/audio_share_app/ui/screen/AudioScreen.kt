@@ -19,10 +19,17 @@ package io.github.mkckr0.audio_share_app.ui.screen
 import android.media.AudioTrack
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight.Companion.W600
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.mkckr0.audio_share_app.R
@@ -36,9 +43,19 @@ import io.github.mkckr0.audio_share_app.ui.theme.AppTheme
 fun AudioScreen() {
     val context = LocalContext.current
     Column(
-        modifier = Modifier.padding(16.dp),
+        modifier = Modifier.padding(16.dp)
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        Text(
+            text = "Audio options",
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.2f)
+                .wrapContentHeight(Alignment.CenterVertically),
+            textAlign = TextAlign.Center,
+            fontWeight = W600
+        )
         ConfigGroup(context.getString(R.string.label_audio_track)) {
             SliderConfig(
                 key = AudioConfigKeys.VOLUME,

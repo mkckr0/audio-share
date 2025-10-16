@@ -20,19 +20,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PauseCircle
-import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.outlined.PauseCircleOutline
+import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,7 +45,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.compose.LifecycleStartEffect
@@ -70,58 +72,78 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
             var host by remember(uiState.host) { mutableStateOf(uiState.host) }
             var port by remember(uiState.port) { mutableStateOf(uiState.port.toString()) }
             var started by remember { mutableStateOf(false) }
-            val isHostError by remember { derivedStateOf {
-                host.isEmpty()
-            } }
-            val isPortError by remember { derivedStateOf {
-                port.isEmpty()
-            } }
+            val isHostError by remember {
+                derivedStateOf {
+                    host.isEmpty() || !Regex("(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])")
+                        .matches(host) // regex to check correct ipv4 address
+                }
+            }
+            val isPortError by remember {
+                derivedStateOf {
+                    port.isEmpty() || if (port.isDigitsOnly()) port.toInt() !in 1..65535 else true
+                }
+            }
 
             Column(
                 modifier = Modifier
                     .padding(16.dp)
                     .fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+                verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Row(
-                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                        Text(
+                            text = AudioPlayer.message,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState()),
+                            textAlign = TextAlign.Center
+                        )
+                }
+                Row(
+                    modifier = Modifier
+                        .padding(4.dp, 0.dp),
                     horizontalArrangement = Arrangement.spacedBy(
                         8.dp,
                         Alignment.CenterHorizontally
-                    ),
-                    verticalAlignment = Alignment.Bottom
+                    )
                 ) {
                     OutlinedTextField(
                         value = host,
                         onValueChange = {
-                            if (it.isEmpty() || !it.contains(Regex("\\s"))) {
-                                host = it
-                            }
+                            host = it
                         },
                         enabled = !started,
                         isError = isHostError,
                         label = { Text(context.getString(R.string.label_host)) },
-                        modifier = Modifier.weight(0.7f),
+                        textStyle = TextStyle(textAlign = TextAlign.Center),
+                        modifier = Modifier.weight(0.5f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(25)
                     )
                     OutlinedTextField(
                         value = port,
                         onValueChange = {
-                            if (it.isEmpty() || it.isDigitsOnly() && it.toInt() in 1..65535) {
-                                port = it
-                            }
+                            port = it
                         },
                         enabled = !started,
                         isError = isPortError,
                         label = { Text(context.getString(R.string.label_port)) },
                         modifier = Modifier.weight(0.3f),
+                        textStyle = TextStyle(textAlign = TextAlign.Center),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(25)
                     )
                 }
 
                 IconButton(
                     onClick = {
                         if (isHostError || isPortError) {
+                            AudioPlayer.message =
+                                if (isHostError) "Check entered IP address" else "Check entered Port number"
                             return@IconButton
                         }
                         scope.launch {
@@ -137,32 +159,15 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
                             }
                         }
                     },
-                    modifier = Modifier.size(80.dp),
+                    modifier = Modifier.size(80.dp)
+                        .padding(12.dp),
                 ) {
                     Icon(
-                        imageVector = if (started) Icons.Default.PauseCircle else Icons.Default.PlayCircle,
+                        imageVector = if (started) Icons.Outlined.PauseCircleOutline else Icons.Outlined.PlayCircleOutline,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.fillMaxSize()
                     )
-                }
-
-                Row(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    OutlinedCard(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        SelectionContainer {
-                            Text(
-                                text = AudioPlayer.message,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp)
-                                    .verticalScroll(rememberScrollState())
-                            )
-                        }
-                    }
                 }
             }
 

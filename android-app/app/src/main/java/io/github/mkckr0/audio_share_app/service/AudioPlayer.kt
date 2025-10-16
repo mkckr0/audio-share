@@ -94,7 +94,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
     private val retryScope: CoroutineScope = MainScope()
 
     companion object {
-        var message by mutableStateOf("")
+        var message by mutableStateOf("Start listening to sounds from your PC!")
     }
 
     override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
