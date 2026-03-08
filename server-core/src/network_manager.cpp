@@ -21,6 +21,7 @@
 #include <list>
 #include <ranges>
 #include <coroutine>
+#include <span>
 
 #ifdef _WINDOWS
 #include <iphlpapi.h>
@@ -118,27 +119,41 @@ std::string network_manager::select_default_address(const std::vector<std::strin
         return {};
     }
 
-    auto is_private_address = [](const std::string& address) {
-        constexpr uint32_t private_addr_list[] = {
-            0x0a000000,
-            0xac100000,
-            0xc0a80000,
-        };
+    struct addr_mask {
+        uint32_t prefix;
+        uint32_t mask;
+    };
 
+    auto matches_any = [](const std::string& address, std::span<const addr_mask> entries) {
         uint32_t addr;
         inet_pton(AF_INET, address.c_str(), &addr);
         addr = ntohl(addr);
-        for (auto&& private_addr : private_addr_list) {
-            if ((addr & private_addr) == private_addr) {
+        for (auto&& e : entries) {
+            if ((addr & e.mask) == e.prefix) {
                 return true;
             }
         }
-
         return false;
     };
 
+    auto is_virtual_address = [&](const std::string& address) {
+        static constexpr addr_mask entries[] = {
+            { 0xac110000, 0xffff0000 }, // 172.17.0.0/16  (Docker)
+        };
+        return matches_any(address, entries);
+    };
+
+    auto is_private_address = [&](const std::string& address) {
+        static constexpr addr_mask entries[] = {
+            { 0x0a000000, 0xff000000 }, // 10.0.0.0/8
+            { 0xac100000, 0xfff00000 }, // 172.16.0.0/12
+            { 0xc0a80000, 0xffff0000 }, // 192.168.0.0/16
+        };
+        return matches_any(address, entries);
+    };
+
     for (auto&& address : address_list) {
-        if (is_private_address(address)) {
+        if (!is_virtual_address(address) && is_private_address(address)) {
             return address;
         }
     }
