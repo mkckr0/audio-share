@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Audio Share</string>
+    <string name="app_name" translatable="false">AudioStream</string>
 
     <!-- Network Config Defaults -->
     <string name="default_host" translatable="false">192.168.</string>
@@ -18,7 +18,7 @@
     <bool name="default_auto_check_for_update" translatable="false">false</bool>
 
     <!-- URLs -->
-    <string name="project_url" translatable="false">https://github.com/mkckr0/audio-share</string>
-    <string name="latest_release_url" translatable="false">https://github.com/mkckr0/audio-share/releases/latest</string>
-    <string name="issues_url" translatable="false">https://github.com/mkckr0/audio-share/issues</string>
+    <string name="project_url" translatable="false">https://github.com/audiostream/audiostream</string>
+    <string name="latest_release_url" translatable="false">https://github.com/audiostream/audiostream/releases/latest</string>
+    <string name="issues_url" translatable="false">https://github.com/audiostream/audiostream/issues</string>
 </resources>

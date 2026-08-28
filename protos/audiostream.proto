@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package com.audiostream.pb;
+
+option java_package = "com.audiostream.app.pb";
+option java_outer_classname = "AudioStreamProto";
+option java_multiple_files = true;
+
+enum AudioCodec {
+  CODEC_PCM = 0;
+  CODEC_OPUS = 1;
+}
+
+enum AudioEncoding {
+  ENCODING_INVALID = 0;
+  ENCODING_PCM_FLOAT = 1;
+  ENCODING_PCM_8BIT = 2;
+  ENCODING_PCM_16BIT = 3;
+  ENCODING_PCM_24BIT_PACKED = 4;
+  ENCODING_PCM_32BIT = 5;
+}
+
+message AudioFormat {
+  AudioEncoding encoding = 1;
+  int32 channels = 2;
+  int32 sample_rate = 3;
+}
+
+message StreamConfig {
+  AudioFormat format = 1;
+  AudioCodec codec = 2;
+  int32 opus_bitrate = 3;
+  int32 opus_frame_size_ms = 4;
+  int32 target_latency_ms = 5;
+}
+
+message MicControl {
+  bool start = 1;
+  StreamConfig config = 2;
+  int32 mic_source = 3;
+}
+
+message DiscoveryBeacon {
+  string app_name = 1;
+  string server_name = 2;
+  int32 port = 3;
+  string version = 4;
+  bool supports_opus = 5;
+  bool supports_mic = 6;
+  string ip_address = 7;
+}

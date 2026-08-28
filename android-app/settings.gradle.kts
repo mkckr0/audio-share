@@ -21,6 +21,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "audio-share-app"
+rootProject.name = "AudioStream"
 include(":app")
  

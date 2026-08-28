@@ -1,0 +1,675 @@
+# AudioStream — Implementation Plan
+
+## Goal
+Transform the open-source [audio-share v0.3.4] codebase into **AudioStream** — a full-featured, bidirectional audio streaming solution between Windows PC and Android phone over USB tethering (and Wi-Fi), with:
+
+- **PC → Phone**: Stream system audio to phone speakers
+- **Phone → PC**: Stream phone microphone to PC as a virtual mic input (on-demand, no green dot until a PC app requests the mic)
+- **Opus + PCM codec support** for low-latency compressed and lossless uncompressed streaming
+- **Zero-setup auto-connection** when USB tethering is plugged in
+- **Dear ImGui system tray app** on PC (dark gaming aesthetic, minimal resources)
+- **Modified Jetpack Compose Android app** with full settings control
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Virtual Audio Driver Dependency**: We will bundle [VB-CABLE](https://vb-audio.com/Cable/) (freeware) as the virtual mic device. The installer will check if it's present and prompt installation if missing. VB-CABLE is widely trusted and used by millions. Alternative: we can also support [Virtual Audio Cable](https://vac.muzychenko.net/) if the user already has it.
+
+> [!WARNING]  
+> **EV Code Signing**: The compiled PC executable and any bundled driver installer will trigger Windows SmartScreen warnings unless signed with an EV code signing certificate. For personal use this is fine — just click "Run anyway". For distribution, a certificate would be needed (~$200-400/year).
+
+> [!IMPORTANT]
+> **Android RECORD_AUDIO Permission**: The modified Android app will request `RECORD_AUDIO` permission. Android 12+ shows the green privacy indicator when mic is actively recording. Our on-demand approach means this indicator only appears when a PC app is actually using the virtual mic.
+
+---
+
+## Architecture Overview
+
+```mermaid
+graph TB
+    subgraph "Windows PC"
+        WASAPI["WASAPI Loopback<br/>Capture"] --> AM["AudioManager"]
+        AM --> NM["NetworkManager"]
+        NM -->|"UDP Audio (Opus/PCM)"| NET["Network<br/>(USB Tethering / Wi-Fi)"]
+        NET -->|"UDP Mic Audio"| VD["VB-CABLE<br/>Virtual Mic Input"]
+        VD --> APPS["Discord / Zoom / Games"]
+        TRAY["System Tray<br/>Dear ImGui UI"] --> NM
+        USBMON["USB Tether<br/>Monitor"] --> NM
+        NM -->|"TCP Control"| NET
+    end
+
+    subgraph "Android Phone"
+        NET2["Network"] -->|"UDP Audio"| AP["AudioPlayer<br/>(AAudio/AudioTrack)"]
+        AP --> SPK["Phone Speakers"]
+        MIC["Phone Microphone"] -->|"On-Demand"| MC["MicCapture<br/>(AudioRecord)"]
+        MC -->|"Opus/PCM Encode"| NC["NetClient"]
+        NC -->|"UDP Mic Audio"| NET2
+        NC -->|"TCP Control"| NET2
+        UI["Jetpack Compose UI"] --> NC
+    end
+
+    NET <--> NET2
+```
+
+---
+
+## Proposed Changes
+
+### Component 1: Protocol Extension (Bidirectional + Codec Negotiation)
+
+The existing protocol supports only PC→Phone PCM streaming. We need to extend it for bidirectional communication and codec negotiation.
+
+#### [MODIFY] `protos/client.proto`
+
+Add new message types for codec negotiation, mic stream control, and bidirectional audio:
+
+```diff
++ // Codec types
++ enum AudioCodec {
++   CODEC_PCM = 0;      // Raw PCM (existing behavior)
++   CODEC_OPUS = 1;     // Opus compressed audio
++ }
++
++ // Extended audio format with codec info
++ message StreamConfig {
++   AudioFormat format = 1;       // Sample rate, channels, encoding
++   AudioCodec codec = 2;         // Codec selection
++   int32 opus_bitrate = 3;       // Opus bitrate (bps), 0 = auto
++   int32 opus_frame_size_ms = 4; // Opus frame duration: 5, 10, 20 ms
++ }
++
++ // Mic stream control
++ message MicControl {
++   bool start = 1;               // true = start mic capture, false = stop
++   StreamConfig config = 2;      // Desired mic stream format
++ }
++
+  // Existing AudioFormat stays unchanged
+```
+
+#### [MODIFY] `server-core/src/network_manager.cpp`
+
+Extend the command protocol:
+
+```cpp
+// Existing commands
+CMD_GET_FORMAT    = 1,  // Client requests audio format
+CMD_START_PLAY    = 2,  // Client starts playback session
+CMD_HEARTBEAT     = 3,  // Keep-alive ping
+
+// New commands
+CMD_NEGOTIATE_CODEC = 4,  // Codec negotiation (Opus/PCM, bitrate, frame size)
+CMD_START_MIC       = 5,  // PC requests phone to start mic capture
+CMD_STOP_MIC        = 6,  // PC requests phone to stop mic capture
+CMD_MIC_DATA        = 7,  // Mic audio data (phone → PC, over UDP)
+CMD_DISCOVERY       = 8,  // UDP broadcast discovery beacon
+CMD_ENCRYPTION_HANDSHAKE = 9,  // Optional TLS/DTLS negotiation
+```
+
+**UDP Packet Header** (new, replaces raw PCM bytes):
+```
+[uint8  packet_type]     // 0x01 = PC audio, 0x02 = Mic audio
+[uint16 sequence_num]    // For ordering & loss detection
+[uint32 timestamp]       // RTP-style timestamp for jitter buffer
+[bytes  payload]         // Opus frame or PCM data
+```
+
+---
+
+### Component 2: Opus Codec Integration (Server Core)
+
+#### [MODIFY] `server-core/CMakeLists.txt`
+
+Add Opus dependency:
+
+```diff
++ find_package(unofficial-opus CONFIG REQUIRED)  # via vcpkg: opus
++ target_link_libraries(as-core PRIVATE unofficial::opus::opus)
+```
+
+#### [NEW] `server-core/src/codec/opus_encoder.h` / `.cpp`
+
+```cpp
+class OpusEncoder {
+public:
+    OpusEncoder(int sample_rate, int channels, int bitrate, int frame_size_ms);
+    ~OpusEncoder();
+    
+    // Encode PCM frames to Opus packet
+    // Returns encoded bytes, output buffer must be pre-allocated
+    int encode(const float* pcm_input, int frame_size, 
+               uint8_t* output, int max_output_bytes);
+    
+    void set_bitrate(int bps);
+    void set_complexity(int complexity); // 0-10, trade CPU for quality
+    
+private:
+    ::OpusEncoder* encoder_ = nullptr;
+    int sample_rate_;
+    int channels_;
+    int frame_size_samples_;
+};
+```
+
+#### [NEW] `server-core/src/codec/opus_decoder.h` / `.cpp`
+
+```cpp
+class OpusDecoder {
+public:
+    OpusDecoder(int sample_rate, int channels);
+    ~OpusDecoder();
+    
+    // Decode Opus packet to PCM
+    int decode(const uint8_t* opus_data, int opus_len,
+               float* pcm_output, int max_frame_size);
+    
+    // Packet loss concealment
+    int decode_plc(float* pcm_output, int frame_size);
+    
+private:
+    ::OpusDecoder* decoder_ = nullptr;
+};
+```
+
+---
+
+### Component 3: Mic Audio Reception (Server Core — Phone → PC)
+
+#### [NEW] `server-core/src/mic_receiver.h` / `.cpp`
+
+Receives mic audio from the Android phone via UDP and writes it to the virtual audio cable (VB-CABLE Input):
+
+```cpp
+class MicReceiver {
+public:
+    MicReceiver(asio::io_context& io, const StreamConfig& config);
+    
+    // Start receiving mic UDP packets and writing to VB-CABLE
+    asio::awaitable<void> start(uint16_t port);
+    void stop();
+    
+    // Signals the Android phone to start/stop mic capture
+    asio::awaitable<void> request_mic_start(tcp::socket& control_socket);
+    asio::awaitable<void> request_mic_stop(tcp::socket& control_socket);
+    
+    bool is_active() const;
+    
+private:
+    // WASAPI Render to VB-CABLE Input device
+    void init_wasapi_render(const std::string& device_id);
+    void write_to_virtual_mic(const float* pcm, int frames);
+    
+    // Jitter buffer for incoming mic packets
+    AdaptiveJitterBuffer jitter_buffer_;
+    OpusDecoder decoder_;
+    
+    // WASAPI rendering
+    wil::com_ptr<IAudioClient> audio_client_;
+    wil::com_ptr<IAudioRenderClient> render_client_;
+};
+```
+
+---
+
+### Component 4: Virtual Mic On-Demand Detection
+
+#### [NEW] `server-core/src/virtual_mic_monitor.h` / `.cpp`
+
+Monitors whether any Windows application is reading from the VB-CABLE Output device (i.e., a VoIP app opened the virtual mic). When detected, signals the phone to start mic capture.
+
+```cpp
+class VirtualMicMonitor {
+public:
+    VirtualMicMonitor(asio::io_context& io);
+    
+    // Poll WASAPI session manager to detect active audio sessions
+    // on the VB-CABLE Output device
+    asio::awaitable<void> monitor_loop(
+        std::function<void(bool)> on_state_change);  // true=active, false=inactive
+    
+private:
+    // Uses IAudioSessionManager2 + IAudioSessionEnumerator
+    // to detect when apps open the VB-CABLE Output recording device
+    bool is_virtual_mic_in_use();
+    
+    std::string vb_cable_device_id_;
+    bool last_state_ = false;
+};
+```
+
+**Detection approach**: Use `IMMDeviceEnumerator` to find the VB-CABLE Output endpoint, then use `IAudioMeterInformation` or `IAudioSessionManager2` to detect when another process activates a capture session on it. Poll every 100ms (negligible CPU cost).
+
+---
+
+### Component 5: USB Tethering Auto-Detection
+
+#### [NEW] `server-core/src/usb_tether_monitor.h` / `.cpp`
+
+```cpp
+class UsbTetherMonitor {
+public:
+    UsbTetherMonitor(asio::io_context& io);
+    
+    // Monitor for RNDIS/NCM network adapter appearance/disappearance
+    asio::awaitable<void> monitor_loop(
+        std::function<void(std::string /*gateway_ip*/)> on_tether_connected,
+        std::function<void()> on_tether_disconnected);
+    
+private:
+    // Uses Windows IP Helper API (GetAdaptersAddresses) 
+    // with NotifyIpInterfaceChange for real-time notifications
+    // Detects adapters with:
+    //   - IfType = IF_TYPE_USB (or adapter name containing "RNDIS"/"NCM")
+    //   - Subnet 192.168.42.x (standard Android USB tethering)
+    //   - Or 192.168.137.x (Windows ICS)
+    
+    void detect_tether_interface();
+    HANDLE notification_handle_ = nullptr;
+};
+```
+
+---
+
+### Component 6: Adaptive Jitter Buffer
+
+#### [NEW] `server-core/src/audio/jitter_buffer.h` / `.cpp`
+
+```cpp
+class AdaptiveJitterBuffer {
+public:
+    enum Preset { LOW, MEDIUM, HIGH, CUSTOM };
+    
+    AdaptiveJitterBuffer(int sample_rate, int channels, 
+                         Preset preset = LOW);
+    
+    // Push received packet (may arrive out of order)
+    void push(uint16_t seq, uint32_t timestamp, 
+              const uint8_t* data, int len);
+    
+    // Pull next audio frame for playback (called by render thread)
+    // Returns true if data available, false if underrun
+    bool pull(float* pcm_output, int frame_size);
+    
+    // Statistics
+    struct Stats {
+        float avg_latency_ms;
+        float jitter_ms;
+        int packets_lost;
+        int buffer_depth_ms;
+        int underruns;
+        int overruns;
+    };
+    Stats get_stats() const;
+    
+    void set_preset(Preset p);
+    void set_custom_buffer_ms(int min_ms, int max_ms);
+    
+private:
+    // Ring buffer of timestamped packets, sorted by sequence number
+    // Adaptive target depth based on measured jitter
+    struct Packet {
+        uint16_t seq;
+        uint32_t timestamp;
+        std::vector<uint8_t> data;
+    };
+    std::map<uint16_t, Packet> buffer_;
+    int target_depth_ms_;
+    // ... statistics tracking
+};
+```
+
+**Preset values**:
+- **LOW**: 20ms target buffer (USB tethering)
+- **MEDIUM**: 50ms target buffer (good Wi-Fi)
+- **HIGH**: 100ms target buffer (unstable network)
+- **CUSTOM**: User-defined min/max in ms
+
+---
+
+### Component 7: Dear ImGui PC Application
+
+#### [NEW] `server-gui/` directory structure
+
+```
+server-gui/
+├── CMakeLists.txt
+├── src/
+│   ├── main.cpp              // Entry point, Win32 message loop, tray icon
+│   ├── app.h / .cpp           // Application lifecycle, settings persistence
+│   ├── tray_icon.h / .cpp     // System tray icon with context menu
+│   ├── gui/
+│   │   ├── imgui_app.h / .cpp       // Dear ImGui window management
+│   │   ├── main_panel.h / .cpp      // Status overview, connection info
+│   │   ├── settings_panel.h / .cpp  // Audio, network, latency settings
+│   │   └── stats_panel.h / .cpp     // Real-time latency/buffer stats
+│   └── resources/
+│       ├── icon.ico
+│       └── app.rc
+├── vendor/
+│   ├── imgui/               // Dear ImGui (MIT license)
+│   └── imgui_impl_win32/    // Win32 + D3D11 backend
+```
+
+#### Key UI Panels:
+
+**Main Panel** (default view):
+```
+┌─────────────────────────────────────────┐
+│  🔊 AudioStream                   ─ □ X │
+├─────────────────────────────────────────┤
+│  Status: ● Connected via USB Tethering  │
+│  Device: Pixel 8 Pro                    │
+│  Latency: 12ms  │  Codec: Opus 128kbps  │
+│                                         │
+│  ┌─ PC Audio → Phone ──────────────┐   │
+│  │  Source: [Speakers (Realtek) ▼]  │   │
+│  │  Volume: ████████░░ 80%          │   │
+│  │  Status: Streaming               │   │
+│  └──────────────────────────────────┘   │
+│                                         │
+│  ┌─ Phone Mic → PC ───────────────┐    │
+│  │  Output: [VB-CABLE Input ▼]     │    │
+│  │  Status: ● On-demand (idle)     │    │
+│  │  Level:  ░░░░░░░░░░ --dB        │    │
+│  └──────────────────────────────────┘   │
+│                                         │
+│  [⚙ Settings]  [📊 Stats]  [⏻ Exit]    │
+└─────────────────────────────────────────┘
+```
+
+**Settings Panel**:
+- **Audio**: Codec (Opus/PCM), Opus bitrate, Opus frame size, sample rate
+- **Latency**: Preset (Low/Medium/High), custom buffer slider
+- **Network**: Port, auto-connect toggle, discovery settings
+- **Encryption**: Enable/disable TLS toggle
+- **Startup**: Run on boot, minimize to tray on close
+- **Theme**: Dark (default), accent color picker
+
+---
+
+### Component 8: Android App Modifications
+
+#### [MODIFY] `android-app/app/src/main/AndroidManifest.xml`
+
+```diff
++ <uses-permission android:name="android.permission.RECORD_AUDIO" />
++ <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+```
+
+#### [NEW] `android-app/.../service/MicCaptureService.kt`
+
+```kotlin
+class MicCaptureService : Service() {
+    private var audioRecord: AudioRecord? = null
+    private var opusEncoder: OpusEncoder? = null  // Native JNI binding
+    private var isCapturing = false
+    
+    // Called when PC requests mic start via TCP control command
+    fun startCapture(config: StreamConfig, udpTarget: InetSocketAddress) {
+        val source = when(config.micSource) {
+            MicSource.DEFAULT -> MediaRecorder.AudioSource.DEFAULT
+            MicSource.VOICE_COMM -> MediaRecorder.AudioSource.VOICE_COMMUNICATION
+            MicSource.RAW -> MediaRecorder.AudioSource.UNPROCESSED
+        }
+        
+        audioRecord = AudioRecord.Builder()
+            .setAudioSource(source)
+            .setAudioFormat(AudioFormat.Builder()
+                .setSampleRate(config.sampleRate)
+                .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+                .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
+                .build())
+            .setBufferSizeInBytes(minBufferSize)
+            .build()
+        
+        // Capture loop in coroutine — encode with Opus and send via UDP
+        captureJob = scope.launch(Dispatchers.IO) { captureLoop(udpTarget) }
+    }
+    
+    fun stopCapture() {
+        isCapturing = false
+        audioRecord?.stop()
+        audioRecord?.release()
+    }
+}
+```
+
+#### [NEW] `android-app/.../codec/OpusCodec.kt` + JNI native
+
+Thin Kotlin wrapper around libopus via JNI:
+
+```kotlin
+class OpusEncoder(sampleRate: Int, channels: Int, bitrate: Int) {
+    private var nativeHandle: Long = 0
+    
+    init { nativeHandle = nativeCreate(sampleRate, channels, bitrate) }
+    
+    fun encode(pcmInput: FloatArray, frameSize: Int): ByteArray {
+        return nativeEncode(nativeHandle, pcmInput, frameSize)
+    }
+    
+    fun destroy() { nativeDestroy(nativeHandle) }
+    
+    private external fun nativeCreate(sr: Int, ch: Int, br: Int): Long
+    private external fun nativeEncode(handle: Long, pcm: FloatArray, fs: Int): ByteArray
+    private external fun nativeDestroy(handle: Long)
+    
+    companion object { init { System.loadLibrary("opus_jni") } }
+}
+```
+
+#### [MODIFY] `android-app/.../service/PlaybackService.kt`
+
+Add Opus decoding support for incoming PC audio:
+
+```diff
++ private var opusDecoder: OpusDecoder? = null
++ 
+  // In the UDP receive loop:
+- audioTrack.write(audioData, ...)
++ when (packetType) {
++     PACKET_TYPE_PCM -> audioTrack.write(audioData, ...)
++     PACKET_TYPE_OPUS -> {
++         val pcm = opusDecoder!!.decode(audioData)
++         audioTrack.write(pcm, ...)
++     }
++ }
+```
+
+#### [MODIFY] `android-app/.../ui/` — Settings screens
+
+Add new settings sections:
+- **Mic Source**: Default / Voice Communication / Raw
+- **Codec**: Opus / PCM
+- **Opus Settings**: Bitrate slider (32-510 kbps), Frame size dropdown (5/10/20 ms)
+- **Latency**: Preset selector + custom buffer slider
+- **Auto-Connect**: Enable/disable auto-connect on USB tethering
+- **Encryption**: Toggle
+
+---
+
+### Component 9: Server Discovery (UDP Broadcast)
+
+#### [MODIFY] `server-core/src/network_manager.cpp`
+
+Add periodic UDP broadcast on port 59200 (matching AudioRelay convention):
+
+```cpp
+asio::awaitable<void> NetworkManager::discovery_beacon_loop() {
+    auto endpoint = udp::endpoint(
+        asio::ip::address_v4::broadcast(), 59200);
+    
+    DiscoveryBeacon beacon;
+    beacon.set_app_name("AudioStream");
+    beacon.set_server_name(hostname_);
+    beacon.set_port(port_);
+    beacon.set_version(APP_VERSION);
+    beacon.set_supports_opus(true);
+    beacon.set_supports_mic(true);
+    
+    while (running_) {
+        auto data = beacon.SerializeAsString();
+        co_await udp_socket_.async_send_to(
+            asio::buffer(data), endpoint, asio::use_awaitable);
+        co_await asio::steady_timer(io_, 2s).async_wait(asio::use_awaitable);
+    }
+}
+```
+
+---
+
+### Component 10: Optional Encryption
+
+#### TLS for TCP Control Channel
+
+Using OpenSSL (already available via vcpkg):
+
+```cpp
+// Wrap TCP socket with asio::ssl::stream when encryption enabled
+if (encryption_enabled_) {
+    ssl::context ctx(ssl::context::tlsv13_client);
+    ssl::stream<tcp::socket> secure_socket(std::move(socket), ctx);
+    co_await secure_socket.async_handshake(ssl::stream_base::server, 
+                                            asio::use_awaitable);
+    // Use secure_socket for all control commands
+}
+```
+
+For UDP audio: no encryption (USB tethering is physically secure; Wi-Fi encryption is handled at the WPA layer). User can enable DTLS in settings for additional security if desired.
+
+---
+
+## Implementation Phases
+
+### Phase 1: Core Protocol & Codec (Week 1)
+1. Extend protobuf schema with codec negotiation and mic control
+2. Integrate libopus into server-core (vcpkg)
+3. Implement `OpusEncoder` / `OpusDecoder` classes
+4. Add packet header with sequence numbers and timestamps
+5. Implement adaptive jitter buffer
+6. Test PC→Phone streaming with Opus codec
+
+### Phase 2: Phone Mic → PC (Week 2)
+1. Add `RECORD_AUDIO` permission to Android app
+2. Implement `MicCaptureService` with `AudioRecord`
+3. Build Opus JNI bridge for Android
+4. Implement `MicReceiver` on PC (write to VB-CABLE)
+5. Implement `VirtualMicMonitor` for on-demand activation
+6. Test bidirectional streaming
+
+### Phase 3: Dear ImGui PC App (Week 2-3)
+1. Create `server-gui` project with Dear ImGui + Win32 + D3D11
+2. Port server-core integration from MFC to new GUI
+3. Implement system tray icon with context menu
+4. Build main panel, settings panel, stats panel
+5. Dark theme styling
+6. Minimize to tray, start on boot
+
+### Phase 4: Auto-Connect & Discovery (Week 3)
+1. Implement `UsbTetherMonitor` (Windows IP Helper API)
+2. Implement UDP discovery beacon
+3. Android app: auto-detect servers on subnet
+4. Zero-click connection flow
+5. Test with USB tethering and Wi-Fi
+
+### Phase 5: Polish & Security (Week 4)
+1. Optional TLS encryption for TCP control
+2. VB-CABLE bundling & auto-detection in installer
+3. Android settings UI for all new features
+4. Error handling, reconnection logic
+5. Resource optimization (memory, CPU profiling)
+6. Build & package (NSIS installer for Windows, signed APK for Android)
+
+---
+
+## Dependency Security Audit
+
+| Dependency | License | Security Status |
+|:---|:---|:---|
+| **libopus** 1.5.x | BSD-3 | ✅ IETF standard, widely audited, used by Chrome/Firefox/Discord |
+| **asio** (standalone) | BSL-1.0 | ✅ Boost ecosystem, mature, no known CVEs |
+| **protobuf** | BSD-3 | ✅ Google-maintained, regular security patches |
+| **spdlog** | MIT | ✅ Header-only logger, minimal attack surface |
+| **Dear ImGui** | MIT | ✅ Single-header, no network code, widely trusted |
+| **OpenSSL** 3.x | Apache-2.0 | ✅ Industry standard, active security team |
+| **VB-CABLE** | Freeware | ✅ Widely used, digitally signed by VB-Audio |
+| **Ktor Network** | Apache-2.0 | ✅ JetBrains-maintained, Kotlin-native |
+| **AndroidX Media3** | Apache-2.0 | ✅ Google-maintained |
+
+> [!NOTE]
+> All dependencies are well-known, open-source (except VB-CABLE which is freeware), and actively maintained. No obscure or unmaintained libraries are used.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+
+```bash
+# Build server-core with tests
+cd server-core
+cmake --preset windows-Release
+cmake --build build/Release --target tests
+
+# Run codec round-trip tests
+./build/Release/tests --gtest_filter="OpusCodec.*"
+
+# Run jitter buffer tests
+./build/Release/tests --gtest_filter="JitterBuffer.*"
+
+# Build Android app
+cd android-app
+./gradlew assembleDebug
+./gradlew test
+```
+
+### Manual Verification
+
+1. **PC → Phone Audio (Opus)**:
+   - Play music on PC → verify it plays on phone speakers with acceptable latency
+   - Compare Opus vs PCM quality and latency
+
+2. **Phone Mic → PC (On-Demand)**:
+   - Verify NO green dot appears on Android when connected but no PC app uses the mic
+   - Open Discord on PC, select VB-CABLE as mic input → verify green dot appears and mic audio streams
+   - Close Discord → verify green dot disappears and mic streaming stops
+
+3. **Auto-Connect**:
+   - Enable USB tethering on phone → verify PC app auto-detects and connects within 3 seconds
+   - Disconnect USB → verify clean disconnection and status update
+
+4. **Latency**:
+   - Measure round-trip latency with USB tethering (target: <20ms)
+   - Test all jitter buffer presets (Low/Medium/High)
+
+5. **Resource Usage**:
+   - Verify PC app uses <30MB RAM and <2% CPU when idle
+   - Verify <50MB RAM and <5% CPU when actively streaming
+
+6. **Encryption Toggle**:
+   - Enable encryption → verify TLS handshake succeeds and streaming works
+   - Disable encryption → verify no TLS overhead
+
+---
+
+## File Change Summary
+
+| Component | Action | Files |
+|:---|:---|:---|
+| Protocol | MODIFY | [`client.proto`](file:///C:/Users/kyril/audioStream/audio-share-0.3.4/audio-share-0.3.4/protos/client.proto) |
+| Server Core | MODIFY | [`network_manager.cpp`](file:///C:/Users/kyril/audioStream/audio-share-0.3.4/audio-share-0.3.4/server-core/src/network_manager.cpp), [`CMakeLists.txt`](file:///C:/Users/kyril/audioStream/audio-share-0.3.4/audio-share-0.3.4/server-core/CMakeLists.txt) |
+| Opus Codec (PC) | NEW | `server-core/src/codec/opus_encoder.{h,cpp}`, `opus_decoder.{h,cpp}` |
+| Mic Receiver | NEW | `server-core/src/mic_receiver.{h,cpp}` |
+| Virtual Mic Monitor | NEW | `server-core/src/virtual_mic_monitor.{h,cpp}` |
+| USB Tether Monitor | NEW | `server-core/src/usb_tether_monitor.{h,cpp}` |
+| Jitter Buffer | NEW | `server-core/src/audio/jitter_buffer.{h,cpp}` |
+| Dear ImGui GUI | NEW | `server-gui/` (entire directory, ~15 files) |
+| Android Manifest | MODIFY | [`AndroidManifest.xml`](file:///C:/Users/kyril/audioStream/audio-share-0.3.4/audio-share-0.3.4/android-app/app/src/main/AndroidManifest.xml) |
+| Android Mic Service | NEW | `MicCaptureService.kt` |
+| Android Opus JNI | NEW | `codec/OpusCodec.kt`, `jni/opus_jni.cpp` |
+| Android Net Client | MODIFY | `NetClient.kt` |
+| Android Playback | MODIFY | `AudioPlayer.kt`, `PlaybackService.kt` |
+| Android Settings UI | MODIFY | Various Compose UI files |
+| Server MFC | DELETE | `server-mfc/` (replaced by Dear ImGui GUI) |

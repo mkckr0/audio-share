@@ -1,19 +1,3 @@
-/*
- *    Copyright 2022-2024 mkckr0 <https://github.com/mkckr0>
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
-
 @file:Suppress("UnstableApiUsage")
 
 import java.util.Properties
@@ -29,29 +13,32 @@ plugins {
 }
 
 android {
-    namespace = "io.github.mkckr0.audio_share_app"
+    namespace = "com.audiostream.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "io.github.mkckr0.audio_share_app"
+        applicationId = "com.audiostream.app"
         minSdk = 23
         targetSdk = 35
-        versionCode = 3004
-        versionName = "0.3.4"
-        base.archivesName = "${rootProject.name}-$versionName"
+        versionCode = 1000
+        versionName = "1.0.0"
+        base.archivesName = "AudioStream-1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
         create("release") {
-            val keystoreProperties = Properties().apply {
-                load(rootProject.file("keystore.properties").inputStream())
+            val ksFile = rootProject.file("keystore.properties")
+            if (ksFile.exists()) {
+                val keystoreProperties = Properties().apply {
+                    load(ksFile.inputStream())
+                }
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                enableV3Signing = true
             }
-            storeFile = file(keystoreProperties.getProperty("storeFile"))
-            keyAlias = keystoreProperties.getProperty("keyAlias")
-            storePassword = keystoreProperties.getProperty("storePassword")
-            keyPassword = keystoreProperties.getProperty("keyPassword")
-            enableV3Signing = true
         }
     }
 
@@ -62,7 +49,10 @@ android {
             isDebuggable = false
             isProfileable = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs["release"]
+            val ksFile = rootProject.file("keystore.properties")
+            if (ksFile.exists()) {
+                signingConfig = signingConfigs["release"]
+            }
         }
     }
 
@@ -77,6 +67,8 @@ android {
 
     sourceSets {
         getByName("main") {
+            java.srcDirs("src/main/java", "build/generated/source/proto/debug/java")
+            kotlin.srcDirs("src/main/java", "build/generated/source/proto/debug/java")
             proto {
                 srcDir("../../protos")
             }

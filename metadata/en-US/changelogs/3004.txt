@@ -1,2 +1,0 @@
-Server MFC
-- Fix pop up "No update" msg box when auto update running. #147

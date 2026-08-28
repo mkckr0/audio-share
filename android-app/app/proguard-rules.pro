@@ -22,7 +22,7 @@
 
 -dontobfuscate
 
--keep class io.github.mkckr0.audio_share_app.pb.** { *; }
+-keep class com.audiostream.app.pb.** { *; }
 
 -assumenosideeffects class android.util.Log {
     public static *** v(...);

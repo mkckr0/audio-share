@@ -1,0 +1,8 @@
+#ifndef AUDIOSTREAM_CONFIG_H
+#define AUDIOSTREAM_CONFIG_H
+
+#define AUDIOSTREAM_VERSION "1.0.0"
+#define AUDIOSTREAM_BIN_NAME "AudioStream"
+#define AUDIOSTREAM_HOMEPAGE "https://audiostream.local"
+
+#endif // AUDIOSTREAM_CONFIG_H

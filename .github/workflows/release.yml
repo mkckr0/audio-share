@@ -140,7 +140,7 @@ jobs:
 
   create_release:
     name: Create Release
-    needs: [build_app, build_server_mfc, build_server_core]
+    needs: [build_app, build_server_core]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -154,7 +154,7 @@ jobs:
           path: release_bin
       
       - name: Generate release notes
-        run: 'echo -e "$(cat ./metadata/en-US/changelogs/$(bash ./scripts/get_version.sh -c).txt)" > notes'
+        run: 'echo "AudioStream Release v$version" > notes'
       
       - name: Create Github Release
         run: |
