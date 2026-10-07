@@ -76,8 +76,9 @@ as-cmd -b                          # Opus, 128 kbit/s
 as-cmd -b --bitrate=96             # Opus, 96 kbit/s
 as-cmd -b --compression=none       # raw PCM, for older apps
 ```
-- The phone app must support Opus, since the protocol has no negotiation. Use `--compression=none` for older apps.
-- Only mono and stereo are compressed; other layouts fall back to PCM. Opus is always 48 kHz, so other capture rates are resampled.
+- The app asks for Opus when it connects, and the server only sends it to apps that asked. Older apps connected to the same server just get uncompressed PCM.
+- Layouts with more than two channels are downmixed to stereo. Opus is always 48 kHz, so other capture rates are resampled.
+- The app shows the codec, lost and late packets, dropped packets and underruns under the playback status.
 - If the server was built without Opus support, it defaults to PCM.
 - The Windows GUI server doesn't have this option yet.
 

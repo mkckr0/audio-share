@@ -156,12 +156,14 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
         struct pw_stream* stream;
         std::shared_ptr<class network_manager> network_manager;
         std::shared_ptr<AudioFormat> format;
+        audio_manager* manager;
         int block_align;
     } user_data = {
         .loop = _loop,
         .stream = nullptr,
         .network_manager = network_manager,
         .format = _format,
+        .manager = this,
         .block_align = 0,
     };
 
@@ -287,6 +289,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
                 user_data->block_align = bits_per_sample / 8 * user_data->format->channels();
                 spdlog::info("block_align: {}", user_data->block_align);
                 spdlog::info("AudioFormat:\n{}", user_data->format->DebugString());
+                user_data->manager->publish_format();
             }
         },
         .process = [](void* data) {

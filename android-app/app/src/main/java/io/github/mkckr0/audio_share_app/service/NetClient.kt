@@ -30,6 +30,9 @@ import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
 import io.ktor.network.sockets.toJavaAddress
 import io.ktor.util.network.address
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.ByteWriteChannel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -44,6 +47,7 @@ import kotlinx.coroutines.withTimeout
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.UnresolvedAddressException
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
@@ -79,14 +83,23 @@ class NetClient(val context: Context) {
         CMD_GET_FORMAT,
         CMD_START_PLAY,
         CMD_HEARTBEAT,
+        CMD_GET_FORMAT_V2,
     }
+
+    private class Handshake(val read: ByteReadChannel, val write: ByteWriteChannel, val format: AudioFormat)
+
+    // servers that closed the connection on CMD_GET_FORMAT_V2 but answered the old command
+    private val legacyServers = ConcurrentHashMap.newKeySet<String>()
+
+    @Volatile
+    private var _receivedAudio = false
 
     interface Callback {
         val scope: CoroutineScope
         suspend fun log(message: String)
         suspend fun onReceiveAudioFormat(format: AudioFormat)
         suspend fun onPlaybackStarted()
-        suspend fun onReceiveAudioData(audioData: ByteBuffer)
+        fun onReceiveAudioData(audioData: ByteBuffer)
         suspend fun onError(message: String?, cause: Throwable?)
 
         fun launch(block: suspend Callback.() -> Unit): Job {
@@ -111,30 +124,30 @@ class NetClient(val context: Context) {
             }
             _selectorManager = SelectorManager(Dispatchers.IO)
 
-            try {
-                _tcpSocket = withTimeout(3.seconds) {
-                    aSocket(selectorManager).tcp().connect(host, port)
-                }
-            } catch (e: TimeoutCancellationException) {
-                throw Exception(context.getString(R.string.label_timeout))
-            } catch (e: UnresolvedAddressException) {
-                throw Exception(context.getString(R.string.label_unresolved_address))
+            val serverKey = "$host:$port"
+            val useV2 = serverKey !in legacyServers
+
+            connectTcp(host, port)
+            var session = try {
+                performHandshake(useV2)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (!useV2) throw e
+                Log.i(tag, "no v2 handshake, trying the old one: ${e.message}")
+                null
+            }
+            if (session == null) {
+                _tcpSocket?.close()
+                connectTcp(host, port)
+                session = performHandshake(false)
+                legacyServers.add(serverKey)
             }
 
-            _callback?.launch {
-                log("TCP connected")
-            }
-
-            val tcpReadChannel = tcpSocket.openReadChannel()
-            val tcpWriteChannel = tcpSocket.openWriteChannel()
-
-            // get format
-            tcpWriteChannel.writeCMD(CMD.CMD_GET_FORMAT)
-            var cmd = tcpReadChannel.readCMD()
-            if (cmd != CMD.CMD_GET_FORMAT) {
-                return@launch
-            }
-            val audioFormat = tcpReadChannel.readAudioFormat() ?: return@launch
+            val tcpReadChannel = session.read
+            val tcpWriteChannel = session.write
+            val audioFormat = session.format
+            var cmd = CMD.CMD_NONE
             _callback?.launch {
                 onReceiveAudioFormat(audioFormat)
             }?.join()   // wait AudioTrack created
@@ -186,17 +199,54 @@ class NetClient(val context: Context) {
             }
 
             // audio data read loop
+            _receivedAudio = false
             scope.launch {
-                udpSocket.writeIntLE(id, InetSocketAddress(host, port))
-//                udpSocket.writeIntLE(id)
                 while (true) {
                     val buf = udpSocket.readByteBuffer()
-                    _callback?.launch {
-                        onReceiveAudioData(buf.order(ByteOrder.LITTLE_ENDIAN))
-                    }
+                    _receivedAudio = true
+                    _callback?.onReceiveAudioData(buf.order(ByteOrder.LITTLE_ENDIAN))
+                }
+            }
+            // UDP can lose the registration datagram, so repeat it until audio shows up
+            scope.launch {
+                while (!_receivedAudio) {
+                    udpSocket.writeIntLE(id, InetSocketAddress(host, port))
+                    delay(500)
                 }
             }
         }
+    }
+
+    private suspend fun connectTcp(host: String, port: Int) {
+        try {
+            _tcpSocket = withTimeout(3.seconds) {
+                aSocket(selectorManager).tcp().connect(host, port)
+            }
+        } catch (e: TimeoutCancellationException) {
+            throw Exception(context.getString(R.string.label_timeout))
+        } catch (e: UnresolvedAddressException) {
+            throw Exception(context.getString(R.string.label_unresolved_address))
+        }
+
+        _callback?.launch {
+            log("TCP connected")
+        }
+    }
+
+    private suspend fun performHandshake(useV2: Boolean): Handshake {
+        val read = tcpSocket.openReadChannel()
+        val write = tcpSocket.openWriteChannel()
+
+        val expected = if (useV2) CMD.CMD_GET_FORMAT_V2 else CMD.CMD_GET_FORMAT
+        write.writeCMD(expected)
+        if (useV2) {
+            write.writeIntLE(CAP_OPUS)
+        }
+        if (read.readCMD() != expected) {
+            throw Exception("unexpected reply to the format request")
+        }
+        val format = read.readAudioFormat() ?: throw Exception("no audio format received")
+        return Handshake(read, write, format)
     }
 
     fun stop() {
@@ -209,5 +259,9 @@ class NetClient(val context: Context) {
         _selectorManager = null
         _udpSocket?.close()
         _tcpSocket?.close()
+    }
+
+    companion object {
+        const val CAP_OPUS = 1
     }
 }

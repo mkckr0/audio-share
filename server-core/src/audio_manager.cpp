@@ -10,6 +10,10 @@ audio_manager::~audio_manager() = default;
 void audio_manager::start_loopback_recording(std::shared_ptr<network_manager> network_manager, const capture_config& config)
 {
     _stopped = false;
+    {
+        std::lock_guard lock(_format_mutex);
+        _published_format.reset();
+    }
     _record_thread = std::thread([network_manager = network_manager, config = config, self = shared_from_this()] {
         self->do_loopback_recording(network_manager, config);
     });
@@ -23,10 +27,19 @@ void audio_manager::stop()
 
 std::string audio_manager::get_format_binary()
 {
-    return _format->SerializeAsString();
+    auto format = get_format();
+    return format ? format->SerializeAsString() : std::string();
 }
 
-std::shared_ptr<audio_manager::AudioFormat> audio_manager::get_format() const
+std::shared_ptr<const audio_manager::AudioFormat> audio_manager::get_format() const
 {
-    return _format;
+    std::lock_guard lock(_format_mutex);
+    return _published_format;
+}
+
+void audio_manager::publish_format()
+{
+    auto snapshot = std::make_shared<const AudioFormat>(*_format);
+    std::lock_guard lock(_format_mutex);
+    _published_format = std::move(snapshot);
 }

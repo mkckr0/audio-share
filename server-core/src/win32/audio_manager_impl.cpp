@@ -211,6 +211,7 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     }
 
     set_format(_format, pCaptureFormat.get());
+    publish_format();
 
     constexpr int REFTIMES_PER_SEC = 10000000; // 1 reference_time = 100ns
     constexpr int REFTIMES_PER_MILLISEC = 10000;

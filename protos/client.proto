@@ -31,14 +31,12 @@ message AudioFormat
 
 	enum Compression {
 		COMPRESSION_NONE = 0;   // Audio data is raw PCM described by `encoding`.
-		COMPRESSION_OPUS = 1;   // Each UDP datagram holds exactly one Opus packet (20 ms).
-		                        // The client decodes it to 16-bit PCM, so `encoding` is
-		                        // ENCODING_PCM_16BIT, and `channels`/`sample_rate` describe
-		                        // the decoded stream.
+		COMPRESSION_OPUS = 1;   // Datagram = uint16 LE sequence + one 20 ms Opus packet, decoded to 16-bit PCM (V2 clients only).
 	}
 
 	Encoding encoding = 1;
 	int32 channels = 2;
 	int32 sample_rate = 3;
 	Compression compression = 4;   // Absent (0) from servers that don't support compression.
+	int32 opus_pre_skip = 5;       // samples at 48 kHz to discard at stream start
 }

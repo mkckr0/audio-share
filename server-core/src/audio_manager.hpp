@@ -26,6 +26,7 @@
 #endif
 
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <thread>
 
@@ -112,7 +113,8 @@ public:
     void do_loopback_recording(std::shared_ptr<network_manager> network_manager, const capture_config& config);
 
     std::string get_format_binary();
-    std::shared_ptr<AudioFormat> get_format() const;
+    std::shared_ptr<const AudioFormat> get_format() const;
+    void publish_format();
 
     endpoint_list_t get_endpoint_list();
 
@@ -122,6 +124,8 @@ private:
     std::thread _record_thread;
     std::atomic_bool _stopped;
     std::shared_ptr<AudioFormat> _format;
+    mutable std::mutex _format_mutex;
+    std::shared_ptr<const AudioFormat> _published_format;
 };
 
 #endif // !BASIC_AUDIO_MANAGER_HPP

@@ -159,7 +159,10 @@ void network_manager::start_server(const std::string& host, uint16_t port, const
 #ifdef AUDIO_SHARE_WITH_OPUS
         _opus_encoder.reset();
 #endif
+        _opus_seq = 0;
     }
+    _opus_peer_count = 0;
+    _pcm_peer_count = 0;
 #ifndef AUDIO_SHARE_WITH_OPUS
     if (capture_config.compression == audio_manager::compression_t::compression_opus) {
         spdlog::warn("this build has no Opus support, audio will be sent uncompressed");
@@ -186,11 +189,21 @@ void network_manager::start_server(const std::string& host, uint16_t port, const
         ip::udp::endpoint endpoint { ip::make_address(host), port };
         _udp_server = std::make_unique<udp_socket>(*_ioc, endpoint.protocol());
         _udp_server->bind(endpoint);
+
+        // DSCP EF lands in the WMM voice queue on Wi-Fi; plenty of systems ignore it
+        asio::error_code tos_ec;
+        _udp_server->set_option(asio::detail::socket_option::integer<IPPROTO_IP, IP_TOS>(0xb8), tos_ec);
         asio::co_spawn(*_ioc, accept_udp_loop(), asio::detached);
 
         // start udp success
         spdlog::info("udp listen success on {}", endpoint);
     }
+
+    _capture_queue.clear();
+    _encode_stop = false;
+    _encode_thread = std::thread([self = shared_from_this()] {
+        self->encode_loop();
+    });
 
     _net_thread = std::thread([self = shared_from_this()] {
         self->_ioc->run();
@@ -206,7 +219,12 @@ void network_manager::stop_server()
     }
     _net_thread.join();
     _audio_manager->stop();
+    _encode_stop = true;
+    ++_capture_signal;
+    _capture_signal.notify_one();
+    _encode_thread.join();
     _playing_peer_list.clear();
+    update_peer_counts();
     _udp_server = nullptr;
     _ioc = nullptr;
     spdlog::info("server stopped");
@@ -224,6 +242,9 @@ bool network_manager::is_running() const
 
 asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> peer)
 {
+    uint32_t client_caps = 0;
+    bool wire_opus = false;
+
     while (true) {
         cmd_t cmd = cmd_t::cmd_none;
         auto [ec, _] = co_await asio::async_read(*peer, asio::buffer(&cmd, sizeof(cmd)));
@@ -235,8 +256,18 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
 
         spdlog::trace("cmd {}", (uint32_t)cmd);
 
-        if (cmd == cmd_t::cmd_get_format) {
-            auto format = get_wire_format_binary();
+        if (cmd == cmd_t::cmd_get_format || cmd == cmd_t::cmd_get_format_v2) {
+            if (cmd == cmd_t::cmd_get_format_v2) {
+                auto [caps_ec, __] = co_await asio::async_read(*peer, asio::buffer(&client_caps, sizeof(client_caps)));
+                if (caps_ec) {
+                    close_session(peer);
+                    spdlog::trace("{} {}", __func__, caps_ec);
+                    break;
+                }
+            } else {
+                client_caps = 0; // old clients can't play Opus
+            }
+            auto format = get_format_binary_for(client_caps, wire_opus);
             auto size = (uint32_t)format.size();
             std::array<asio::const_buffer, 3> buffers = {
                 asio::buffer(&cmd, sizeof(cmd)),
@@ -250,7 +281,7 @@ asio::awaitable<void> network_manager::read_loop(std::shared_ptr<tcp_socket> pee
                 break;
             }
         } else if (cmd == cmd_t::cmd_start_play) {
-            int id = add_playing_peer(peer);
+            int id = add_playing_peer(peer, wire_opus);
             if (id <= 0) {
                 spdlog::error("{} id error", __func__);
                 close_session(peer);
@@ -368,20 +399,55 @@ auto network_manager::close_session(std::shared_ptr<tcp_socket>& peer) -> playin
     return it;
 }
 
-int network_manager::add_playing_peer(std::shared_ptr<tcp_socket>& peer)
+// dual-stack sockets report IPv4 peers as v4-mapped v6 addresses
+static asio::ip::address normalize_address(const asio::ip::address& a)
+{
+    if (a.is_v6() && a.to_v6().is_v4_mapped()) {
+        return asio::ip::make_address_v4(asio::ip::v4_mapped, a.to_v6());
+    }
+    return a;
+}
+
+int network_manager::add_playing_peer(std::shared_ptr<tcp_socket>& peer, bool opus)
 {
     if (_playing_peer_list.contains(peer)) {
         spdlog::error("{} repeat add tcp://{}", __func__, peer->remote_endpoint());
         return 0;
     }
 
-    auto info = _playing_peer_list[peer] = std::make_shared<peer_info_t>();
-    static int g_id = 0;
-    info->id = ++g_id;
+    asio::error_code ec;
+    auto remote = peer->remote_endpoint(ec);
+    if (ec) {
+        spdlog::error("{} no remote endpoint: {}", __func__, ec);
+        return 0;
+    }
+
+    auto info = std::make_shared<peer_info_t>();
+    info->opus = opus;
+    info->tcp_address = normalize_address(remote.address());
     info->last_tick = std::chrono::steady_clock::now();
 
-    spdlog::trace("{} add id:{} tcp://{}", __func__, info->id, peer->remote_endpoint());
+    // random so a LAN neighbour can't guess it; has to stay > 0 because clients reject id <= 0
+    std::uniform_int_distribution<int> dist(1, std::numeric_limits<int>::max());
+    do {
+        info->id = dist(_id_rng);
+    } while (std::any_of(_playing_peer_list.begin(), _playing_peer_list.end(), [&](const auto& e) { return e.second->id == info->id; }));
+
+    _playing_peer_list[peer] = info;
+    update_peer_counts();
+
+    spdlog::trace("{} add id:{} opus:{} tcp://{}", __func__, info->id, opus, remote);
     return info->id;
+}
+
+void network_manager::update_peer_counts()
+{
+    int opus = 0, pcm = 0;
+    for (auto& [_, info] : _playing_peer_list) {
+        (info->opus ? opus : pcm)++;
+    }
+    _opus_peer_count = opus;
+    _pcm_peer_count = pcm;
 }
 
 auto network_manager::remove_playing_peer(std::shared_ptr<tcp_socket>& peer) -> playing_peer_list_t::iterator
@@ -393,6 +459,7 @@ auto network_manager::remove_playing_peer(std::shared_ptr<tcp_socket>& peer) -> 
     }
 
     it = _playing_peer_list.erase(it);
+    update_peer_counts();
     spdlog::trace("{} remove tcp://{}", __func__, peer->remote_endpoint());
     return it;
 }
@@ -405,6 +472,12 @@ void network_manager::fill_udp_peer(int id, asio::ip::udp::endpoint udp_peer)
 
     if (it == _playing_peer_list.cend()) {
         spdlog::error("{} no tcp peer id:{} udp://{}", __func__, id, udp_peer);
+        return;
+    }
+
+    // stops anyone who knows the id from redirecting the stream to another host
+    if (normalize_address(udp_peer.address()) != it->second->tcp_address) {
+        spdlog::warn("{} id:{} udp://{} does not match the tcp peer address {}, ignored", __func__, id, udp_peer, it->second->tcp_address.to_string());
         return;
     }
 
@@ -424,7 +497,8 @@ bool network_manager::ensure_codec()
         return false; // capture format isn't known yet
     }
 
-    _wire_format = *format;
+    _raw_format = *format;
+    _opus_format = *format;
     _capture_encoding = format->encoding();
 
 #ifdef AUDIO_SHARE_WITH_OPUS
@@ -432,80 +506,134 @@ bool network_manager::ensure_codec()
         std::string error;
         auto encoder = opus_stream_encoder::create(format->encoding(), format->channels(), format->sample_rate(), _requested_bitrate, error);
         if (encoder) {
-            // The client decodes Opus to 16-bit PCM at the encoder's output rate.
-            _wire_format.set_encoding(audio_manager::AudioFormat::ENCODING_PCM_16BIT);
-            _wire_format.set_sample_rate(encoder->output_sample_rate());
-            _wire_format.set_compression(audio_manager::AudioFormat::COMPRESSION_OPUS);
+            // the client decodes Opus to 16-bit PCM at the encoder's rate
+            _opus_format.set_encoding(audio_manager::AudioFormat::ENCODING_PCM_16BIT);
+            _opus_format.set_sample_rate(encoder->output_sample_rate());
+            _opus_format.set_channels(encoder->channels());
+            _opus_format.set_opus_pre_skip(encoder->pre_skip());
+            _opus_format.set_compression(audio_manager::AudioFormat::COMPRESSION_OPUS);
             _opus_encoder = std::move(encoder);
-            spdlog::info("opus compression enabled, bitrate: {} bps", _requested_bitrate);
+            spdlog::info("opus compression enabled, bitrate: {} bps\nopus AudioFormat:\n{}", _requested_bitrate, _opus_format.DebugString());
         } else {
             spdlog::warn("opus compression disabled, sending uncompressed audio: {}", error);
         }
     }
 #endif
 
-    spdlog::info("wire AudioFormat:\n{}", _wire_format.DebugString());
+    spdlog::info("raw AudioFormat:\n{}", _raw_format.DebugString());
     _codec_resolved = true;
     return true;
 }
 
-std::string network_manager::get_wire_format_binary()
+std::string network_manager::get_format_binary_for(uint32_t client_caps, bool& opus)
 {
-    if (ensure_codec()) {
-        return _wire_format.SerializeAsString();
+    opus = false;
+    if (!ensure_codec()) {
+        return _audio_manager->get_format_binary();
     }
-    return _audio_manager->get_format_binary();
+
+#ifdef AUDIO_SHARE_WITH_OPUS
+    if (_opus_encoder) {
+        if (client_caps & cap_opus) {
+            opus = true;
+            return _opus_format.SerializeAsString();
+        }
+        spdlog::info("client doesn't support opus, sending raw PCM");
+    }
+#endif
+    return _raw_format.SerializeAsString();
 }
 
 void network_manager::broadcast_audio_data(const char* data, size_t count, int block_align)
 {
-    if (count <= 0) {
-        return;
-    }
-    // spdlog::trace("broadcast_audio_data count: {}", count);
-
-    if (!should_transmit(data, count)) {
+    if (count == 0 || _opus_peer_count + _pcm_peer_count == 0) {
         return;
     }
 
-    segment_list_t seg_list;
+    _block_align = block_align;
+    if (!_capture_queue.push((const uint8_t*)data, count)) {
+        ++_dropped_chunks;
+    }
+    ++_capture_signal;
+    _capture_signal.notify_one();
+}
 
+void network_manager::encode_loop()
+{
+    std::vector<uint8_t> chunk;
+    size_t reported_drops = 0;
+
+    while (!_encode_stop) {
+        const uint32_t seen = _capture_signal.load();
+        if (!_capture_queue.pop(chunk)) {
+            _capture_signal.wait(seen);
+            continue;
+        }
+
+        const size_t drops = _dropped_chunks;
+        if (drops != reported_drops) {
+            spdlog::warn("encoder is behind, dropped {} audio chunks", drops - reported_drops);
+            reported_drops = drops;
+        }
+
+        process_audio(chunk.data(), chunk.size(), _block_align);
+    }
+}
+
+void network_manager::process_audio(const uint8_t* data, size_t count, int block_align)
+{
+    if (!should_transmit((const char*)data, count)) {
+        return;
+    }
+
+    segment_list_t pcm_segments, opus_segments;
+
+    bool opus_active = false;
 #ifdef AUDIO_SHARE_WITH_OPUS
-    if (ensure_codec() && _opus_encoder) {
-        // one Opus packet per UDP datagram, so the client can decode each independently
-        _opus_encoder->encode((const uint8_t*)data, count, [&seg_list](const uint8_t* packet, size_t size) {
-            seg_list.push_back(std::make_shared<std::vector<uint8_t>>(packet, packet + size));
+    opus_active = ensure_codec() && _opus_encoder;
+    if (opus_active && _opus_peer_count > 0) {
+        const size_t errors_before = _opus_encoder->errors();
+        _opus_encoder->encode(data, count, [&](const uint8_t* packet, size_t size) {
+            auto seg = std::make_shared<std::vector<uint8_t>>(size + sizeof(uint16_t));
+            (*seg)[0] = (uint8_t)(_opus_seq & 0xff);
+            (*seg)[1] = (uint8_t)(_opus_seq >> 8);
+            std::copy(packet, packet + size, seg->begin() + sizeof(uint16_t));
+            ++_opus_seq;
+            opus_segments.push_back(std::move(seg));
         });
-        send_segments(std::move(seg_list));
-        return;
+        if (_opus_encoder->errors() != errors_before) {
+            spdlog::warn("opus encoder failed on {} frames", _opus_encoder->errors() - errors_before);
+        }
     }
 #endif
 
-    // divide udp frame
-    constexpr int mtu = 1492;
-    int max_seg_size = mtu - 20 - 8;
-    max_seg_size -= max_seg_size % block_align; // one single sample can't be divided
+    if (!opus_active || _pcm_peer_count > 0) {
+        constexpr int mtu = 1492;
+        int max_seg_size = mtu - 20 - 8;
+        max_seg_size -= max_seg_size % block_align; // a sample can't be split across datagrams
 
-    for (int begin_pos = 0; begin_pos < count;) {
-        const int real_seg_size = std::min((int)count - begin_pos, max_seg_size);
-        auto seg = std::make_shared<std::vector<uint8_t>>(real_seg_size);
-        std::copy((const uint8_t*)data + begin_pos, (const uint8_t*)data + begin_pos + real_seg_size, seg->begin());
-        seg_list.push_back(seg);
-        begin_pos += real_seg_size;
+        for (size_t begin_pos = 0; begin_pos < count;) {
+            const size_t real_seg_size = std::min(count - begin_pos, (size_t)max_seg_size);
+            pcm_segments.push_back(std::make_shared<std::vector<uint8_t>>(data + begin_pos, data + begin_pos + real_seg_size));
+            begin_pos += real_seg_size;
+        }
     }
 
-    send_segments(std::move(seg_list));
+    send_segments(std::move(pcm_segments), std::move(opus_segments));
 }
 
-void network_manager::send_segments(segment_list_t seg_list)
+void network_manager::send_segments(segment_list_t pcm_segments, segment_list_t opus_segments)
 {
-    if (seg_list.empty()) {
+    if (pcm_segments.empty() && opus_segments.empty()) {
         return;
     }
 
-    _ioc->post([seg_list = std::move(seg_list), self = shared_from_this()] {
-        for (const auto& seg : seg_list) {
-            for (auto& [peer, info] : self->_playing_peer_list) {
+    _ioc->post([pcm_segments = std::move(pcm_segments), opus_segments = std::move(opus_segments), self = shared_from_this()] {
+        for (auto& [peer, info] : self->_playing_peer_list) {
+            if (info->udp_peer.port() == 0) {
+                continue;
+            }
+            for (const auto& seg : info->opus ? opus_segments : pcm_segments) {
                 self->_udp_server->async_send_to(asio::buffer(*seg), info->udp_peer, [seg](const asio::error_code& ec, std::size_t bytes_transferred) { });
             }
         }

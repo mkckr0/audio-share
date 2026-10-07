@@ -21,6 +21,7 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.media.audiofx.LoudnessEnhancer
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Looper
 import android.os.SystemClock
@@ -89,7 +90,9 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
     private var _audioTrack: AudioTrack? = null
     private val audioTrack get() = _audioTrack!!
 
-    private var _opusDecoder: OpusDecoder? = null
+    @Volatile
+    private var _pipeline: AudioPipeline? = null
+    private var _wifiLock: WifiManager.WifiLock? = null
 
     private var _loudnessEnhancer: LoudnessEnhancer? = null
     private val loudnessEnhancer get() = _loudnessEnhancer!!
@@ -99,6 +102,10 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
 
     companion object {
         var message by mutableStateOf("")
+
+        private const val MAX_QUEUED_MS = 200
+        private const val OPUS_PACKET_MS = 20
+        private const val PCM_DATAGRAM_BYTES = 1400
 
         // The server stops streaming after silence (2 s by default), so this must stay well above
         // normal packet jitter but low enough to let the audio output idle quickly.
@@ -139,6 +146,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                     .setPlayWhenReady(true, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
                     .build()
 
+                acquireWifiLock()
                 netClient.start(
                     host = host,
                     port = port,
@@ -149,7 +157,8 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                     .setPlayWhenReady(false, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
                     .build()
                 netClient.stop()
-                releaseOpusDecoder()
+                releaseAudio()
+                releaseWifiLock()
                 retryScope.coroutineContext.cancelChildren()
                 message = context.getString(R.string.label_paused)
             }
@@ -163,7 +172,8 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
             .setPlayWhenReady(false, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
             .build()
         netClient.stop()
-        releaseOpusDecoder()
+        releaseAudio()
+        releaseWifiLock()
         retryScope.coroutineContext.cancelChildren()
         message = context.getString(R.string.label_stopped)
         return immediateVoidFuture()
@@ -173,18 +183,9 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
         Log.d(tag, "handleRelease")
         scope.cancel()
         netClient.stop()
-        releaseOpusDecoder()
+        releaseAudio()
+        releaseWifiLock()
         retryScope.cancel()
-        _loudnessEnhancer?.run {
-            release()
-        }
-        _loudnessEnhancer = null
-        _audioTrack?.run {
-            pause()
-            flush()
-            release()
-        }
-        _audioTrack = null
         _state = State.Builder().build()
         return immediateVoidFuture()
     }
@@ -244,13 +245,14 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                 "encoding: $encoding, channelMask: $channelMask, sampleRate: ${format.sampleRate}, compression: ${format.compression}"
             )
 
-            releaseOpusDecoder()
+            releaseAudio()
+            var opusDecoder: OpusDecoder? = null
             try {
                 when (format.compression) {
                     Client.AudioFormat.Compression.COMPRESSION_NONE -> {}
                     Client.AudioFormat.Compression.COMPRESSION_OPUS -> {
                         // MediaCodec decodes to 16-bit PCM, which is what the server declares.
-                        _opusDecoder = OpusDecoder(format.sampleRate, format.channels)
+                        opusDecoder = OpusDecoder(format.sampleRate, format.channels, format.opusPreSkip)
                     }
 
                     else -> throw Exception("Unsupported compression ${format.compression}, please update the app")
@@ -274,7 +276,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                 )).toInt()
             Log.i(tag, "buffer scale: $bufferScale")
 
-            _audioTrack = AudioTrack.Builder()
+            val trackBuilder = AudioTrack.Builder()
                 .setAudioAttributes(
                     AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -290,7 +292,10 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                 )
                 .setBufferSizeInBytes(minBufferSize * bufferScale)
                 .setTransferMode(AudioTrack.MODE_STREAM)
-                .build()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                trackBuilder.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
+            }
+            _audioTrack = trackBuilder.build()
 
             val volume = audioConfig[floatPreferencesKey(AudioConfigKeys.VOLUME)]
                 ?: context.getFloat(R.string.default_volume)
@@ -307,7 +312,15 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                 loudnessEnhancer.setEnabled(true)
             }
 
-            audioTrack.play()
+            val bytesPerFrame = bytesPerSample(encoding) * format.channels
+            val maxQueued = if (opusDecoder != null) {
+                MAX_QUEUED_MS / OPUS_PACKET_MS
+            } else {
+                maxOf(MAX_QUEUED_MS / OPUS_PACKET_MS, format.sampleRate * bytesPerFrame * MAX_QUEUED_MS / 1000 / PCM_DATAGRAM_BYTES)
+            }
+            _pipeline = AudioPipeline(audioTrack, opusDecoder, bytesPerFrame, maxQueued) { stats ->
+                message = "${context.getString(R.string.label_started)} · $stats"
+            }.also { it.start() }
             lastDataTime = SystemClock.elapsedRealtime()
             audioIdle = false
         }
@@ -340,7 +353,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
             }
         }
 
-        override suspend fun onReceiveAudioData(audioData: ByteBuffer) {
+        override fun onReceiveAudioData(audioData: ByteBuffer) {
 //            Log.d(tag, "${audioData.remaining()}")
             lastDataTime = SystemClock.elapsedRealtime()
             if (audioIdle) {
@@ -348,14 +361,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                 Log.d(tag, "audio data again, resuming AudioTrack")
                 _audioTrack?.play()
             }
-            val decoder = _opusDecoder
-            if (decoder != null) {
-                decoder.decode(audioData) { pcm, size ->
-                    audioTrack.write(pcm, size, AudioTrack.WRITE_NON_BLOCKING)
-                }
-            } else {
-                audioTrack.write(audioData, audioData.remaining(), AudioTrack.WRITE_NON_BLOCKING)
-            }
+            _pipeline?.submit(audioData)
         }
 
         override suspend fun onError(message: String?, cause: Throwable?) {
@@ -392,9 +398,63 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
         }
     }
 
-    private fun releaseOpusDecoder() {
-        _opusDecoder?.release()
-        _opusDecoder = null
+    // the pipeline owns the Opus decoder and has to stop before the track goes away
+    private fun releaseAudio() {
+        _pipeline?.shutdown()
+        _pipeline = null
+        _loudnessEnhancer?.run {
+            release()
+        }
+        _loudnessEnhancer = null
+        _audioTrack?.run {
+            try {
+                pause()
+                flush()
+            } catch (e: IllegalStateException) {
+                Log.w(tag, e.stackTraceToString())
+            }
+            release()
+        }
+        _audioTrack = null
+    }
+
+    private fun bytesPerSample(encoding: Int): Int = when (encoding) {
+        AudioFormat.ENCODING_PCM_8BIT -> 1
+        AudioFormat.ENCODING_PCM_16BIT -> 2
+        AudioFormat.ENCODING_PCM_24BIT_PACKED -> 3
+        else -> 4
+    }
+
+    // Wi-Fi power save adds latency spikes to the UDP stream
+    private fun acquireWifiLock() {
+        if (_wifiLock?.isHeld == true) {
+            return
+        }
+        try {
+            val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+                ?: return
+            val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                WifiManager.WIFI_MODE_FULL_LOW_LATENCY
+            } else {
+                @Suppress("DEPRECATION")
+                WifiManager.WIFI_MODE_FULL_HIGH_PERF
+            }
+            _wifiLock = wifiManager.createWifiLock(mode, "AudioShare").apply {
+                setReferenceCounted(false)
+                acquire()
+            }
+        } catch (e: Exception) {
+            Log.w(tag, e.stackTraceToString())
+        }
+    }
+
+    private fun releaseWifiLock() {
+        try {
+            _wifiLock?.takeIf { it.isHeld }?.release()
+        } catch (e: Exception) {
+            Log.w(tag, e.stackTraceToString())
+        }
+        _wifiLock = null
     }
 
     /**

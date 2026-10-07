@@ -18,6 +18,7 @@ package io.github.mkckr0.audio_share_app.service
 
 import android.media.MediaCodec
 import android.media.MediaFormat
+import android.os.Build
 import android.util.Log
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -28,7 +29,7 @@ import java.nio.ByteOrder
  *
  * Not thread safe: call everything from one thread.
  */
-class OpusDecoder(sampleRate: Int, channels: Int) {
+class OpusDecoder(sampleRate: Int, channels: Int, preSkip: Int = 0) {
 
     private val tag = OpusDecoder::class.simpleName
 
@@ -41,9 +42,12 @@ class OpusDecoder(sampleRate: Int, channels: Int) {
         val format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_OPUS, sampleRate, channels)
         // The Opus decoder needs the three codec-specific buffers, see
         // https://developer.android.com/reference/android/media/MediaCodec#CSD
-        format.setByteBuffer("csd-0", opusHead(sampleRate, channels))
-        format.setByteBuffer("csd-1", nanos(PRE_SKIP_NS))
+        format.setByteBuffer("csd-0", opusHead(sampleRate, channels, preSkip))
+        format.setByteBuffer("csd-1", nanos(preSkip * 1_000_000_000L / 48_000))
         format.setByteBuffer("csd-2", nanos(SEEK_PRE_ROLL_NS))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            format.setInteger(MediaFormat.KEY_LOW_LATENCY, 1)
+        }
         try {
             codec.configure(format, null, null, 0)
             codec.start()
@@ -113,18 +117,17 @@ class OpusDecoder(sampleRate: Int, channels: Int) {
     }
 
     companion object {
-        private const val INPUT_TIMEOUT_US = 5_000L
+        private const val INPUT_TIMEOUT_US = 20_000L
         private const val FRAME_US = 20_000L          // the server always sends 20 ms packets
-        private const val PRE_SKIP_NS = 0L
         private const val SEEK_PRE_ROLL_NS = 80_000_000L // 80 ms, the value used by Ogg Opus / Matroska
 
         /** "OpusHead" identification header, RFC 7845 section 5.1. */
-        private fun opusHead(inputSampleRate: Int, channels: Int): ByteBuffer {
+        private fun opusHead(inputSampleRate: Int, channels: Int, preSkip: Int): ByteBuffer {
             return ByteBuffer.allocate(19).order(ByteOrder.LITTLE_ENDIAN).apply {
                 put("OpusHead".toByteArray(Charsets.US_ASCII))
                 put(1)                          // version
                 put(channels.toByte())
-                putShort(0)                     // pre-skip, in samples at 48 kHz
+                putShort(preSkip.toShort())
                 putInt(inputSampleRate)
                 putShort(0)                     // output gain
                 put(0)                          // channel mapping family 0: mono / stereo

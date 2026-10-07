@@ -43,6 +43,13 @@ suspend fun ByteWriteChannel.writeCMD(cmd: CMD) {
     flush()
 }
 
+suspend fun ByteWriteChannel.writeIntLE(value: Int) {
+    writePacket(Buffer().apply {
+        writeIntLe(value)
+    }.build())
+    flush()
+}
+
 suspend fun ByteReadChannel.readByteBuffer(count: Int): ByteBuffer {
     return ByteBuffer.wrap(readByteArray(count))
 }
