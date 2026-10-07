@@ -95,7 +95,6 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
     private var _wifiLock: WifiManager.WifiLock? = null
 
     private var _loudnessEnhancer: LoudnessEnhancer? = null
-    private val loudnessEnhancer get() = _loudnessEnhancer!!
 
     private val scope: CoroutineScope = MainScope()
     private val retryScope: CoroutineScope = MainScope()
@@ -276,6 +275,11 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                 )).toInt()
             Log.i(tag, "buffer scale: $bufferScale")
 
+            val loudnessEnhancerGain =
+                (audioConfig[floatPreferencesKey(AudioConfigKeys.LOUDNESS_ENHANCER)]
+                    ?: context.getFloat(R.string.default_loudness_enhancer)).toInt()
+            Log.i(tag, "loudness enhancer: ${loudnessEnhancerGain}mB")
+
             val trackBuilder = AudioTrack.Builder()
                 .setAudioAttributes(
                     AudioAttributes.Builder()
@@ -292,7 +296,9 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                 )
                 .setBufferSizeInBytes(minBufferSize * bufferScale)
                 .setTransferMode(AudioTrack.MODE_STREAM)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Effects generally cannot be attached to fast-mixer (low-latency) tracks, so only
+            // request low latency when no loudness enhancer is wanted.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && loudnessEnhancerGain <= 0) {
                 trackBuilder.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
             }
             _audioTrack = trackBuilder.build()
@@ -302,14 +308,20 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
             Log.i(tag, "volume: $volume")
             audioTrack.setVolume(volume)
 
-            val loudnessEnhancerGain =
-                (audioConfig[floatPreferencesKey(AudioConfigKeys.LOUDNESS_ENHANCER)]
-                    ?: context.getFloat(R.string.default_loudness_enhancer)).toInt()
-            Log.i(tag, "loudness enhancer: ${loudnessEnhancerGain}mB")
             if (loudnessEnhancerGain > 0) {
-                _loudnessEnhancer = LoudnessEnhancer(audioTrack.audioSessionId)
-                loudnessEnhancer.setTargetGain(loudnessEnhancerGain)
-                loudnessEnhancer.setEnabled(true)
+                var enhancer: LoudnessEnhancer? = null
+                try {
+                    enhancer = LoudnessEnhancer(audioTrack.audioSessionId)
+                    enhancer.setTargetGain(loudnessEnhancerGain)
+                    enhancer.enabled = true
+                    _loudnessEnhancer = enhancer
+                } catch (e: Exception) {
+                    // e.g. RuntimeException ERROR_NO_INIT: the device can't provide the effect.
+                    // Keep playing without it instead of crashing.
+                    Log.w(tag, "loudness enhancer unavailable, continuing without it", e)
+                    try { enhancer?.release() } catch (_: Exception) {}
+                    _loudnessEnhancer = null
+                }
             }
 
             val bytesPerFrame = bytesPerSample(encoding) * format.channels
