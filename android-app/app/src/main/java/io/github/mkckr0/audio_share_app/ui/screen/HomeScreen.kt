@@ -17,9 +17,11 @@
 package io.github.mkckr0.audio_share_app.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -27,8 +29,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.WifiFind
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +43,7 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +63,7 @@ import androidx.media3.common.Player
 import io.github.mkckr0.audio_share_app.R
 import io.github.mkckr0.audio_share_app.service.AudioPlayer
 import io.github.mkckr0.audio_share_app.ui.MainActivity
+import io.github.mkckr0.audio_share_app.ui.screen.HomeScreenViewModel.DiscoveryState
 import io.github.mkckr0.audio_share_app.ui.screen.HomeScreenViewModel.UiState
 import kotlinx.coroutines.launch
 
@@ -76,6 +85,30 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
             val isPortError by remember { derivedStateOf {
                 port.isEmpty()
             } }
+            val discoveryState by viewModel.discoveryState.collectAsStateWithLifecycle()
+            var serverMenuExpanded by remember { mutableStateOf(false) }
+
+            fun discover() {
+                port.toIntOrNull()?.let { viewModel.discoverServers(it) }
+            }
+
+            // search the local network on open, so the host doesn't need to be typed by hand
+            LaunchedEffect(Unit) {
+                if (discoveryState == DiscoveryState.Idle) {
+                    discover()
+                }
+            }
+
+            LaunchedEffect(discoveryState) {
+                val servers = (discoveryState as? DiscoveryState.Done)?.servers ?: return@LaunchedEffect
+                if (started || servers.isEmpty()) {
+                    return@LaunchedEffect
+                }
+                if (servers.none { it.host == host }) {
+                    host = servers.first().host
+                }
+                serverMenuExpanded = servers.size > 1
+            }
 
             Column(
                 modifier = Modifier
@@ -92,18 +125,79 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
                     ),
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    OutlinedTextField(
-                        value = host,
-                        onValueChange = {
-                            if (it.isEmpty() || !it.contains(Regex("\\s"))) {
-                                host = it
+                    Box(modifier = Modifier.weight(0.7f)) {
+                        OutlinedTextField(
+                            value = host,
+                            onValueChange = {
+                                if (it.isEmpty() || !it.contains(Regex("\\s"))) {
+                                    host = it
+                                }
+                            },
+                            enabled = !started,
+                            isError = isHostError,
+                            label = { Text(context.getString(R.string.label_host)) },
+                            trailingIcon = {
+                                if (discoveryState == DiscoveryState.Scanning) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        strokeWidth = 2.dp,
+                                    )
+                                } else {
+                                    IconButton(
+                                        onClick = {
+                                            val servers = (discoveryState as? DiscoveryState.Done)?.servers
+                                            if (servers.isNullOrEmpty()) discover() else serverMenuExpanded = true
+                                        },
+                                        enabled = !started,
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.WifiFind,
+                                            contentDescription = context.getString(R.string.label_find_servers),
+                                        )
+                                    }
+                                }
+                            },
+                            supportingText = {
+                                when (val state = discoveryState) {
+                                    DiscoveryState.Idle -> {}
+                                    DiscoveryState.Scanning -> Text(context.getString(R.string.label_searching_servers))
+                                    is DiscoveryState.Done -> Text(
+                                        if (state.servers.isEmpty()) context.getString(R.string.label_no_server_found)
+                                        else context.resources.getQuantityString(
+                                            R.plurals.label_servers_found, state.servers.size, state.servers.size
+                                        )
+                                    )
+                                }
+                            },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        DropdownMenu(
+                            expanded = serverMenuExpanded && !started,
+                            onDismissRequest = { serverMenuExpanded = false },
+                        ) {
+                            (discoveryState as? DiscoveryState.Done)?.servers?.forEach { server ->
+                                DropdownMenuItem(
+                                    text = { Text("${server.host}:${server.port}") },
+                                    leadingIcon = { Icon(Icons.Default.Computer, contentDescription = null) },
+                                    onClick = {
+                                        host = server.host
+                                        port = server.port.toString()
+                                        serverMenuExpanded = false
+                                    },
+                                )
                             }
-                        },
-                        enabled = !started,
-                        isError = isHostError,
-                        label = { Text(context.getString(R.string.label_host)) },
-                        modifier = Modifier.weight(0.7f),
-                    )
+                            DropdownMenuItem(
+                                text = { Text(context.getString(R.string.label_search_again)) },
+                                leadingIcon = { Icon(Icons.Default.WifiFind, contentDescription = null) },
+                                onClick = {
+                                    serverMenuExpanded = false
+                                    discover()
+                                },
+                            )
+                        }
+                    }
                     OutlinedTextField(
                         value = port,
                         onValueChange = {

@@ -7,6 +7,14 @@
     <!-- Home Screen -->
     <string name="label_host">Host</string>
     <string name="label_port">Port</string>
+    <string name="label_find_servers">Find servers on the local network</string>
+    <string name="label_searching_servers">Searching the local network…</string>
+    <string name="label_no_server_found">No server found, enter the host manually</string>
+    <string name="label_search_again">Search again</string>
+    <plurals name="label_servers_found">
+        <item quantity="one">%d server found</item>
+        <item quantity="other">%d servers found</item>
+    </plurals>
     <!-- Audio Screen -->
     <string name="label_audio_track">Audio Track</string>
     <string name="label_volume_linear_gain">Volume(Linear Gain)</string>

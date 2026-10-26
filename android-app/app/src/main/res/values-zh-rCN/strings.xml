@@ -7,6 +7,13 @@
     <!-- Home Screen -->
     <string name="label_host">主机</string>
     <string name="label_port">端口</string>
+    <string name="label_find_servers">在局域网中查找服务器</string>
+    <string name="label_searching_servers">正在搜索局域网…</string>
+    <string name="label_no_server_found">未找到服务器，请手动输入主机</string>
+    <string name="label_search_again">重新搜索</string>
+    <plurals name="label_servers_found">
+        <item quantity="other">找到 %d 个服务器</item>
+    </plurals>
     <!-- Audio Screen -->
     <string name="label_audio_track">音轨</string>
     <string name="label_volume_linear_gain">音量（线性增益）</string>
