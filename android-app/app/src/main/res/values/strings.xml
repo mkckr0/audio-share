@@ -51,5 +51,6 @@
     <string name="label_retry">will retry in %d seconds</string>
     <string name="label_timeout">Connect timeout</string>
     <string name="label_unresolved_address">Unresolved address</string>
+    <string name="label_unsupported_audio_format">Unsupported audio format from server (check its audio endpoint and encoding)</string>
     <string name="label_connecting">Connecting</string>
 </resources>

@@ -227,6 +227,14 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                 "encoding: $encoding, channelMask: $channelMask, sampleRate: ${format.sampleRate}"
             )
 
+            if (encoding == AudioFormat.ENCODING_INVALID
+                || channelMask == AudioFormat.CHANNEL_INVALID
+                || format.sampleRate <= 0
+            ) {
+                onError(context.getString(R.string.label_unsupported_audio_format), null)
+                return
+            }
+
             val minBufferSize =
                 AudioTrack.getMinBufferSize(format.sampleRate, channelMask, encoding)
 
