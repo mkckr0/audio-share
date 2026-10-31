@@ -51,5 +51,6 @@
     <string name="label_retry">会在%d秒内重试</string>
     <string name="label_timeout">连接超时</string>
     <string name="label_unresolved_address">无法解析的地址</string>
+    <string name="label_unsupported_audio_format">服务端的音频格式不受支持（请检查其音频端点和编码）</string>
     <string name="label_connecting">正在连接</string>
 </resources>
