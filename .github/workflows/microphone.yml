@@ -36,7 +36,15 @@ jobs:
           distribution: temurin
           cache: gradle
       - run: chmod +x gradlew
-      - run: ./gradlew --no-daemon testMicrophoneUnitTest assembleMicrophone lintMicrophone
+      - run: ./gradlew --no-daemon testMicrophoneUnitTest assembleMicrophone lintMicrophone assembleRelease
+      - name: Verify microphone permission and optional hardware in both APKs
+        run: |
+          build_tools=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)
+          for apk in app/build/outputs/apk/release/*.apk app/build/outputs/apk/microphone/*.apk; do
+            badging=$("$ANDROID_HOME/build-tools/$build_tools/aapt" dump badging "$apk")
+            grep -F "uses-permission: name='android.permission.RECORD_AUDIO'" <<< "$badging"
+            grep -F "uses-feature-not-required: name='android.hardware.microphone'" <<< "$badging"
+          done
 
   windows:
     name: Windows receiver tests and build
