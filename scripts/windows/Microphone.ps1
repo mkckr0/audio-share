@@ -20,7 +20,9 @@ function Get-Supervisor {
     $processIdText = (Get-Content -LiteralPath $pidPath -Raw).Trim()
     if ($processIdText -notmatch '^\d+$') { return $null }
     $processInfo = Get-CimInstance Win32_Process -Filter ('ProcessId=' + $processIdText) -ErrorAction SilentlyContinue
-    if ($processInfo -and $processInfo.CommandLine -and $processInfo.CommandLine.Contains($scriptPath) -and $processInfo.CommandLine -match '-Action Run') {
+    if ($processInfo -and $processInfo.CommandLine -and
+        $processInfo.CommandLine.IndexOf($scriptPath, [StringComparison]::OrdinalIgnoreCase) -ge 0 -and
+        $processInfo.CommandLine -match '-Action Run') {
         return $processInfo
     }
     return $null

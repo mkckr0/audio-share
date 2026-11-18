@@ -63,3 +63,6 @@ jobs:
       - run: go vet ./...
       - run: go test -count=1 -gcflags=all=-d=checkptr=2 ./...
       - run: go build -trimpath -o audio-share-mic.exe .
+      - name: Test repeated Start with different directory casing
+        shell: powershell
+        run: ../scripts/windows/Test-MicrophoneStart.ps1
