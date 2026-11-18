@@ -2,7 +2,9 @@
 
 This repository-owned receiver sends the phone microphone to an explicitly
 selected VB-CABLE playback endpoint. Windows applications select **CABLE Output**
-as their microphone. The existing Audio Share speaker server runs independently.
+as their microphone. The separate Windows speaker server uses the receiver's
+published playback endpoint and process ID to prevent microphone feedback.
+Update both binaries for [simultaneous microphone and speaker use](../docs/microphone.md#sharing-a-playback-endpoint).
 
 Build and verify with Go 1.23 or later on Windows; there are no external packages
 or C compiler requirements:

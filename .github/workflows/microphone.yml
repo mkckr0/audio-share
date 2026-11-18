@@ -5,6 +5,7 @@ on:
     paths:
       - android-app/**
       - protos/**
+      - server-core/**
       - server-mic/**
       - scripts/windows/**
       - .github/workflows/microphone.yml
@@ -12,6 +13,7 @@ on:
     paths:
       - android-app/**
       - protos/**
+      - server-core/**
       - server-mic/**
       - scripts/windows/**
       - .github/workflows/microphone.yml
@@ -66,3 +68,44 @@ jobs:
       - name: Test repeated Start with different directory casing
         shell: powershell
         run: ../scripts/windows/Test-MicrophoneStart.ps1
+
+  windows_playback:
+    name: Windows playback server build and tests
+    runs-on: windows-2022
+    timeout-minutes: 45
+    env:
+      VCPKG_COMMIT: 10b7a178346f3f0abef60cecd5130e295afd8da4
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
+      VCPKG_DEFAULT_HOST_TRIPLET: x64-windows-static-md
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.vcpkg-cache
+      PKG_CONFIG: C:\msys64\mingw64\bin\pkgconf.exe
+      VCPKG_KEEP_ENV_VARS: PKG_CONFIG
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: microsoft/vcpkg
+          ref: ${{ env.VCPKG_COMMIT }}
+          path: vcpkg
+      - name: Prepare build tools
+        id: tools
+        run: |
+          # The MSYS2 mirrors have retired the pkgconf package in this vcpkg snapshot.
+          C:\msys64\usr\bin\bash.exe -lc 'pacman -Sy --needed --noconfirm mingw-w64-x86_64-pkgconf'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
+          "image=$env:ImageVersion" >> $env:GITHUB_OUTPUT
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: windows-playback-vcpkg-${{ env.VCPKG_COMMIT }}-${{ steps.tools.outputs.image }}
+      - run: .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+      - run: .\vcpkg\vcpkg.exe install asio protobuf cxxopts 'spdlog[wchar]' wil
+      - name: Configure playback server
+        run: >-
+          cmake -S server-core -B build/server-core -G "Visual Studio 17 2022" -A x64
+          "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          "-DVCPKG_TARGET_TRIPLET=$env:VCPKG_DEFAULT_TRIPLET" -DBUILD_TESTING=ON
+      - run: cmake --build build/server-core --config Release --parallel
+      - run: ctest --test-dir build/server-core -C Release --output-on-failure --no-tests=error

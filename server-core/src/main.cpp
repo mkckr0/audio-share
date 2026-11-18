@@ -24,6 +24,9 @@ int main(int argc, char* argv[])
     options.add_options()
         ("h,help", "Print usage")
         ("l,list-endpoint", "List available endpoints")
+#ifdef _WINDOWS
+        ("allow-system-mix", "When sharing the microphone's playback endpoint, capture all PC outputs except the Audio Share microphone")
+#endif
         ("b,bind", "The server bind address. If not set, will use default", cxxopts::value<string>()->implicit_value(default_address), "[host][:<port>]")
         ("e,endpoint", "Specify the endpoint id. If not set or set \"default\", will use default", cxxopts::value<string>()->default_value("default"), "[endpoint]")
         ("encoding", "Specify the capture encoding. If not set or set \"default\", will use default", cxxopts::value<audio_manager::encoding_t>()->default_value("default"), "[encoding]")
@@ -96,6 +99,9 @@ int main(int argc, char* argv[])
             audio_manager::capture_config capture_config;
 
             capture_config.endpoint_id = result["endpoint"].as<string>();
+#ifdef _WINDOWS
+            capture_config.allow_system_mix = result.count("allow-system-mix") != 0;
+#endif
             capture_config.encoding = result["encoding"].as<audio_manager::encoding_t>();
             capture_config.channels = result["channels"].as<int>();
             capture_config.sample_rate = result["sample-rate"].as<int>();

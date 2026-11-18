@@ -78,6 +78,7 @@ var (
 	winmm                      = syscall.NewLazyDLL("winmm.dll")
 	procWaveOutGetNumDevs      = winmm.NewProc("waveOutGetNumDevs")
 	procWaveOutGetDevCapsW     = winmm.NewProc("waveOutGetDevCapsW")
+	procWaveOutGetID           = winmm.NewProc("waveOutGetID")
 	procWaveOutGetErrorTextW   = winmm.NewProc("waveOutGetErrorTextW")
 	procWaveOutOpen            = winmm.NewProc("waveOutOpen")
 	procWaveOutPrepareHeader   = winmm.NewProc("waveOutPrepareHeader")
@@ -133,6 +134,7 @@ type waveSink struct {
 	handle  uintptr
 	buffers [6]waveBuffer
 	next    int
+	route   *microphoneRoute
 }
 
 func openWaveSink(device outputDevice, format audioFormat) (*waveSink, error) {
@@ -143,6 +145,17 @@ func openWaveSink(device outputDevice, format audioFormat) (*waveSink, error) {
 	sink := &waveSink{}
 	result, _, _ := procWaveOutOpen.Call(uintptr(unsafe.Pointer(&sink.handle)), device.ID, uintptr(unsafe.Pointer(&waveFormat)), 0, 0, 0)
 	if err := winmmError("waveOutOpen "+device.Name, result); err != nil {
+		return nil, err
+	}
+	// Publish the route before WritePCM can submit even the first sample.
+	endpoint, err := renderEndpointID(sink.handle)
+	if err == nil {
+		sink.route, err = claimMicrophoneRoute(endpoint)
+	}
+	if err != nil {
+		if closeErr := sink.Close(); closeErr != nil {
+			err = errors.Join(err, &outputCleanupError{closeErr})
+		}
 		return nil, err
 	}
 	for i := range sink.buffers {
@@ -244,6 +257,10 @@ func (s *waveSink) Close() error {
 		failures = append(failures, err)
 	} else {
 		s.handle = 0
+		if s.route != nil {
+			s.route.close()
+			s.route = nil
+		}
 	}
 	// A failing unprepare leaves its native allocation alive, never dangling.
 	// The receiver treats cleanup failure as fatal and terminates the process.

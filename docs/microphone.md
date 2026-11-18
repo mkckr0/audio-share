@@ -1,8 +1,8 @@
 # USB phone microphone for Windows (experimental)
 
-Send the Android microphone to Windows applications over USB while continuing to use the phone as a speaker. The Android app contains an independent microphone control; `server-mic` builds a separate `audio-share-mic.exe` receiver. The existing C++ speaker server and its wire protocol are unchanged.
+Send the Android microphone to Windows applications over USB while continuing to use the phone as a speaker. The Android app has independent microphone and speaker controls. The Windows microphone receiver and speaker server coordinate their audio routes within the same Windows sign-in session. Update both Windows executables from this branch to enable this protection. Existing Android playback clients use the same wire protocol.
 
-This first implementation is USB-only and Windows-only on the receiving side. It does not provide a Linux/PipeWire backend or Wi-Fi microphone transport. The receiver uses Go and WinMM, introducing a separate build target instead of changing the existing C++ targets. Integration into the existing server and release packaging is not included.
+The microphone transport uses USB. The receiver is a separate Go/WinMM build target on Windows.
 
 ## Requirements
 
@@ -15,10 +15,18 @@ This first implementation is USB-only and Windows-only on the receiving side. It
 1. Install the `Audio Share + Mic` APK. This build is a side-by-side app, preserving an existing official Audio Share installation.
 2. Build and start the Windows microphone receiver as described below. The optional PowerShell helper restores the microphone's USB forwarding after the phone reconnects.
 3. In Audio Share + Mic, enable **Windows microphone** and grant microphone permission. Keep notifications enabled to use the notification's Stop action.
-4. In your voice/meeting app, select **CABLE Output (VB-Audio Virtual Cable)** as the microphone. The receiver sends audio to **CABLE Input**, not to the PC's normal speakers. Do not set CABLE Input as the default speaker output.
+4. In your voice/meeting app, select **CABLE Output (VB-Audio Virtual Cable)** as the microphone. Send the app's playback to the regular PC playback device and select that same device in the Audio Share speaker server. The receiver writes the phone microphone to **CABLE Input**.
 5. Turn off the phone's microphone switch to stop capture. The notification has another Stop control. Microphone capture does not start automatically at boot.
 
-The speaker and microphone can run simultaneously. Platform echo cancellation is enabled when available, but acoustic performance depends on the device, volume and room. A successful audio connection is not proof that every calling app is echo-free.
+### Sharing a playback endpoint
+
+When both services select the same playback endpoint, the speaker server pauses forwarding while the microphone is active. It resumes after the cable has drained. This also works if the microphone starts after a speaker client has connected.
+
+To hear PC audio when the cable is the only playback device, start the speaker server with `--allow-system-mix` alongside your usual options. The Windows GUI offers **Default playback (allow all PC outputs when sharing the microphone cable)**. On a shared endpoint this mode sends audio from **all Windows playback devices** and excludes the Audio Share microphone receiver. Windows 10 build 20348 or newer is required for process exclusion. If Windows cannot start the filtered stream, the microphone continues working and the speaker server reports the error. [Windows application loopback capture](https://learn.microsoft.com/en-us/samples/microsoft/windows-classic-samples/applicationloopbackaudio-sample/)
+
+With one cable, Windows apps recording **CABLE Output** also receive any PC app audio played directly into that cable. Choose a separate PC playback endpoint when a calling app needs a microphone-only input. Android's acoustic echo cancellation remains device- and room-dependent.
+
+The cable can still contain microphone audio after Windows closes the render stream. The speaker server keeps the previous receiver excluded for one second, or pauses if the buffered samples could belong to two different receivers. It also waits one second when starting on a cable with unknown recent activity. Physical playback endpoints can start immediately. [VB-CABLE buffer sizes and internal sample rates](https://vb-audio.com/Cable/VBCABLE_ReferenceManual.pdf#page=10)
 
 ## Windows receiver setup
 
