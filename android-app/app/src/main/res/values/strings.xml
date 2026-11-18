@@ -7,6 +7,18 @@
     <!-- Home Screen -->
     <string name="label_host">Host</string>
     <string name="label_port">Port</string>
+    <string name="microphone_title">Windows microphone</string>
+    <string name="microphone_description">Send this phone’s microphone over USB. In Windows apps, choose CABLE Output as the microphone.</string>
+    <string name="microphone_off">Off</string>
+    <string name="microphone_connecting">Connecting to Windows…</string>
+    <string name="microphone_streaming">Microphone on · USB connected</string>
+    <string name="microphone_reconnecting">Waiting for USB connection · retrying…</string>
+    <string name="microphone_unavailable">Microphone unavailable · retrying…</string>
+    <string name="microphone_permission_required">Allow microphone access to start.</string>
+    <string name="microphone_start_failed">Could not start. Open the app and try again.</string>
+    <string name="microphone_notification_channel">Microphone sharing</string>
+    <string name="microphone_notification_title">Phone microphone</string>
+    <string name="microphone_stop">Stop microphone</string>
     <!-- Audio Screen -->
     <string name="label_audio_track">Audio Track</string>
     <string name="label_volume_linear_gain">Volume(Linear Gain)</string>

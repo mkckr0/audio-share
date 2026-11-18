@@ -1,0 +1,5 @@
+{
+  "AdbPath": "..\\platform-tools\\adb.exe",
+  "Serial": "YOUR_USB_DEVICE_SERIAL",
+  "Device": "CABLE Input"
+}

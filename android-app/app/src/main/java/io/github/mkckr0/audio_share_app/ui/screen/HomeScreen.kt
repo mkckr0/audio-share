@@ -164,6 +164,8 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel()) {
                         }
                     }
                 }
+
+                MicrophoneCard()
             }
 
             LifecycleStartEffect(true) {

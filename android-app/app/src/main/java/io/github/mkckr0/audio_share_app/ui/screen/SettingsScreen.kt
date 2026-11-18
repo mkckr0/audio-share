@@ -59,6 +59,7 @@ import androidx.work.WorkManager
 import io.github.mkckr0.audio_share_app.BuildConfig
 import io.github.mkckr0.audio_share_app.R
 import io.github.mkckr0.audio_share_app.model.AppSettingsKeys
+import io.github.mkckr0.audio_share_app.model.Util
 import io.github.mkckr0.audio_share_app.model.WorkName
 import io.github.mkckr0.audio_share_app.model.getBoolean
 import io.github.mkckr0.audio_share_app.ui.base.EditTextPreference
@@ -80,6 +81,9 @@ fun SettingsScreen() {
     val tag = "SettingsScreen"
 
     val context = LocalContext.current
+    val officialReleaseTag = remember {
+        Util.officialReleaseTag(BuildConfig.APPLICATION_ID, BuildConfig.VERSION_NAME)
+    }
 
     PreferenceScreen {
 
@@ -186,52 +190,54 @@ fun SettingsScreen() {
             }
         }
 
-        PreferenceCategory(context.getString(R.string.label_update)) {
-            val workManager = remember { WorkManager.getInstance(context.applicationContext) }
-            SwitchPreference(
-                icon = Icons.Default.Autorenew,
-                key = AppSettingsKeys.AUTO_CHECK_FOR_UPDATE,
-                title = context.getString(R.string.label_auto_check_for_update),
-                defaultValue = context.getBoolean(R.bool.default_auto_check_for_update),
-            ) { checked ->
-                if (checked) {
-                    Log.d(tag, "UpdateWorker beginAutoUpdate")
-                    val updateWorker =
-                        PeriodicWorkRequestBuilder<UpdateWorker>(
-                            3, TimeUnit.HOURS,
-                            5, TimeUnit.MINUTES,
-//                            PeriodicWorkRequest.MIN_PERIODIC_INTERVAL_MILLIS, TimeUnit.MILLISECONDS,
-//                            PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS, TimeUnit.MILLISECONDS,
-                        ).build()
-                    workManager.enqueueUniquePeriodicWork(
-                        WorkName.AUTO_CHECK_UPDATE.value,
-                        ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
-                        updateWorker
-                    )
-                } else {
-                    Log.d(tag, "UpdateWorker stopAutoUpdate")
-                    workManager.cancelUniqueWork(WorkName.AUTO_CHECK_UPDATE.value)
+        if (officialReleaseTag != null) {
+            PreferenceCategory(context.getString(R.string.label_update)) {
+                val workManager = remember { WorkManager.getInstance(context.applicationContext) }
+                SwitchPreference(
+                    icon = Icons.Default.Autorenew,
+                    key = AppSettingsKeys.AUTO_CHECK_FOR_UPDATE,
+                    title = context.getString(R.string.label_auto_check_for_update),
+                    defaultValue = context.getBoolean(R.bool.default_auto_check_for_update),
+                ) { checked ->
+                    if (checked) {
+                        Log.d(tag, "UpdateWorker beginAutoUpdate")
+                        val updateWorker =
+                            PeriodicWorkRequestBuilder<UpdateWorker>(
+                                3, TimeUnit.HOURS,
+                                5, TimeUnit.MINUTES,
+    //                            PeriodicWorkRequest.MIN_PERIODIC_INTERVAL_MILLIS, TimeUnit.MILLISECONDS,
+    //                            PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS, TimeUnit.MILLISECONDS,
+                            ).build()
+                        workManager.enqueueUniquePeriodicWork(
+                            WorkName.AUTO_CHECK_UPDATE.value,
+                            ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
+                            updateWorker
+                        )
+                    } else {
+                        Log.d(tag, "UpdateWorker stopAutoUpdate")
+                        workManager.cancelUniqueWork(WorkName.AUTO_CHECK_UPDATE.value)
+                    }
                 }
-            }
-            Preference(
-                icon = Icons.Default.Update,
-                title = context.getString(R.string.label_check_for_update),
-            ) {
-                val work = OneTimeWorkRequestBuilder<UpdateWorker>().build()
-                workManager.enqueueUniqueWork(
-                    WorkName.CHECK_UPDATE.value,
-                    ExistingWorkPolicy.REPLACE,
-                    work
+                Preference(
+                    icon = Icons.Default.Update,
+                    title = context.getString(R.string.label_check_for_update),
+                ) {
+                    val work = OneTimeWorkRequestBuilder<UpdateWorker>().build()
+                    workManager.enqueueUniqueWork(
+                        WorkName.CHECK_UPDATE.value,
+                        ExistingWorkPolicy.REPLACE,
+                        work
+                    )
+                }
+                Preference(
+                    icon = Icons.Default.NewReleases,
+                    title = context.getString(R.string.label_latest_release),
+                    intent = rememberIntent(
+                        Intent.ACTION_VIEW,
+                        stringResource(R.string.latest_release_url)
+                    )
                 )
             }
-            Preference(
-                icon = Icons.Default.NewReleases,
-                title = context.getString(R.string.label_latest_release),
-                intent = rememberIntent(
-                    Intent.ACTION_VIEW,
-                    stringResource(R.string.latest_release_url)
-                )
-            )
         }
 
         PreferenceCategory(context.getString(R.string.label_about)) {
@@ -257,10 +263,12 @@ fun SettingsScreen() {
                 icon = Icons.Default.Info,
                 title = context.getString(R.string.label_version),
                 summary = remember { "${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE})-${BuildConfig.BUILD_TYPE}" },
-                intent = rememberIntent(
-                    Intent.ACTION_VIEW,
-                    "https://github.com/mkckr0/audio-share/releases/tag/v${BuildConfig.VERSION_NAME}"
-                ),
+                intent = if (officialReleaseTag != null) {
+                    rememberIntent(
+                        Intent.ACTION_VIEW,
+                        "https://github.com/mkckr0/audio-share/releases/tag/$officialReleaseTag"
+                    )
+                } else null,
             )
         }
     }

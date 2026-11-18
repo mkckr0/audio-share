@@ -8,6 +8,24 @@ import org.junit.Test
 class UtilTest {
 
     @Test
+    fun officialReleaseTagPreservesOfficialBuildUpdates() {
+        assertEquals("v0.3.4", Util.officialReleaseTag("io.github.mkckr0.audio_share_app", "0.3.4"))
+    }
+
+    @Test
+    fun officialReleaseTagExcludesSideBySidePackages() {
+        assertNull(Util.officialReleaseTag("io.github.mkckr0.audio_share_app.mic", "0.3.4-mic"))
+        assertNull(Util.officialReleaseTag("io.github.mkckr0.audio_share_app.mic", "0.3.4"))
+    }
+
+    @Test
+    fun officialReleaseTagRejectsVersionsTheUpdaterCannotCompare() {
+        for (version in listOf("0.3.4-mic", "", "0.3", "0.3.2147483648")) {
+            assertNull(Util.officialReleaseTag("io.github.mkckr0.audio_share_app", version))
+        }
+    }
+
+    @Test
     fun isNewerVersion_arg0() {
         assertThrows(IllegalArgumentException::class.java) {
             Util.isNewerVersion("3.2.2", "v0.0.1")

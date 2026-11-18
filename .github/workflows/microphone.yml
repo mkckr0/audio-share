@@ -1,0 +1,57 @@
+name: Microphone
+
+on:
+  pull_request:
+    paths:
+      - android-app/**
+      - protos/**
+      - server-mic/**
+      - scripts/windows/**
+      - .github/workflows/microphone.yml
+  push:
+    paths:
+      - android-app/**
+      - protos/**
+      - server-mic/**
+      - scripts/windows/**
+      - .github/workflows/microphone.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Android tests, APK and lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: android-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: gradle
+      - run: chmod +x gradlew
+      - run: ./gradlew --no-daemon testMicrophoneUnitTest assembleMicrophone lintMicrophone
+
+  windows:
+    name: Windows receiver tests and build
+    runs-on: windows-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: server-mic
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache: false
+      - run: go test -count=1 ./...
+      - run: go vet ./...
+      - run: go test -count=1 -gcflags=all=-d=checkptr=2 ./...
+      - run: go build -trimpath -o audio-share-mic.exe .

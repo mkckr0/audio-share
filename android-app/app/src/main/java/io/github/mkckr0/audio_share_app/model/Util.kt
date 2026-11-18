@@ -17,6 +17,16 @@
 package io.github.mkckr0.audio_share_app.model
 
 object Util {
+    fun officialReleaseTag(applicationId: String, versionName: String): String? {
+        // Official APKs cannot update a side-by-side package or a custom version.
+        if (applicationId != "io.github.mkckr0.audio_share_app") return null
+        val parts = versionName.split('.')
+        if (parts.size != 3 || parts.any { part ->
+                part.isEmpty() || part.any { it !in '0'..'9' } || part.toIntOrNull() == null
+            }) return null
+        return "v$versionName"
+    }
+
     fun isNewerVersion(a: String, b: String): Boolean {
         if (a[0] != 'v' || b[0] != 'v') {
             throw IllegalArgumentException("version format error, a=${a} b=${b}")
