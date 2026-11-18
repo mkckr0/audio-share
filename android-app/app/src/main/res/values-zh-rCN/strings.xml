@@ -7,6 +7,18 @@
     <!-- Home Screen -->
     <string name="label_host">主机</string>
     <string name="label_port">端口</string>
+    <string name="microphone_title">Windows 麦克风</string>
+    <string name="microphone_description">通过 USB 传输手机麦克风音频。在 Windows 应用中选择 CABLE Output 作为麦克风。</string>
+    <string name="microphone_off">已关闭</string>
+    <string name="microphone_connecting">正在连接 Windows…</string>
+    <string name="microphone_streaming">麦克风已开启 · USB 已连接</string>
+    <string name="microphone_reconnecting">等待 USB 连接 · 正在重试…</string>
+    <string name="microphone_unavailable">麦克风不可用 · 正在重试…</string>
+    <string name="microphone_permission_required">请允许访问麦克风后再开启。</string>
+    <string name="microphone_start_failed">无法启动。请打开应用后重试。</string>
+    <string name="microphone_notification_channel">麦克风共享</string>
+    <string name="microphone_notification_title">手机麦克风</string>
+    <string name="microphone_stop">关闭麦克风</string>
     <!-- Audio Screen -->
     <string name="label_audio_track">音轨</string>
     <string name="label_volume_linear_gain">音量（线性增益）</string>

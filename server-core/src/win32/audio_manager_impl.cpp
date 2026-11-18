@@ -25,12 +25,17 @@
 #include <iostream>
 #include <vector>
 #include <cstdlib>
+#include <functional>
+#include <optional>
 
 #include <initguid.h>
 #include <Mmdeviceapi.h>
 #include <Functiondiscoverykeys_devpkey.h>
 #include <Audioclient.h>
 #include <Audiopolicy.h>
+#include "win32/microphone_route.hpp"
+#include "win32/microphone_endpoint.hpp"
+#include "win32/process_loopback.hpp"
 
 using namespace io::github::mkckr0::audio_share_app::pb;
 
@@ -110,16 +115,69 @@ audio_manager_impl::~audio_manager_impl()
 
 } // namespace detail
 
-void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> network_manager, const capture_config& config)
+// Capture from the selected endpoint or, with explicit consent, the system mix
+// excluding the microphone renderer. Both use the same negotiated wire format.
+static HRESULT capture_packets(IMMDevice* endpoint, DWORD exclude_pid, WAVEFORMATEX* format, DWORD poll_ms,
+                               const std::function<bool()>& current, network_manager& network)
+{
+    wil::com_ptr_nothrow<IAudioClient> client;
+    wil::unique_event_nothrow ready;
+    DWORD flags = AUDCLNT_STREAMFLAGS_LOOPBACK;
+    REFERENCE_TIME buffer_duration = 10000000; // one second for legacy endpoint polling
+    if (exclude_pid) {
+        RETURN_IF_FAILED(detail::activate_without_microphone(exclude_pid, &client));
+        RETURN_IF_FAILED(ready.create());
+        flags |= AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM;
+        buffer_duration = 0;
+    } else {
+        RETURN_IF_FAILED(endpoint->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, client.put_void()));
+    }
+    RETURN_IF_FAILED(client->Initialize(AUDCLNT_SHAREMODE_SHARED, flags, buffer_duration, 0, format, nullptr));
+    if (ready) RETURN_IF_FAILED(client->SetEventHandle(ready.get()));
+    wil::com_ptr_nothrow<IAudioCaptureClient> capture;
+    RETURN_IF_FAILED(client->GetService(IID_PPV_ARGS(&capture)));
+    RETURN_IF_FAILED(client->Start());
+
+    std::vector<BYTE> silence;
+    while (current()) {
+        if (ready) ready.wait(50);
+        else std::this_thread::sleep_for(std::chrono::milliseconds(poll_ms));
+        while (current()) {
+            UINT32 frames = 0;
+            RETURN_IF_FAILED(capture->GetNextPacketSize(&frames));
+            if (!frames) break;
+            BYTE* data = nullptr;
+            DWORD packet_flags = 0;
+            const HRESULT result = capture->GetBuffer(&data, &frames, &packet_flags, nullptr, nullptr);
+            if (result == AUDCLNT_S_BUFFER_EMPTY) break;
+            RETURN_IF_FAILED(result);
+            const size_t bytes = static_cast<size_t>(frames) * format->nBlockAlign;
+            if (packet_flags & AUDCLNT_BUFFERFLAGS_SILENT) {
+                silence.resize(bytes, format->wBitsPerSample == 8 ? 128 : 0);
+                data = silence.data();
+            }
+            // The receiver publishes before rendering. Drop buffered audio if
+            // the route changed while WASAPI was providing this packet.
+            if (current() && bytes)
+                network.broadcast_audio_data(reinterpret_cast<const char*>(data), bytes, format->nBlockAlign);
+            RETURN_IF_FAILED(capture->ReleaseBuffer(frames));
+        }
+    }
+    return client->Stop();
+}
+
+void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> network_manager, const capture_config& config) try
 {
     spdlog::info("endpoint_id: {}", config.endpoint_id);
 
     HRESULT hr;
 
+    auto com = wil::CoInitializeEx(COINIT_MULTITHREADED);
     auto pEnumerator = wil::CoCreateInstance<MMDeviceEnumerator, IMMDeviceEnumerator>();
 
     wil::com_ptr<IMMDevice> pEndpoint;
-    if (config.endpoint_id.empty() || config.endpoint_id == "default") {
+    const bool duplex_default = config.endpoint_id == "duplex";
+    if (config.endpoint_id.empty() || config.endpoint_id == "default" || duplex_default) {
         hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pEndpoint);
         exit_on_failed(hr, "can't find default audio endpoint");
     } else {
@@ -132,13 +190,16 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
     exit_on_failed(hr);
     auto device_name = get_device_name(pProps.get());
     spdlog::info("select audio endpoint: {}", device_name);
+    wil::unique_cotaskmem_string endpoint_id;
+    exit_on_failed(pEndpoint->GetId(wil::out_param(endpoint_id)));
+    microphone_route route(wchars_to_utf8(endpoint_id.get()));
 
     wil::com_ptr<IAudioClient> pAudioClient;
     hr = pEndpoint->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, (void**)&pAudioClient);
     exit_on_failed(hr);
 
     wil::unique_cotaskmem_ptr<WAVEFORMATEX> pMixFormat;
-    pAudioClient->GetMixFormat(wil::out_param(pMixFormat));
+    exit_on_failed(pAudioClient->GetMixFormat(wil::out_param(pMixFormat)));
     spdlog::info("default mix format:\n{}", *pMixFormat);
 
     wil::unique_cotaskmem_ptr<WAVEFORMATEX> pCaptureFormat;
@@ -212,81 +273,65 @@ void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> netwo
 
     set_format(_format, pCaptureFormat.get());
 
-    constexpr int REFTIMES_PER_SEC = 10000000; // 1 reference_time = 100ns
-    constexpr int REFTIMES_PER_MILLISEC = 10000;
-
-    REFERENCE_TIME hnsMinimumDevicePeriod = 0;
-    hr = pAudioClient->GetDevicePeriod(nullptr, &hnsMinimumDevicePeriod);
-    exit_on_failed(hr);
-
-    REFERENCE_TIME hnsRequestedDuration = REFTIMES_PER_SEC; // 1s buffer
-    hr = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, hnsRequestedDuration, 0, pCaptureFormat.get(), nullptr);
-    exit_on_failed(hr);
-
-    UINT32 bufferFrameCount {};
-    hr = pAudioClient->GetBufferSize(&bufferFrameCount);
-    exit_on_failed(hr);
-
-    spdlog::info("buffer size: {}", bufferFrameCount);
-
-    wil::com_ptr<IAudioCaptureClient> pCaptureClient;
-    hr = pAudioClient->GetService(__uuidof(IAudioCaptureClient), (void**)&pCaptureClient);
-    exit_on_failed(hr);
-
-    hr = pAudioClient->Start();
-    exit_on_failed(hr);
-
-    const std::chrono::milliseconds duration { hnsMinimumDevicePeriod / REFTIMES_PER_MILLISEC };
-    spdlog::info("device period: {}ms", duration.count());
-
-#ifdef DEBUG
-    UINT32 frame_count = 0;
-    int seconds {};
-#endif
-
-    using namespace std::chrono_literals;
-    asio::steady_timer timer(*network_manager->_ioc);
-    std::error_code ec;
-
-    timer.expires_at(std::chrono::steady_clock::now());
-
-    do {
-        timer.expires_at(timer.expiry() + duration);
-        timer.wait(ec);
-        if (ec) {
-            break;
+    REFERENCE_TIME period = 0;
+    exit_on_failed(pAudioClient->GetDevicePeriod(nullptr, &period));
+    const DWORD poll_ms = static_cast<DWORD>((std::max)(1LL, period / 10000));
+    const bool allow_system_mix = duplex_default || config.allow_system_mix;
+    playback_routing routing(allow_system_mix, detail::can_render_microphone(endpoint_id.get()),
+                             playback_routing::clock::now());
+    std::optional<uint64_t> watched;
+    wil::unique_handle owner;
+    auto select_source = [&]() -> playback_source {
+        for (;;) {
+            const auto epoch = route.snapshot();
+            const auto source = routing.next(epoch, playback_routing::clock::now());
+            const DWORD pid = static_cast<DWORD>(epoch);
+            if (watched != epoch) {
+                watched = epoch;
+                owner.reset();
+                if (pid) {
+                    owner.reset(OpenProcess(SYNCHRONIZE, FALSE, pid));
+                    if (!allow_system_mix)
+                        spdlog::warn("Microphone and speaker share {}. Speaker playback paused. Select a separate playback "
+                                     "endpoint or use --allow-system-mix to share all PC outputs except the microphone.", device_name);
+                }
+            }
+            if (!pid) return source;
+            const bool exited = owner ? WaitForSingleObject(owner.get(), 0) == WAIT_OBJECT_0 : route.writer_gone();
+            if (!exited) return source;
+            // A crash leaves the PID behind. Keep its exclusion through the
+            // driver's tail and never clear a replacement receiver's epoch.
+            route.receiver_exited(epoch);
         }
-
-        UINT32 next_packet_size = 0;
-        hr = pCaptureClient->GetNextPacketSize(&next_packet_size);
-        exit_on_failed(hr, "pCaptureClient->GetNextPacketSize");
-
-        if (next_packet_size == 0) {
+    };
+    using mode = playback_source::mode;
+    std::optional<playback_source> failed;
+    while (!_stopped) {
+        const auto source = select_source();
+        auto current = [&] { return !_stopped && select_source() == source; };
+        if (source.type == mode::pause) {
+            while (current()) std::this_thread::sleep_for(std::chrono::milliseconds(20));
             continue;
         }
-
-        BYTE* pData {};
-        UINT32 numFramesAvailable {};
-        DWORD dwFlags {};
-
-        hr = pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &dwFlags, nullptr, nullptr);
-        exit_on_failed(hr, "pCaptureClient->GetBuffer");
-
-        int bytes_per_frame = pCaptureFormat->nBlockAlign;
-        size_t count = numFramesAvailable * bytes_per_frame;
-
-        network_manager->broadcast_audio_data((const char*)pData, count, pCaptureFormat->nBlockAlign);
-
-#ifdef DEBUG
-        frame_count += numFramesAvailable;
-        seconds = frame_count / pCaptureFormat->nSamplesPerSec;
-        // spdlog::trace("numFramesAvailable: {}, seconds: {}", numFramesAvailable, seconds);
-#endif // DEBUG
-
-        hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
-        exit_on_failed(hr, "pCaptureClient->ReleaseBuffer");
-
-    } while (!_stopped);
+        if (failed != source) {
+            if (source.type == mode::exclude_receiver)
+                spdlog::info("Sharing system playback excluding microphone receiver PID {}", source.pid);
+            else spdlog::info("Sharing playback from {}", device_name);
+            failed.reset();
+        }
+        hr = capture_packets(pEndpoint.get(), source.pid, pCaptureFormat.get(), poll_ms, current, *network_manager);
+        if (FAILED(hr)) {
+            if (failed != source)
+                spdlog::error("Playback capture failed (HRESULT 0x{:08x}). Choose a separate playback endpoint "
+                              "if this Windows version cannot exclude the microphone.", static_cast<DWORD>(hr));
+            failed = source;
+            // Never substitute unfiltered loopback while the mic is rendering.
+            for (int i = 0; i < 20 && current(); ++i)
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+    }
+} catch (const wil::ResultException& error) {
+    spdlog::error("Cannot initialize Windows playback capture: {}", error.what());
 }
 
 audio_manager::endpoint_list_t audio_manager::get_endpoint_list()
@@ -326,6 +371,9 @@ audio_manager::endpoint_list_t audio_manager::get_endpoint_list()
         endpoint_list.emplace_back(endpoint_id, name);
     }
 
+    if (!endpoint_list.empty()) {
+        endpoint_list.emplace_back("duplex", "Default playback (allow all PC outputs when sharing the microphone cable)");
+    }
     return endpoint_list;
 }
 

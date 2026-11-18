@@ -1,4 +1,5 @@
 # Audio Share
+
 <p align="center">
     <img src="metadata/en-US/images/icon.png" width="20%" alt="metadata/en-US/images/icon.png">
 </p>
@@ -33,6 +34,8 @@
 <a href="https://sourceforge.net/projects/audio-share/files"><img alt="Download Audio Share" src="https://a.fsdn.com/con/app/sf-download-button?button_size=2x" width=276 height=48></a>
 
 Audio Share can share Windows/Linux computer's audio to Android phone over network, so your phone becomes the speaker of computer. (You needn't buy a new speaker😄.)
+
+Experimental [USB microphone support for Windows](docs/microphone.md) also sends the phone's microphone to a Windows recording device. It requires ADB and a separately installed VB-CABLE driver; the existing speaker feature can run at the same time.
 
 
 ## Screenshots

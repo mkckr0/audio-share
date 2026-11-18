@@ -54,6 +54,9 @@ class UpdateWorker(appContext: Context, workerParams: WorkerParameters) : Worker
     
     @OptIn(ExperimentalSerializationApi::class)
     override fun doWork(): Result {
+        val currentReleaseTag = Util.officialReleaseTag(
+            BuildConfig.APPLICATION_ID, BuildConfig.VERSION_NAME
+        ) ?: return Result.success()
         Log.d(tag, "UpdateWorker doWork")
         suppressMessage = inputData.getBoolean("SUPPRESS_MESSAGE", false)
         MainScope().launch(Dispatchers.IO) {
@@ -73,7 +76,7 @@ class UpdateWorker(appContext: Context, workerParams: WorkerParameters) : Worker
             val latestRelease: LatestRelease = res.body()
 
             withContext(Dispatchers.Main) {
-                if (!Util.isNewerVersion(latestRelease.tagName, "v${BuildConfig.VERSION_NAME}")) {
+                if (!Util.isNewerVersion(latestRelease.tagName, currentReleaseTag)) {
                     showMessage(applicationContext.getString(R.string.label_no_update))
                     return@withContext
                 }

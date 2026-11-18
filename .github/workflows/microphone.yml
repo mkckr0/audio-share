@@ -1,0 +1,111 @@
+name: Microphone
+
+on:
+  pull_request:
+    paths:
+      - android-app/**
+      - protos/**
+      - server-core/**
+      - server-mic/**
+      - scripts/windows/**
+      - .github/workflows/microphone.yml
+  push:
+    paths:
+      - android-app/**
+      - protos/**
+      - server-core/**
+      - server-mic/**
+      - scripts/windows/**
+      - .github/workflows/microphone.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Android tests, APK and lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: android-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: gradle
+      - run: chmod +x gradlew
+      - run: ./gradlew --no-daemon testMicrophoneUnitTest assembleMicrophone lintMicrophone assembleRelease
+      - name: Verify microphone permission and optional hardware in both APKs
+        run: |
+          build_tools=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)
+          for apk in app/build/outputs/apk/release/*.apk app/build/outputs/apk/microphone/*.apk; do
+            badging=$("$ANDROID_HOME/build-tools/$build_tools/aapt" dump badging "$apk")
+            grep -F "uses-permission: name='android.permission.RECORD_AUDIO'" <<< "$badging"
+            grep -F "uses-feature-not-required: name='android.hardware.microphone'" <<< "$badging"
+          done
+
+  windows:
+    name: Windows receiver tests and build
+    runs-on: windows-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: server-mic
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache: false
+      - run: go test -count=1 ./...
+      - run: go vet ./...
+      - run: go test -count=1 -gcflags=all=-d=checkptr=2 ./...
+      - run: go build -trimpath -o audio-share-mic.exe .
+      - name: Test repeated Start with different directory casing
+        shell: powershell
+        run: ../scripts/windows/Test-MicrophoneStart.ps1
+
+  windows_playback:
+    name: Windows playback server build and tests
+    runs-on: windows-2022
+    timeout-minutes: 45
+    env:
+      VCPKG_COMMIT: 10b7a178346f3f0abef60cecd5130e295afd8da4
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
+      VCPKG_DEFAULT_HOST_TRIPLET: x64-windows-static-md
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.vcpkg-cache
+      PKG_CONFIG: C:\msys64\mingw64\bin\pkgconf.exe
+      VCPKG_KEEP_ENV_VARS: PKG_CONFIG
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: microsoft/vcpkg
+          ref: ${{ env.VCPKG_COMMIT }}
+          path: vcpkg
+      - name: Prepare build tools
+        id: tools
+        run: |
+          # The MSYS2 mirrors have retired the pkgconf package in this vcpkg snapshot.
+          C:\msys64\usr\bin\bash.exe -lc 'pacman -Sy --needed --noconfirm mingw-w64-x86_64-pkgconf'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
+          "image=$env:ImageVersion" >> $env:GITHUB_OUTPUT
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: windows-playback-vcpkg-${{ env.VCPKG_COMMIT }}-${{ steps.tools.outputs.image }}
+      - run: .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+      - run: .\vcpkg\vcpkg.exe install asio protobuf cxxopts 'spdlog[wchar]' wil
+      - name: Configure playback server
+        run: >-
+          cmake -S server-core -B build/server-core -G "Visual Studio 17 2022" -A x64
+          "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          "-DVCPKG_TARGET_TRIPLET=$env:VCPKG_DEFAULT_TRIPLET" -DBUILD_TESTING=ON
+      - run: cmake --build build/server-core --config Release --parallel
+      - run: ctest --test-dir build/server-core -C Release --output-on-failure --no-tests=error

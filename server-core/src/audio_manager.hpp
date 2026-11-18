@@ -74,6 +74,9 @@ public:
         encoding_t encoding = encoding_t::encoding_default;
         int channels = 0;
         int sample_rate = 0;
+#ifdef _WINDOWS
+        bool allow_system_mix = false;
+#endif
     };
 
     audio_manager();

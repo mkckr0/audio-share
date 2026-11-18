@@ -1,0 +1,8 @@
+/audio-share-mic.exe
+/microphone-settings.json
+/microphone-status.json
+/.audio-share-mic-status-*.tmp
+/microphone.stop
+/supervisor.pid
+/supervisor.log*
+/receiver.*.log

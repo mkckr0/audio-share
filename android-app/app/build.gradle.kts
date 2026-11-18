@@ -43,15 +43,18 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            val keystoreProperties = Properties().apply {
-                load(rootProject.file("keystore.properties").inputStream())
+        val keystoreFile = rootProject.file("keystore.properties")
+        if (keystoreFile.isFile) {
+            create("release") {
+                val keystoreProperties = Properties().apply {
+                    keystoreFile.inputStream().use { load(it) }
+                }
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                enableV3Signing = true
             }
-            storeFile = file(keystoreProperties.getProperty("storeFile"))
-            keyAlias = keystoreProperties.getProperty("keyAlias")
-            storePassword = keystoreProperties.getProperty("storePassword")
-            keyPassword = keystoreProperties.getProperty("keyPassword")
-            enableV3Signing = true
         }
     }
 
@@ -62,7 +65,15 @@ android {
             isDebuggable = false
             isProfileable = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs["release"]
+            signingConfig = signingConfigs.findByName("release")
+        }
+        create("microphone") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".mic"
+            versionNameSuffix = "-mic"
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += "debug"
         }
     }
 
