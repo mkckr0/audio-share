@@ -20,9 +20,11 @@
 #include "client.pb.h"
 #include "network_manager.hpp"
 
+#include <chrono>
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <thread>
 #include <vector>
 
 #include <pipewire/pipewire.h>
@@ -99,24 +101,48 @@ audio_manager_impl::~audio_manager_impl()
 
 void audio_manager::do_loopback_recording(std::shared_ptr<network_manager> network_manager, const capture_config& config)
 {
-    std::string selected_endpoint_id = config.endpoint_id;
-    if (selected_endpoint_id.empty() || selected_endpoint_id == "default") {
-        selected_endpoint_id = get_default_endpoint();
-    }
+    // The audio endpoint can legitimately be missing when the server starts:
+    // PipeWire/WirePlumber may still be starting, the sink may appear only when
+    // the audio device is resumed, or a USB DAC is plugged in later. Returning
+    // here would end the capture thread for the rest of the process lifetime
+    // while the server keeps accepting clients and answering GET_FORMAT with an
+    // empty AudioFormat, so every client reconnects in a loop and no audio is
+    // played until as-cmd is restarted by hand. Wait for a usable endpoint
+    // instead, which also covers a configured endpoint that is not there yet.
+    constexpr auto retry_interval = std::chrono::seconds(2);
+    endpoint_list_t endpoint_list;
+    endpoint_list_t::iterator it;
+    std::string selected_endpoint_id;
+    while (true) {
+        selected_endpoint_id = config.endpoint_id;
+        if (selected_endpoint_id.empty() || selected_endpoint_id == "default") {
+            selected_endpoint_id = get_default_endpoint();
+        }
 
-    endpoint_list_t endpoint_list = get_endpoint_list();
-    if (endpoint_list.empty()) {
-        spdlog::error("audio endpoint list is empty");
-        return;
-    }
-    auto it = std::find_if(endpoint_list.begin(), endpoint_list.end(), [&](const endpoint_list_t::value_type& e) {
-        return e.first == selected_endpoint_id;
-    });
-    if (it != endpoint_list.end()) {
-        spdlog::info("select audio endpoint: {}, {}", selected_endpoint_id, it->second);
-    } else {
-        spdlog::error("selected audio endpoint is not in list");
-        return;
+        endpoint_list = get_endpoint_list();
+        it = std::find_if(endpoint_list.begin(), endpoint_list.end(), [&](const endpoint_list_t::value_type& e) {
+            return e.first == selected_endpoint_id;
+        });
+        if (it != endpoint_list.end()) {
+            spdlog::info("select audio endpoint: {}, {}", selected_endpoint_id, it->second);
+            break;
+        }
+
+        if (endpoint_list.empty()) {
+            spdlog::warn("audio endpoint list is empty, retrying in {}s", retry_interval.count());
+        } else {
+            spdlog::warn("selected audio endpoint {} is not in list, retrying in {}s",
+                selected_endpoint_id, retry_interval.count());
+        }
+
+        // stop() must not wait for a whole retry interval
+        auto deadline = std::chrono::steady_clock::now() + retry_interval;
+        while (!_stopped && std::chrono::steady_clock::now() < deadline) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        if (_stopped) {
+            return;
+        }
     }
 
     // set capture format
