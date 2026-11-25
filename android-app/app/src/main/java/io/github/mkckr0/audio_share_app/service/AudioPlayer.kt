@@ -50,15 +50,20 @@ import io.github.mkckr0.audio_share_app.model.networkConfigDataStore
 import io.github.mkckr0.audio_share_app.pb.Client
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import java.nio.ByteBuffer
+import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(UnstableApi::class)
@@ -92,6 +97,51 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
 
     private val scope: CoroutineScope = MainScope()
     private val retryScope: CoroutineScope = MainScope()
+
+    // ------------------------------------------------------------------
+    // 音频写入路径（为什么不直接 write(WRITE_NON_BLOCKING) 见下面说明）
+    // 上游实现每包一次 `audioTrack.write(buf, size, WRITE_NON_BLOCKING)`、
+    // 跑在 Main 线程、返回值被丢弃 ⇒ AudioTrack 缓冲只有 1x minBufferSize
+    // (15392 B ≈ 40 ms) 时写不进去的样本被静默丢弃，实测稳态 5% 欠载
+    // （AudioFlinger Underruns 每秒约 +2500 帧）⇒ 每 21 ms 一次爆音。
+    // 现在：UDP 读完只入队（非阻塞），由单线程按序 BLOCKING 写满，缓冲满时
+    // 反压到队列而不是丢样本；队列溢出时丢最旧数据保实时。
+    // ------------------------------------------------------------------
+    private val audioQueue = Channel<ByteBuffer>(capacity = 128)
+    private val audioWriterExecutor = Executors.newSingleThreadExecutor { r ->
+        Thread(r, "AudioWriter").apply { isDaemon = true }
+    }
+    private val audioWriterScope = CoroutineScope(
+        SupervisorJob() + audioWriterExecutor.asCoroutineDispatcher() + CoroutineName("AudioWriter")
+    )
+    private var _audioWriterJob: Job? = null
+
+    private fun dropPendingAudio() {
+        while (audioQueue.tryReceive().isSuccess) {
+            // drain pending packets
+        }
+    }
+
+    private fun startAudioWriter() {
+        if (_audioWriterJob != null) return
+        _audioWriterJob = audioWriterScope.launch {
+            for (buf in audioQueue) {
+                val track = _audioTrack ?: continue
+                while (buf.remaining() > 0) {
+                    val written = try {
+                        track.write(buf, buf.remaining(), AudioTrack.WRITE_BLOCKING)
+                    } catch (e: IllegalStateException) {
+                        Log.w(tag, "write on released track: ${e.message}")
+                        break
+                    }
+                    if (written <= 0) {
+                        Log.w(tag, "AudioTrack.write returned $written, aborting chunk")
+                        break
+                    }
+                }
+            }
+        }
+    }
 
     companion object {
         var message by mutableStateOf("")
@@ -141,6 +191,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                     .setPlayWhenReady(false, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
                     .build()
                 netClient.stop()
+                dropPendingAudio()
                 retryScope.coroutineContext.cancelChildren()
                 message = context.getString(R.string.label_paused)
             }
@@ -154,6 +205,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
             .setPlayWhenReady(false, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
             .build()
         netClient.stop()
+        dropPendingAudio()
         retryScope.coroutineContext.cancelChildren()
         message = context.getString(R.string.label_stopped)
         return immediateVoidFuture()
@@ -163,6 +215,9 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
         Log.d(tag, "handleRelease")
         scope.cancel()
         netClient.stop()
+        dropPendingAudio()
+        _audioWriterJob?.cancel()
+        _audioWriterJob = null
         retryScope.cancel()
         _loudnessEnhancer?.run {
             release()
@@ -240,6 +295,9 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
                 )).toInt()
             Log.i(tag, "buffer scale: $bufferScale")
 
+            dropPendingAudio()
+            startAudioWriter()
+
             _audioTrack = AudioTrack.Builder()
                 .setAudioAttributes(
                     AudioAttributes.Builder()
@@ -274,6 +332,7 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
             }
 
             audioTrack.play()
+            Log.i(tag, "AudioTrack started, buffer=${audioTrack.bufferSizeInFrames} frames")
         }
 
         override suspend fun onPlaybackStarted() {
@@ -286,8 +345,13 @@ class AudioPlayer(val context: Context) : SimpleBasePlayer(Looper.getMainLooper(
         }
 
         override suspend fun onReceiveAudioData(audioData: ByteBuffer) {
-//            Log.d(tag, "${audioData.remaining()}")
-            audioTrack.write(audioData, audioData.remaining(), AudioTrack.WRITE_NON_BLOCKING)
+            // 只入队；阻塞写由 AudioWriter 单线程完成，顺序由队列保证。
+            while (true) {
+                if (audioQueue.trySend(audioData).isSuccess) return
+                if (audioQueue.isClosedForSend) return
+                // 队列满：丢最旧的一包保实时，避免延迟累积
+                audioQueue.tryReceive()
+            }
         }
 
         override suspend fun onError(message: String?, cause: Throwable?) {
